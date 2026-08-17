@@ -114,6 +114,12 @@
 
   const sansPrefixe = (s, prefixe) => (typeof s === 'string' ? s.replace(prefixe, '') : undefined);
 
+  // PIÈGE DU FORMAT : en Protocol Buffers, une liste d'un seul élément s'écrit
+  // exactement comme une valeur simple. Sans le schéma, impossible de les distinguer,
+  // et le décodeur ne produit un tableau qu'à partir de deux occurrences.
+  // Tout champ censé être une liste doit donc passer par ici.
+  const tableau = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
+
   // Un attribut d'équipement : quelle statistique il touche, et de combien.
   // Les attributs dont le nom finit par "Bonus" (et les critiques) sont des pourcentages.
   // Un attribut sans détail est verrouillé : le jeu en connaît le type, pas encore la valeur.
@@ -172,12 +178,12 @@
     const bloc = brut.startup || (brut.captures || []).find((c) => /\/game\/startup$/.test(c.url));
     if (!bloc) throw new Error("Cet export ne contient pas l'état du compte (/game/startup).");
     const startup = decoder(base64VersOctets(bloc.payload));
-    const blocs = startup.f8.f2;
+    const blocs = tableau(startup.f8?.f2);
     const parType = (type) => blocs.filter((b) => b.$type === type).map((b) => b.$valeur);
 
     const [joueur] = parType('PlayerDTO');
-    const heros = parType('HeroPush').flatMap((p) => p.f1 || []);
-    const equipements = parType('EquipmentPush').flatMap((p) => p.f1 || []);
+    const heros = parType('HeroPush').flatMap((p) => tableau(p.f1));
+    const equipements = parType('EquipmentPush').flatMap((p) => tableau(p.f1));
 
     // Le catalogue du jeu se déduit de tous les identifiants présents dans l'export.
     const familles = {};
@@ -225,7 +231,7 @@
           niveau: e.f5,
           porteParHero: sansPrefixe(e.f6, 'hero.') ?? null,
           principal: lireAttribut(e.f8),
-          secondaires: (e.f9 || []).map(lireAttribut),
+          secondaires: tableau(e.f9).map(lireAttribut),
         })),
       },
     };

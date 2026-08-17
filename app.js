@@ -465,7 +465,11 @@ $('#fichier').addEventListener('change', async (e) => {
     charger(brut.compte && brut.catalogue ? brut : HOH_DECODEUR.extraire(brut));
     $('#sousTitre').title = `Chargé depuis ${fichier.name}`;
   } catch (erreur) {
-    etatVide(`Impossible de lire ce fichier : ${erreur.message}`);
+    // Le message brut d'une erreur technique n'aide personne : on explique quoi faire,
+    // et on laisse le détail complet dans la console pour pouvoir diagnostiquer.
+    console.error('HOH Builder — échec de lecture de', fichier.name, erreur);
+    etatVide(`Impossible de lire « ${fichier.name} ». Vérifie qu'il s'agit bien du fichier`
+      + ' produit par l\'extension. Détail technique dans la console du navigateur (touche F12).');
   }
   e.target.value = '';
 });
