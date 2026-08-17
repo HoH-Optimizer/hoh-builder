@@ -49,8 +49,8 @@ l'état du compte) n'est pas encore décodé.
 
 | Manque | Conséquence |
 |---|---|
-| Statistiques de base des héros | Les écarts entre configurations sont exacts, mais pas les totaux absolus. On peut saisir les valeurs à la main par héros, elles sont mémorisées dans le navigateur. |
-| Noms affichés | Le site montre les identifiants internes anglais (`SiouxShaman`) au lieu des noms traduits. Un bandeau le signale. |
+| Progression des stats par niveau | Les statistiques de base niveau 1 sont connues, mais pas la formule qui les fait monter. Les écarts entre configurations sont exacts, les totaux absolus non. On peut saisir les valeurs à la main par héros. |
+| Noms français | Le site affiche les noms anglais du wiki. Les noms traduits demandent le fichier de traduction du jeu, pas encore décodé. |
 | Bonus de set | Le nombre de pièces est affiché, pas encore l'effet. |
 | Icônes de 7 sets | Images cassées côté wiki : le site affiche l'initiale du set. |
 
@@ -86,6 +86,14 @@ node tools/images.js
 ```
 
 Récupère les illustrations manquantes. Ne retélécharge jamais ce qui est déjà là.
+
+```bash
+node tools/wiki.js
+```
+
+Régénère `heros-jeu.js` : noms, rareté (étoiles) et statistiques de base des 136 héros.
+Ces données appartiennent au jeu et non au compte — elles ne sont donc pas dans l'export,
+et sont extraites du catalogue que le wiki communautaire embarque dans ses pages.
 
 **Après toute modification de l'extension ou du décodeur**, régénérer l'archive proposée
 au téléchargement sur la page d'accueil :

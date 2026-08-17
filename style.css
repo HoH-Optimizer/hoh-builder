@@ -217,6 +217,11 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
   border-radius: 6px;
 }
 
+.etoiles { color: var(--accent); letter-spacing: .06em; white-space: nowrap; }
+.etoiles .creuses { color: var(--bordure); }
+#infoHeros .surMax { color: var(--discret); }
+#infoHeros .separateur { margin: 0 7px; opacity: .45; }
+
 .enteteHeros { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
 .enteteHeros h2 { margin: 0 0 4px; }
 .enteteHeros p { margin: 0; }

@@ -214,13 +214,20 @@
       },
       compte: {
         joueur: { id: joueur?.f1, nom: joueur?.f2 },
-        // f2 = niveau. f3/f5/f7 restent à confirmer en jeu (étoiles / rang / éveil).
+        // Correspondances vérifiées en comparant l'export à l'écran du jeu :
+        //   f2  = niveau actuel
+        //   f3  = nombre d'ascensions — le niveau maximum vaut (ascensions + 1) x 10
+        //   f5  = niveau de compétence
+        //   f10 = variante « montée en étoiles » (ex. AshokaTheGreatLegendary),
+        //         qui remplace alors la rareté de base du héros
+        // f7 reste inexpliqué : ses valeurs ne correspondent à rien d'observé.
         heros: heros.map((h) => ({
           id: sansPrefixe(h.f1, 'hero.'),
           niveau: h.f2,
-          etoiles: h.f3 ?? 0,
-          rang: h.f5,
-          eveil: h.f7,
+          ascensions: h.f3 ?? 0,
+          niveauMax: ((h.f3 ?? 0) + 1) * 10,
+          competence: h.f5 ?? 0,
+          montee: sansPrefixe(h.f10, 'hero_star_up.') ?? null,
         })),
         // f6 = héros porteur ; absent lorsque l'objet est en réserve.
         equipements: equipements.map((e) => ({

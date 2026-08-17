@@ -24,6 +24,21 @@ const NOM_STAT = {
 // Les seules statistiques pour lesquelles une valeur de base a du sens à saisir.
 const STATS_DE_BASE = ['Attack', 'Defense', 'MaxHitPoints'];
 
+const NOM_TYPE = {
+  Ranged: 'À distance',
+  Infantry: 'Infanterie',
+  HeavyInfantry: 'Infanterie lourde',
+  Cavalry: 'Cavalerie',
+  Siege: 'Siège',
+};
+
+// La rareté d'un héros va de 2 à 5 étoiles. On montre les cinq crans pour que
+// la valeur se lise d'un coup d'œil, les manquantes en creux.
+// Les crans manquants utilisent un glyphe différent, pas seulement une autre couleur :
+// la valeur reste lisible sans distinguer les nuances.
+const etoilesHtml = (n) =>
+  `<span class="etoiles" title="${n} étoiles sur 5">${'★'.repeat(n)}<span class="creuses">${'☆'.repeat(5 - n)}</span></span>`;
+
 /* ---------------------------------------------------------------- utilitaires */
 
 const $ = (s) => document.querySelector(s);
@@ -39,7 +54,15 @@ const joliNom = (id) => String(id)
 // Les vrais noms français viennent du fichier de traduction du jeu, qui n'est pas
 // toujours présent dans l'export. Tant qu'il manque, on affiche l'identifiant aéré.
 const libelles = () => (donnees && donnees.libelles) || {};
-const nomHeros = (id) => libelles().heros?.[id] || joliNom(id);
+
+// heros-jeu.js vient du catalogue du wiki : vrais noms, rareté et statistiques de base.
+// Beaucoup d'identifiants internes ne sont pas des noms (SiouxShaman = Sitting Bull).
+const fiche = (id) => (window.HEROS_JEU || {})[id];
+
+// Un héros monté en étoiles prend la rareté et les stats de sa variante.
+const ficheDuHeros = (h) => (h && fiche(h.montee)) || fiche(h?.id);
+
+const nomHeros = (id) => libelles().heros?.[id] || fiche(id)?.nom || joliNom(id);
 const nomSet = (id) => libelles().sets?.[id] || joliNom(id);
 const nomsReels = () => Boolean(libelles().heros);
 
@@ -211,9 +234,9 @@ function rendreEntete() {
   // L'avertissement se réduit à une pastille : l'explication tient dans l'infobulle.
   const alerte = $('#avertissement');
   alerte.hidden = nomsReels();
-  alerte.textContent = 'Noms provisoires';
-  alerte.title = "Le fichier de traduction du jeu n'est pas encore dans l'export : "
-    + 'les noms affichés sont les identifiants internes du jeu, en anglais.';
+  alerte.textContent = 'Noms en anglais';
+  alerte.title = "Les noms viennent du wiki communautaire et sont donc en anglais. "
+    + "Les noms français demandent le fichier de traduction du jeu, pas encore capturé.";
 }
 
 function rendreListeHeros() {
@@ -243,10 +266,21 @@ function rendreHeros() {
   const portrait = $('#portraitHeros');
   portrait.classList.remove('sansIcone');
   portrait.src = `images/heros/${encodeURIComponent(selection)}.webp`;
-  $('#infoHeros').innerHTML = h
-    ? `Niveau ${h.niveau ?? '?'} · ${h.etoiles ?? 0} étoiles · rang ${h.rang ?? '?'} `
-      + `<span class="discret">(la signification exacte de ces deux derniers reste à confirmer en jeu)</span>`
-    : "Ce héros n'est pas sur ton compte — tu peux quand même simuler un équipement dessus.";
+  const details = fiche(selection);
+  if (h) {
+    const morceaux = [`Niveau ${h.niveau ?? '?'}<span class="surMax">/${h.niveauMax ?? '?'}</span>`];
+    const rarete = ficheDuHeros(h)?.etoiles;
+    if (rarete) morceaux.push(etoilesHtml(rarete));
+    if (h.competence) morceaux.push(`Compétence ${h.competence}`);
+    if (details?.type) morceaux.push(esc(NOM_TYPE[details.type] || details.type));
+    $('#infoHeros').innerHTML = morceaux.join('<span class="separateur">·</span>');
+  } else {
+    const morceaux = [];
+    if (details?.etoiles) morceaux.push(etoilesHtml(details.etoiles));
+    if (details?.type) morceaux.push(esc(NOM_TYPE[details.type] || details.type));
+    morceaux.push("Pas sur ton compte — tu peux quand même simuler un équipement dessus.");
+    $('#infoHeros').innerHTML = morceaux.join('<span class="separateur">·</span>');
+  }
 
   const slots = equipe[selection] || {};
   $('#emplacements').innerHTML = ORDRE_SLOTS.map((slot) => {
