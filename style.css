@@ -111,14 +111,60 @@ header p { margin: 0; color: var(--discret); font-size: 13px; }
 }
 .bouton.principal:hover { filter: brightness(1.07); }
 
+/* La liste des héros occupe la colonne de gauche sur toute la hauteur ; le
+   comparateur et le tableau de statistiques s'empilent à sa droite, ce qui
+   laisse au tableau toute la largeur dont il a besoin. */
 main {
   display: grid;
-  grid-template-columns: 300px minmax(340px, 1fr) 380px;
+  grid-template-columns: 290px minmax(0, 1fr);
   gap: 16px;
   align-items: start;
   padding: 16px 20px 40px;
 }
-@media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+#colonneHeros { grid-row: 1 / span 2; }
+#colonneEquipement { grid-column: 2; grid-row: 1; }
+#colonneStats { grid-column: 2; grid-row: 2; }
+@media (max-width: 1000px) {
+  main { grid-template-columns: 1fr; }
+  #colonneHeros, #colonneEquipement, #colonneStats { grid-column: 1; grid-row: auto; }
+}
+
+/* ---------- Comparateur : actuel à gauche, simulé à droite ---------- */
+
+.comparateur {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 230px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .comparateur { grid-template-columns: 1fr; }
+  .personnage { order: -1; }
+}
+
+.cote h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--discret);
+}
+.sousTitreCote { font-size: 11px; text-transform: none; letter-spacing: 0; opacity: .75; }
+.emplacements { display: grid; gap: 7px; }
+.listeSets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+.personnage { display: grid; justify-items: center; gap: 8px; padding-top: 8px; }
+.pied {
+  width: 100%;
+  max-width: 220px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .5));
+}
+.pied.sansIcone { display: none; }
 
 .panneau {
   padding: 16px;
@@ -245,15 +291,13 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 
 /* ---------- Emplacements d'équipement ---------- */
 
-#emplacements { display: grid; gap: 8px; }
-
 .emplacement {
   display: grid;
-  grid-template-columns: 76px 40px 1fr auto;
-  gap: 12px;
+  grid-template-columns: 62px 38px minmax(0, 1fr) auto;
+  gap: 9px;
   align-items: center;
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   font: inherit;
   text-align: left;
   color: var(--texte);
@@ -264,7 +308,11 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
   cursor: pointer;
 }
 .emplacement:hover { border-color: var(--accent); }
-.emplacement .type { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--discret); }
+/* La colonne de gauche montre l'équipement réel du compte : on ne la modifie pas. */
+.emplacement.fige { cursor: default; opacity: .82; }
+.emplacement.fige:hover { border-color: var(--bordure); border-left-color: inherit; }
+.emplacement .type { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--discret); }
+.emplacement .titre { font-size: 13px; }
 .emplacement .titre { font-weight: 600; }
 .emplacement .detail { font-size: 12px; color: var(--discret); }
 .emplacement .vide { color: var(--discret); font-style: italic; }
@@ -273,9 +321,12 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .emplacement.r4 { border-left-color: var(--r4); }
 .emplacement.r5 { border-left-color: var(--r5); }
 .retirer {
-  padding: 3px 8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   font: inherit;
-  font-size: 12px;
+  font-size: 17px;
+  line-height: 1;
   color: var(--discret);
   background: transparent;
   border: 1px solid var(--bordure);
@@ -284,7 +335,6 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 }
 .retirer:hover { color: var(--negatif); border-color: var(--negatif); }
 
-#sets { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px; }
 .badgeSet {
   padding: 4px 9px;
   font-size: 12px;
@@ -306,7 +356,24 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .saisieBase { display: grid; gap: 8px; margin-top: 10px; }
 .saisieBase label { display: grid; gap: 4px; font-size: 12px; color: var(--discret); }
 
+/* Totaux absolus, affichés seulement si les statistiques de base sont connues. */
+.totaux { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.totalStat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: var(--panneau-clair);
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+}
+.totalStat .nom { color: var(--discret); font-size: 13px; }
+.totalStat .valeur { font-weight: 700; font-variant-numeric: tabular-nums; }
+
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
+/* Un libellé par ligne : « Dégâts de base » ne doit pas se couper en deux. */
+td.libelle { white-space: nowrap; }
+tr.modifiee td { background: rgba(217, 164, 65, .05); }
 th {
   padding: 6px 4px;
   font-size: 11px;

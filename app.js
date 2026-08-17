@@ -5,21 +5,49 @@ const ORDRE_SLOTS = ['Hand', 'Garment', 'Hat', 'Neck', 'Ring'];
 
 const NOM_SLOT = { Hand: 'Main', Garment: 'Vêtement', Hat: 'Chapeau', Neck: 'Cou', Ring: 'Anneau' };
 
+// Libellés repris mot pour mot de l'écran « Stats de profil » du jeu.
+// Ceux qui n'y figuraient pas sont traduits dans le même esprit.
 const NOM_STAT = {
-  Attack: 'Attaque', Defense: 'Défense', MaxHitPoints: 'Points de vie', HitPoints: 'Points de vie',
-  BaseDamage: 'Dégâts de base', AttackSpeed: "Vitesse d'attaque", MoveSpeed: 'Vitesse de déplacement',
-  CritChance: 'Chance de critique', CritDamage: 'Dégâts critiques', CritHealChance: 'Chance de soin critique',
-  Evasion: 'Esquive', Focus: 'Focus', FocusRegen: 'Régénération de focus',
-  InitialFocusInSecondsBonus: 'Focus initial (s)',
-  AoeDamageAmp: 'Dégâts de zone', BasicAttackDamageAmp: "Dégâts d'attaque de base",
-  SingleTargetDamageAmp: 'Dégâts mono-cible', BurnDamageAmp: 'Dégâts de brûlure',
-  DotDamageAmp: 'Dégâts sur la durée', LightningDamageAmp: 'Dégâts de foudre',
-  StormcastDamageAmp: 'Dégâts Stormcast', StunDurationAmp: "Durée d'étourdissement",
-  HealGivenAmp: 'Soins prodigués', HealTakenAmp: 'Soins reçus',
-  ShieldGivenAmp: 'Bouclier donné', ShieldTakenAmp: 'Bouclier reçu',
-  AttackBuffGivenAmp: "Bonus d'attaque donné", DefenseBuffGivenAmp: 'Bonus de défense donné',
+  Attack: 'Attaque',
+  Defense: 'Défense',
+  MaxHitPoints: 'Points de vie',
+  HitPoints: 'Points de vie',
+  BaseDamage: 'Dégâts de base',
+  InitialFocusInSecondsBonus: 'Charge initiale',
+  Focus: 'Charge',
+  FocusRegen: 'Régén. de charge',
+  SingleTargetDamageAmp: 'Dégâts uniques',
+  AoeDamageAmp: 'Dégâts de zone',
+  DotDamageAmp: 'Dégâts sur la durée',
+  HealGivenAmp: 'Soin prodigué',
+  ShieldGivenAmp: 'Bouclier donné',
+  BasicAttackDamageAmp: "Dégâts d'attaque de base",
+  AttackSpeed: "Vitesse d'attaque",
+  CritChance: 'Chances de crit',
+  CritDamage: 'Dégâts crit',
+  MoveSpeed: 'Vitesse de déplacement',
+  Evasion: 'Esquive',
+  HealTakenAmp: 'Soins reçus',
+  ShieldTakenAmp: 'Bouclier reçu',
+  CritHealChance: 'Chances de soin crit',
+  BurnDamageAmp: 'Dégâts de brûlure',
+  LightningDamageAmp: 'Dégâts de foudre',
+  StormcastDamageAmp: 'Dégâts de tempête',
+  StunDurationAmp: "Durée d'étourdissement",
+  AttackBuffGivenAmp: "Bonus d'attaque donné",
+  DefenseBuffGivenAmp: 'Bonus de défense donné',
   DefenseDebuffGivenAmp: 'Réduction de défense infligée',
 };
+
+// Ordre d'affichage du jeu, pour retrouver ses repères d'un écran à l'autre.
+const ORDRE_STATS = [
+  'Attack', 'Defense', 'MaxHitPoints', 'BaseDamage',
+  'InitialFocusInSecondsBonus', 'Focus', 'FocusRegen',
+  'SingleTargetDamageAmp', 'AoeDamageAmp', 'DotDamageAmp',
+  'HealGivenAmp', 'ShieldGivenAmp', 'BasicAttackDamageAmp',
+  'AttackSpeed', 'CritChance', 'CritDamage',
+  'MoveSpeed', 'Evasion', 'HealTakenAmp', 'ShieldTakenAmp',
+];
 
 // Les seules statistiques pour lesquelles une valeur de base a du sens à saisir.
 const STATS_DE_BASE = ['Attack', 'Defense', 'MaxHitPoints'];
@@ -107,8 +135,15 @@ const imgHeros = (id) =>
 // du jeu et enregistrées en .png, d'où le second repli.
 const imgObjet = (o) => {
   const set = encodeURIComponent(o.set);
-  return `<img class="icone" src="images/equipement/${encodeURIComponent(`${o.set}_${o.emplacement}`)}.webp"`
-    + ` data-repli="images/sets/${set}.webp,images/sets/${set}.png" data-initiale="${esc(initiales(o.set))}"`
+  const piece = encodeURIComponent(`${o.set}_${o.emplacement}`);
+  // On cherche d'abord l'objet lui-même, puis seulement à défaut l'icône du set.
+  const replis = [
+    `images/equipement/${piece}.png`,
+    `images/sets/${set}.webp`,
+    `images/sets/${set}.png`,
+  ];
+  return `<img class="icone" src="images/equipement/${piece}.webp"`
+    + ` data-repli="${replis.join(',')}" data-initiale="${esc(initiales(o.set))}"`
     + ` alt="" loading="lazy" onerror="repliIcone(this)">`;
 };
 
@@ -311,90 +346,127 @@ function rendreHeros() {
     $('#infoHeros').innerHTML = morceaux.join('<span class="separateur">·</span>');
   }
 
-  const slots = equipe[selection] || {};
-  $('#emplacements').innerHTML = ORDRE_SLOTS.map((slot) => {
-    const o = objets.get(slots[slot]);
-    const corps = o
-      ? `${imgObjet(o)}
-         <span><span class="titre">${esc(nomObjet(o))}</span><br>
-           <span class="detail">${esc(detailObjet(o))} · ${texteAttribut(o.principal)}</span></span>
-         <button class="retirer" data-retirer="${slot}">Retirer</button>`
-      : '<span class="icone sansIcone"></span><span class="vide">Emplacement vide — cliquer pour choisir</span><span></span>';
-    // Un <div> et non un <bouton> : il contient déjà le bouton « Retirer ».
-    return `<div class="emplacement ${o ? `r${o.rarete}` : ''}" data-slot="${slot}" role="button" tabindex="0">
-      <span class="type">${NOM_SLOT[slot]}</span>${corps}
-    </div>`;
-  }).join('');
+  const pied = $('#portraitPied');
+  pied.classList.remove('sansIcone');
+  pied.src = `images/pied/${encodeURIComponent(selection)}.webp`;
+  pied.setAttribute('data-repli', `images/heros/${encodeURIComponent(selection)}.webp`);
+
+  $('#emplacementsActuels').innerHTML = emplacementsHtml(equipeInitial[selection] || {}, false);
+  $('#emplacements').innerHTML = emplacementsHtml(equipe[selection] || {}, true);
 
   rendreSets();
   rendreStats();
 }
 
-function rendreSets() {
-  const compte = {};
-  for (const o of objetsEquipes(selection)) compte[o.set] = (compte[o.set] || 0) + 1;
-  const entrees = Object.entries(compte).sort((a, b) => b[1] - a[1]);
-
-  $('#sets').innerHTML = entrees.length
-    ? entrees.map(([set, n]) => {
-        const taille = taillesDeSet.get(set) ?? 3;
-        const complet = n >= taille;
-        const paliers = FORMULES.BONUS_DE_SET[set] || [];
-        const bonus = paliers.filter((p) => n >= p.pieces).map((p) => p.texte).join(' · ');
-        const infobulle = bonus
-          || (complet ? 'Set complet. Son effet exact reste à documenter.' : `Il manque ${taille - n} pièce(s) pour compléter ce set.`);
-        return `<span class="badgeSet ${complet ? 'complet' : ''}" title="${esc(infobulle)}">
-          ${imgSet(set)}${esc(nomSet(set))} ${n}/${taille}${bonus ? ` — ${esc(bonus)}` : ''}
-        </span>`;
-      }).join('')
-    : '';
+// Les deux colonnes du comparateur partagent le même rendu : à gauche la
+// configuration réelle du compte, figée ; à droite celle qu'on modifie.
+function emplacementsHtml(slots, modifiable) {
+  return ORDRE_SLOTS.map((slot) => {
+    const o = objets.get(slots[slot]);
+    const corps = o
+      ? `${imgObjet(o)}
+         <span><span class="titre">${esc(nomObjet(o))}</span><br>
+           <span class="detail">${esc(detailObjet(o))} · ${texteAttribut(o.principal)}</span></span>
+         ${modifiable ? `<button class="retirer" data-retirer="${slot}" title="Retirer cet objet" aria-label="Retirer">×</button>` : '<span></span>'}`
+      : `<span class="icone sansIcone"></span><span class="vide">${modifiable ? 'Vide — cliquer pour choisir' : 'Vide'}</span><span></span>`;
+    // Un <div> et non un <bouton> : il contient déjà le bouton « Retirer ».
+    return `<div class="emplacement ${o ? `r${o.rarete}` : ''} ${modifiable ? '' : 'fige'}"
+        ${modifiable ? `data-slot="${slot}" role="button" tabindex="0"` : ''}>
+      <span class="type">${NOM_SLOT[slot]}</span>${corps}
+    </div>`;
+  }).join('');
 }
 
+function rendreSets() {
+  $('#setsActuels').innerHTML = setsHtml(Object.values(equipeInitial[selection] || {}));
+  $('#sets').innerHTML = setsHtml(Object.values(equipe[selection] || {}));
+}
+
+function setsHtml(identifiants) {
+  const compte = {};
+  for (const id of identifiants) {
+    const o = objets.get(id);
+    if (o) compte[o.set] = (compte[o.set] || 0) + 1;
+  }
+  return Object.entries(compte).sort((a, b) => b[1] - a[1]).map(([set, n]) => {
+    const taille = taillesDeSet.get(set) ?? 3;
+    const complet = n >= taille;
+    const paliers = FORMULES.BONUS_DE_SET[set] || [];
+    const bonus = paliers.filter((p) => n >= p.pieces).map((p) => p.texte).join(' · ');
+    const infobulle = bonus
+      || (complet ? 'Set complet. Son effet exact reste à documenter.' : `Il manque ${taille - n} pièce(s) pour compléter ce set.`);
+    return `<span class="badgeSet ${complet ? 'complet' : ''}" title="${esc(infobulle)}">
+      ${imgSet(set)}${esc(nomSet(set))} ${n}/${taille}${bonus ? ` — ${esc(bonus)}` : ''}
+    </span>`;
+  }).join('');
+}
+
+// Une case du tableau : apport plat et/ou pourcentage, dans l'esprit du jeu.
+const celluleApport = (e) => [
+  e.plat ? signe(e.plat, nombre) : null,
+  e.pourcentage ? signe(e.pourcentage, pourcent) : null,
+].filter(Boolean).join(' ') || '<span class="discret">—</span>';
+
 function rendreStats() {
-  const actuel = agreger(objetsEquipes(selection));
-  const avant = agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean));
+  const simule = agreger(objetsEquipes(selection));
+  const actuel = agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean));
   const bases = basesDe(selection);
 
   for (const champ of document.querySelectorAll('[data-base]')) champ.value = bases[champ.dataset.base] ?? '';
 
-  const stats = [...new Set([...Object.keys(actuel), ...Object.keys(avant)])].sort((a, b) => {
-    const ia = STATS_DE_BASE.indexOf(a), ib = STATS_DE_BASE.indexOf(b);
-    if (ia !== ib) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-    return libelleStat(a).localeCompare(libelleStat(b), 'fr');
-  });
+  // On suit l'ordre du jeu, puis on ajoute à la suite les statistiques qu'il ne
+  // montre pas sur cet écran mais que l'équipement peut apporter.
+  const presentes = new Set([...Object.keys(simule), ...Object.keys(actuel)]);
+  const stats = [
+    ...ORDRE_STATS.filter((s) => presentes.has(s)),
+    ...[...presentes].filter((s) => !ORDRE_STATS.includes(s)).sort((a, b) => libelleStat(a).localeCompare(libelleStat(b), 'fr')),
+  ];
 
   $('#aucuneStat').hidden = stats.length > 0;
   $('#tableStats').hidden = stats.length === 0;
 
   $('#tableStats tbody').innerHTML = stats.map((stat) => {
-    const a = actuel[stat] || { plat: 0, pourcentage: 0 };
-    const v = avant[stat] || { plat: 0, pourcentage: 0 };
+    const vide = { plat: 0, pourcentage: 0 };
+    const s = simule[stat] || vide;
+    const a = actuel[stat] || vide;
 
-    const apport = [
-      a.plat ? signe(a.plat, nombre) : null,
-      a.pourcentage ? signe(a.pourcentage, pourcent) : null,
-    ].filter(Boolean).join(' et ') || '—';
-
-    let total;
-    const base = bases[stat];
-    if (typeof base === 'number') total = nombre(FORMULES.appliquer(base, a.plat, a.pourcentage));
-    else if (STATS_DE_BASE.includes(stat)) total = '<span class="inconnu">base à saisir</span>';
-    else if (a.plat && a.pourcentage) total = `${signe(a.plat, nombre)} et ${signe(a.pourcentage, pourcent)}`;
-    else total = a.pourcentage ? signe(a.pourcentage, pourcent) : signe(a.plat, nombre);
-
-    const dPlat = a.plat - v.plat, dPct = a.pourcentage - v.pourcentage;
-    const morceaux = [
+    const dPlat = s.plat - a.plat;
+    const dPct = s.pourcentage - a.pourcentage;
+    const ecart = [
       dPlat ? `<span class="${dPlat > 0 ? 'hausse' : 'baisse'}">${signe(dPlat, nombre)}</span>` : null,
       dPct ? `<span class="${dPct > 0 ? 'hausse' : 'baisse'}">${signe(dPct, pourcent)}</span>` : null,
-    ].filter(Boolean);
+    ].filter(Boolean).join(' ') || '<span class="discret">=</span>';
 
-    return `<tr>
-      <td class="${STATS_DE_BASE.includes(stat) ? 'principal' : ''}">${imgStat(stat)}${esc(libelleStat(stat))}</td>
-      <td>${apport}</td>
-      <td class="${STATS_DE_BASE.includes(stat) ? 'principal' : ''}">${total}</td>
-      <td>${morceaux.join(' ') || '<span class="discret">=</span>'}</td>
+    const majeure = STATS_DE_BASE.includes(stat);
+    return `<tr class="${dPlat || dPct ? 'modifiee' : ''}">
+      <td class="libelle ${majeure ? 'principal' : ''}">${imgStat(stat)}${esc(libelleStat(stat))}</td>
+      <td>${celluleApport(a)}</td>
+      <td class="${majeure ? 'principal' : ''}">${celluleApport(s)}</td>
+      <td>${ecart}</td>
     </tr>`;
   }).join('');
+
+  rendreTotaux(simule, actuel, bases);
+}
+
+// Quand on a saisi les statistiques de base d'un héros, on peut afficher les totaux
+// absolus. Sans elles, on ne montre rien plutôt qu'un chiffre trompeur.
+function rendreTotaux(simule, actuel, bases) {
+  const lignes = STATS_DE_BASE.filter((stat) => typeof bases[stat] === 'number').map((stat) => {
+    const s = simule[stat] || { plat: 0, pourcentage: 0 };
+    const a = actuel[stat] || { plat: 0, pourcentage: 0 };
+    const totalSimule = FORMULES.appliquer(bases[stat], s.plat, s.pourcentage);
+    const totalActuel = FORMULES.appliquer(bases[stat], a.plat, a.pourcentage);
+    const delta = totalSimule - totalActuel;
+    return `<div class="totalStat">
+      <span class="nom">${imgStat(stat)}${esc(libelleStat(stat))}</span>
+      <span class="valeur">${nombre(totalSimule)}</span>
+      ${delta ? `<span class="${delta > 0 ? 'hausse' : 'baisse'}">${signe(delta, nombre)}</span>` : '<span class="discret">=</span>'}
+    </div>`;
+  }).join('');
+
+  $('#totaux').innerHTML = lignes;
+  $('#totaux').hidden = !lignes;
 }
 
 /* -------------------------------------------------- fenêtre de choix d'objet */

@@ -19,6 +19,8 @@ const aTelecharger = [];
 
 for (const hero of donnees.catalogue.heros) {
   aTelecharger.push({ url: `${BASE}/heroes/intro/icons/Unit_${hero}.webp`, fichier: path.join(RACINE, 'heros', `${hero}.webp`) });
+  // Illustration en pied, affichée au centre du comparateur d'équipement.
+  aTelecharger.push({ url: `${BASE}/heroes/intro/fullbody/Unit_${hero}_fullbody.webp`, fichier: path.join(RACINE, 'pied', `${hero}.webp`), facultatif: true });
 }
 
 for (const set of donnees.catalogue.sets) {
