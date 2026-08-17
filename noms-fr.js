@@ -4,6 +4,26 @@
    Le jour où /game/loca/compressed sera lisible, ce fichier deviendra inutile. */
 
 window.NOMS_FR = {
+  // Héros, relevés un par un sur leur fiche de jeu.
+  // À noter : le wiki anglais nomme EgyptianVizier « Imhotep », ce qui le confond
+  // avec le héros Imhotep. Le jeu, lui, l'appelle Mérérouka.
+  heros: {
+    AhmadIbnMajid: 'Ahmed Ibn Majid',
+    ArtemisiaIOfCaria: 'Artémise I de Carie',
+    AshokaTheGreat: 'Ashoka le Grand',
+    AshokaTheGreatLegendary: 'Ashoka le Grand',
+    AttilaTheHun: 'Attila le Hun',
+    AztecTlacateccatl: 'Cuauhtemoc',
+    Blackbeard: 'Barbe Noire',
+    CyrusTheGreat: 'Cyrus le Grand',
+    DArtagnan: "D'Artagnan",
+    EgyptianVizier: 'Mérérouka',
+    ElCid: 'Le Cid',
+    Eurylochus: 'Euryloque',
+    Geisha: 'Yoshino Dayu',
+    GreekMathematician: 'Euclide',
+  },
+
   // Ensembles d'armement — 2 pièces (main, vêtement)
   sets: {
     Archer: 'Archer',

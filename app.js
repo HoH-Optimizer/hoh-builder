@@ -59,7 +59,8 @@ const fiche = (id) => (window.HEROS_JEU || {})[id];
 // Un héros monté en étoiles prend la rareté et les stats de sa variante.
 const ficheDuHeros = (h) => (h && fiche(h.montee)) || fiche(h?.id);
 
-const nomHeros = (id) => libelles().heros?.[id] || fiche(id)?.nom || joliNom(id);
+const nomHeros = (id) =>
+  libelles().heros?.[id] || (window.NOMS_FR || {}).heros?.[id] || fiche(id)?.nom || joliNom(id);
 const nomSet = (id) => libelles().sets?.[id] || (window.NOMS_FR || {}).sets?.[id] || joliNom(id);
 const nomType = (t) => NOM_TYPE()[t] || t;
 const nomsReels = () => Boolean(libelles().heros);
