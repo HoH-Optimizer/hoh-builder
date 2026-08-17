@@ -185,6 +185,24 @@
     const heros = parType('HeroPush').flatMap((p) => tableau(p.f1));
     const equipements = parType('EquipmentPush').flatMap((p) => tableau(p.f1));
 
+    // Le jeu compose ses statistiques à partir de plusieurs sources. L'export en
+    // contient deux de plus que l'équipement : les nœuds de panthéon débloqués et
+    // les reliques portées. Leurs valeurs, elles, appartiennent au catalogue du jeu
+    // et restent inconnues — on relève donc ce qui est là, sans le chiffrer.
+    const noeudsParHero = {};
+    for (const entree of parType('HeroPantheonStatePush').flatMap((p) => tableau(p.f1))) {
+      const id = sansPrefixe(entree.f1, 'hero.');
+      if (id) noeudsParHero[id] = tableau(entree.f2).map((n) => sansPrefixe(n.f1, 'pantheon_node.'));
+    }
+
+    const reliques = parType('RelicPush').flatMap((p) => tableau(p.f1)).map((r) => ({
+      id: r.f1,
+      relique: sansPrefixe(r.f2, 'relic.'),
+      niveau: r.f3 ?? 0,
+      etoiles: r.f4 ?? 0,
+      porteParHero: sansPrefixe(r.f5, 'hero.') ?? null,
+    }));
+
     // Le catalogue du jeu se déduit de tous les identifiants présents dans l'export.
     const familles = {};
     (function collecte(n) {
@@ -229,7 +247,9 @@
           competence: h.f5 ?? 0,
           eveil: h.f7 ?? 0,
           montee: sansPrefixe(h.f10, 'hero_star_up.') ?? null,
+          pantheon: noeudsParHero[sansPrefixe(h.f1, 'hero.')] || [],
         })),
+        reliques,
         // f6 = héros porteur ; absent lorsque l'objet est en réserve.
         equipements: equipements.map((e) => ({
           id: e.f1,

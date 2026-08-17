@@ -178,6 +178,7 @@ let equipe = {};              // configuration simulée, modifiable
 let porteur = new Map();      // id de l'objet -> id du héros qui le porte (simulation)
 
 let taillesDeSet = new Map(); // identifiant du set -> nombre de pièces qui le composent
+let statOuverte = null;       // statistique dont on affiche le détail par objet
 let selection = null;
 let filtre = 'possedes';
 let recherche = '';
@@ -438,15 +439,79 @@ function rendreStats() {
     ].filter(Boolean).join(' ') || '<span class="discret">=</span>';
 
     const majeure = STATS_DE_BASE.includes(stat);
-    return `<tr class="${dPlat || dPct ? 'modifiee' : ''}">
-      <td class="libelle ${majeure ? 'principal' : ''}">${imgStat(stat)}${esc(libelleStat(stat))}</td>
+    const ouverte = statOuverte === stat;
+    return `<tr class="${dPlat || dPct ? 'modifiee' : ''} ${ouverte ? 'ouverte' : ''}" data-stat="${esc(stat)}">
+      <td class="libelle ${majeure ? 'principal' : ''}">
+        <span class="chevron">${ouverte ? '▾' : '▸'}</span>${imgStat(stat)}${esc(libelleStat(stat))}
+      </td>
       <td>${celluleApport(a)}</td>
       <td class="${majeure ? 'principal' : ''}">${celluleApport(s)}</td>
       <td>${ecart}</td>
-    </tr>`;
+    </tr>${ouverte ? detailHtml(stat) : ''}`;
   }).join('');
 
   rendreTotaux(simule, actuel, bases);
+  rendreSources();
+}
+
+// Ce que chaque objet apporte à une statistique donnée : c'est la réponse
+// concrète à « d'où viennent ces chiffres ».
+function detailHtml(stat) {
+  const colonne = (config) => {
+    const lignes = Object.values(config || {}).map((id) => objets.get(id)).filter(Boolean).map((o) => {
+      let plat = 0, pourcentage = 0;
+      for (const a of [o.principal, ...(o.secondaires || [])]) {
+        if (!a || a.stat !== stat || !FORMULES.attributCompte(a)) continue;
+        if (a.type === 'pourcentage') pourcentage += a.valeur;
+        else plat += a.valeur;
+      }
+      if (!plat && !pourcentage) return '';
+      return `<li><span>${imgObjet(o)}${esc(nomObjet(o))}</span><span>${celluleApport({ plat, pourcentage })}</span></li>`;
+    }).filter(Boolean).join('');
+    return lignes || '<li class="discret">Aucun objet n\'apporte cette statistique.</li>';
+  };
+
+  // Rappel de la transition en toutes lettres : « on passe de X à Y ».
+  const vide = { plat: 0, pourcentage: 0 };
+  const a = agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean))[stat] || vide;
+  const s = agreger(objetsEquipes(selection))[stat] || vide;
+  const change = a.plat !== s.plat || a.pourcentage !== s.pourcentage;
+  const resume = change
+    ? `<p class="transition">${esc(libelleStat(stat))} : <span class="depuis">${celluleApport(a)}</span>
+       <span class="fleche">→</span> <span class="vers">${celluleApport(s)}</span></p>`
+    : `<p class="transition discret">${esc(libelleStat(stat))} : inchangé par rapport à ton équipement actuel.</p>`;
+
+  return `<tr class="detail"><td colspan="4">
+    <div class="detailStat">
+      ${resume}
+      <div><h4>Équipement actuel</h4><ul>${colonne(equipeInitial[selection])}</ul></div>
+      <div><h4>Équipement simulé</h4><ul>${colonne(equipe[selection])}</ul></div>
+    </div>
+  </td></tr>`;
+}
+
+// Le jeu additionne plusieurs sources. On dit franchement lesquelles on sait
+// chiffrer et lesquelles restent hors de portée, plutôt que de faire comme si
+// l'équipement était le seul apport.
+function rendreSources() {
+  const h = herosParId.get(selection);
+  const objetsPortes = objetsEquipes(selection).length;
+  const noeuds = h?.pantheon?.length || 0;
+  const reliques = (donnees.compte.reliques || []).filter((r) => r.porteParHero === selection);
+
+  const ligne = (nom, quantite, etat, chiffre) => `<div class="source ${chiffre ? 'chiffree' : ''}">
+    <span class="nomSource">${esc(nom)}</span>
+    <span class="quantite">${esc(quantite)}</span>
+    <span class="etatSource">${esc(etat)}</span>
+  </div>`;
+
+  $('#sources').innerHTML = [
+    ligne('Équipement', `${objetsPortes} objet${objetsPortes > 1 ? 's' : ''}`, 'détaillé ci-contre', true),
+    ligne('Panthéon', noeuds ? `${noeuds} nœuds` : 'aucun', noeuds ? 'valeurs inconnues' : '—', false),
+    ligne('Reliques', reliques.length ? reliques.map((r) => `${joliNom(r.relique)} niv. ${r.niveau}`).join(', ') : 'aucune', reliques.length ? 'valeurs inconnues' : '—', false),
+    ligne('Caserne', '—', "absent de l'export", false),
+    ligne('Éveil', h?.eveil ? `niveau ${ROMAIN[h.eveil] || h.eveil}` : '—', h?.eveil ? 'valeurs inconnues' : '—', false),
+  ].join('');
 }
 
 // Quand on a saisi les statistiques de base d'un héros, on peut afficher les totaux
@@ -544,6 +609,14 @@ $('#listeHeros').addEventListener('click', (e) => {
 });
 
 $('#recherche').addEventListener('input', (e) => { recherche = e.target.value; rendreListeHeros(); });
+
+// Cliquer une statistique déplie le détail objet par objet.
+$('#tableStats').addEventListener('click', (e) => {
+  const ligne = e.target.closest('tr[data-stat]');
+  if (!ligne) return;
+  statOuverte = statOuverte === ligne.dataset.stat ? null : ligne.dataset.stat;
+  rendreStats();
+});
 
 for (const bouton of document.querySelectorAll('.filtre')) {
   bouton.addEventListener('click', () => {
