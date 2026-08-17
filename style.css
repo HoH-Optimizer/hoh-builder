@@ -100,6 +100,16 @@ header p { margin: 0; color: var(--discret); font-size: 13px; }
   cursor: pointer;
 }
 .bouton:hover { border-color: var(--accent); }
+.bouton.principal {
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17130e;
+  background: linear-gradient(175deg, #f4dcab, var(--accent));
+  border-color: transparent;
+  box-shadow: 0 2px 12px rgba(217, 164, 65, .22);
+}
+.bouton.principal:hover { filter: brightness(1.07); }
 
 main {
   display: grid;
@@ -130,6 +140,16 @@ main.vide #accueil { display: block; max-width: 620px; margin-top: 24px; padding
 .accueil ol { margin: 0; padding-left: 20px; color: var(--discret); }
 .accueil li { margin-bottom: 9px; line-height: 1.6; }
 .accueil strong { color: var(--texte); }
+.zoneTelechargement {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0 0 20px;
+}
+.sourceProjet { margin: 22px 0 0; padding-top: 16px; border-top: 1px solid var(--bordure); }
+.accueil a { color: var(--accent); }
+
 .accueil code, .accueil kbd {
   padding: 1px 6px;
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;

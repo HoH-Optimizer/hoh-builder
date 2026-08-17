@@ -17,8 +17,9 @@ et ne clique jamais à ta place. Elle n'automatise rien.
 
 ## Utilisation
 
-1. Installe le dossier [`hoh-exporter-simple`](hoh-exporter-simple/README.md) comme
-   extension Chrome (mode développeur, « Charger l'extension non empaquetée »).
+1. Télécharge [`hoh-exporter-simple.zip`](hoh-exporter-simple.zip), décompresse-le, et
+   installe-le comme extension Chrome (mode développeur, « Charger l'extension non
+   empaquetée »). Le [détail des étapes](hoh-exporter-simple/README.md) est dans l'archive.
 2. Ouvre Heroes of History dans Chrome, fais `Ctrl + F5`, attends l'écran principal,
    puis ouvre un héros et son écran d'équipement.
 3. Clique sur l'icône de l'extension → **Télécharger mon export JSON**.
@@ -81,6 +82,13 @@ node tools/images.js
 ```
 
 Récupère les illustrations manquantes. Ne retélécharge jamais ce qui est déjà là.
+
+**Après toute modification de l'extension**, régénérer l'archive proposée au
+téléchargement sur la page d'accueil (PowerShell, depuis la racine du dépôt) :
+
+```powershell
+Compress-Archive -Path hoh-exporter-simple -DestinationPath hoh-exporter-simple.zip -Force
+```
 
 ## Illustrations
 
