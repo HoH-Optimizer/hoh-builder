@@ -12,7 +12,7 @@
       "run_at": "document_start"
     },
     {
-      "matches": ["https://thomaswalus7713.github.io/hoh-builder/*", "http://localhost:4173/*"],
+      "matches": ["https://tizzy1377.github.io/hoh-builder/*", "http://localhost:4173/*"],
       "js": ["pont.js"],
       "run_at": "document_idle"
     }

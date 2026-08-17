@@ -1,4 +1,6 @@
-const SITE = 'https://thomaswalus7713.github.io/hoh-builder/';
+// Adresse publique du site. À garder identique aux "matches" du manifeste :
+// c'est là que le pont a le droit de déposer les données.
+const SITE = 'https://tizzy1377.github.io/hoh-builder/';
 
 const etat = document.querySelector('#etat');
 const ouvrir = document.querySelector('#ouvrir');
