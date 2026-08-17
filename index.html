@@ -124,33 +124,38 @@
   <section id="colonneStats" class="panneau">
     <h2>Statistiques</h2>
 
-    <details id="blocBase">
-      <summary>Statistiques de base du héros</summary>
-      <p class="discret">
-        Ces valeurs ne sont pas encore dans l'export du jeu. Tu peux les relever en jeu
-        sur un héros <strong>sans aucun équipement</strong> et les saisir ici : elles sont
-        mémorisées par héros dans ce navigateur.
-      </p>
-      <div class="saisieBase">
-        <label>Attaque <input type="number" data-base="Attack" min="0" step="1"></label>
-        <label>Défense <input type="number" data-base="Defense" min="0" step="1"></label>
-        <label>Points de vie <input type="number" data-base="MaxHitPoints" min="0" step="1"></label>
-      </div>
-    </details>
+    <div class="grilleStats">
+      <table id="tableStats">
+        <thead>
+          <tr>
+            <th>Statistique</th>
+            <th>Équipement actuel</th>
+            <th>Équipement simulé</th>
+            <th>Écart</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
 
-    <div id="totaux" class="totaux" hidden></div>
+      <aside class="coteStats">
+        <div id="totaux" class="totaux" hidden></div>
 
-    <table id="tableStats">
-      <thead>
-        <tr>
-          <th>Statistique</th>
-          <th>Équipement actuel</th>
-          <th>Équipement simulé</th>
-          <th>Écart</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+        <details id="blocBase">
+          <summary>Statistiques de base du héros</summary>
+          <p class="discret">
+            Ces valeurs ne sont pas dans l'export du jeu. Relève-les en jeu sur un héros
+            <strong>sans aucun équipement</strong> et saisis-les ici : elles sont mémorisées
+            par héros dans ce navigateur, et donnent les totaux absolus.
+          </p>
+          <div class="saisieBase">
+            <label>Attaque <input type="number" data-base="Attack" min="0" step="1"></label>
+            <label>Défense <input type="number" data-base="Defense" min="0" step="1"></label>
+            <label>Points de vie <input type="number" data-base="MaxHitPoints" min="0" step="1"></label>
+          </div>
+        </details>
+      </aside>
+    </div>
+
     <p id="aucuneStat" class="discret">Aucun équipement sur ce héros.</p>
   </section>
 

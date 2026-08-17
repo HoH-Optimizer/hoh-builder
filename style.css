@@ -356,36 +356,54 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .saisieBase { display: grid; gap: 8px; margin-top: 10px; }
 .saisieBase label { display: grid; gap: 4px; font-size: 12px; color: var(--discret); }
 
+/* Le tableau n'a pas besoin de toute la largeur : la saisie des statistiques de
+   base et les totaux occupent la place restante plutôt que de la laisser vide. */
+.grilleStats {
+  display: grid;
+  grid-template-columns: minmax(0, 760px) minmax(230px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 900px) { .grilleStats { grid-template-columns: 1fr; } }
+
+.coteStats { display: grid; gap: 12px; }
+#blocBase { margin: 0; }
+
 /* Totaux absolus, affichés seulement si les statistiques de base sont connues. */
-.totaux { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.totaux { display: grid; gap: 8px; }
 .totalStat {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
+  gap: 10px;
+  padding: 8px 12px;
   background: var(--panneau-clair);
   border: 1px solid var(--bordure);
   border-radius: 8px;
 }
 .totalStat .nom { color: var(--discret); font-size: 13px; }
-.totalStat .valeur { font-weight: 700; font-variant-numeric: tabular-nums; }
+.totalStat .valeur { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
 
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+/* Le panneau occupe toute la largeur, mais quatre colonnes courtes n'en ont pas
+   besoin : on borne la table pour que les chiffres restent près de leur libellé. */
+table { width: 100%; max-width: 760px; border-collapse: collapse; font-size: 13.5px; }
 /* Un libellé par ligne : « Dégâts de base » ne doit pas se couper en deux. */
 td.libelle { white-space: nowrap; }
-tr.modifiee td { background: rgba(217, 164, 65, .05); }
+tr.modifiee td { background: rgba(217, 164, 65, .06); }
 th {
-  padding: 6px 4px;
-  font-size: 11px;
+  padding: 5px 10px;
+  font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: .04em;
   color: var(--discret);
   text-align: right;
   border-bottom: 1px solid var(--bordure);
 }
 th:first-child { text-align: left; }
-td { padding: 6px 4px; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid rgba(58, 50, 44, .5); }
-td:first-child { text-align: left; font-variant-numeric: normal; }
+td { padding: 4px 10px; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid rgba(58, 50, 44, .45); }
+td:first-child { text-align: left; font-variant-numeric: normal; width: 34%; }
+th:nth-child(2), th:nth-child(3), td:nth-child(2), td:nth-child(3) { width: 22%; }
+th:last-child, td:last-child { width: 22%; }
 td.principal { font-weight: 600; }
 .hausse { color: var(--positif); }
 .baisse { color: var(--negatif); }
