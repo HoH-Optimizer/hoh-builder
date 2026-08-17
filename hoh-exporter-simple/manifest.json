@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "HoH Export Persos & Équipements",
+  "version": "2.2.0",
+  "description": "Exporte localement les données Heroes of History nécessaires aux héros et équipements. Lecture seule.",
+  "permissions": ["storage", "unlimitedStorage"],
+  "action": {"default_popup": "popup.html", "default_title": "Exporter mes données HoH"},
+  "content_scripts": [{
+    "matches": ["*://*.heroesofhistorygame.com/*", "*://*.heroesofhistory.com/*"],
+    "js": ["content.js"],
+    "run_at": "document_start"
+  }],
+  "web_accessible_resources": [{"resources": ["page-hook.js"], "matches": ["*://*.heroesofhistorygame.com/*", "*://*.heroesofhistory.com/*"]}]
+}

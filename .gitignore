@@ -1,0 +1,17 @@
+# ---------------------------------------------------------------------------
+# Données personnelles — ne doivent JAMAIS être publiées.
+# donnees.js contient l'inventaire complet d'un compte de jeu.
+# ---------------------------------------------------------------------------
+/donnees.js
+/donnees.js.test
+/data/
+/heroes-of-history-export-*.json
+
+# ---------------------------------------------------------------------------
+# Fichiers de travail locaux
+# ---------------------------------------------------------------------------
+/*.png
+/.claude/
+node_modules/
+.DS_Store
+Thumbs.db

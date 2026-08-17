@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HOH Builder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="marque">
+    <svg class="blason" viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <linearGradient id="orBlason" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f8e6bd"/>
+          <stop offset="1" stop-color="#c1861f"/>
+        </linearGradient>
+      </defs>
+      <path d="M12 2.1 4.1 5v6.5c0 5 3.3 9.2 7.9 10.4 4.6-1.2 7.9-5.4 7.9-10.4V5L12 2.1Z" fill="url(#orBlason)"/>
+      <path d="M12 7.2v9.3M8.1 10.9h7.8" stroke="#1a1510" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <h1>HOH <span class="leger">Builder</span></h1>
+      <p id="sousTitre">Chargement…</p>
+    </div>
+  </div>
+  <div class="actions">
+    <span id="avertissement" class="alerte" hidden></span>
+    <label class="bouton" for="fichier">Charger un autre export</label>
+    <input type="file" id="fichier" accept=".json" hidden>
+    <button id="reinitialiser" class="bouton">Rétablir mon équipement réel</button>
+  </div>
+</header>
+
+<main>
+
+  <section id="accueil" class="panneau accueil">
+    <h2>Bienvenue</h2>
+    <p class="intro">
+      HOH Builder te permet de tester des configurations d'équipement sur tes héros
+      <strong>Heroes of History</strong> et de voir leurs statistiques se recalculer en direct,
+      sans toucher à ton compte.
+    </p>
+    <p class="intro confidentialite">
+      Tes données ne quittent jamais ton ordinateur : tout se passe dans ton navigateur,
+      rien n'est envoyé nulle part.
+    </p>
+    <h3>Pour commencer</h3>
+    <ol>
+      <li>Récupère le dossier <code>hoh-exporter-simple</code> du dépôt et installe-le comme
+        extension Chrome (son <code>README</code> détaille les 4 étapes).</li>
+      <li>Ouvre Heroes of History dans Chrome, fais <kbd>Ctrl</kbd>+<kbd>F5</kbd> et attends
+        l'écran principal.</li>
+      <li>Clique sur l'icône de l'extension, puis sur <strong>Télécharger mon export JSON</strong>.</li>
+      <li>Reviens ici et clique sur <strong>Charger un autre export</strong>, en haut à droite.</li>
+    </ol>
+  </section>
+
+  <section id="colonneHeros" class="panneau">
+    <h2>Héros</h2>
+    <input type="search" id="recherche" placeholder="Rechercher un héros…" autocomplete="off">
+    <div class="filtres">
+      <button class="filtre actif" data-filtre="possedes">Mes héros</button>
+      <button class="filtre" data-filtre="tous">Tous</button>
+      <button class="filtre" data-filtre="equipes">Équipés</button>
+    </div>
+    <ul id="listeHeros"></ul>
+  </section>
+
+  <section id="colonneEquipement" class="panneau">
+    <div class="enteteHeros">
+      <img id="portraitHeros" class="portrait" alt="" onerror="repliIcone(this)">
+      <div>
+        <h2 id="nomHeros">Sélectionne un héros</h2>
+        <p id="infoHeros" class="discret"></p>
+      </div>
+    </div>
+    <div id="emplacements"></div>
+    <div id="sets"></div>
+  </section>
+
+  <section id="colonneStats" class="panneau">
+    <h2>Statistiques</h2>
+
+    <details id="blocBase">
+      <summary>Statistiques de base du héros</summary>
+      <p class="discret">
+        Ces valeurs ne sont pas encore dans l'export du jeu. Tu peux les relever en jeu
+        sur un héros <strong>sans aucun équipement</strong> et les saisir ici : elles sont
+        mémorisées par héros dans ce navigateur.
+      </p>
+      <div class="saisieBase">
+        <label>Attaque <input type="number" data-base="Attack" min="0" step="1"></label>
+        <label>Défense <input type="number" data-base="Defense" min="0" step="1"></label>
+        <label>Points de vie <input type="number" data-base="MaxHitPoints" min="0" step="1"></label>
+      </div>
+    </details>
+
+    <table id="tableStats">
+      <thead>
+        <tr><th>Statistique</th><th>Équipement</th><th>Total</th><th>Écart</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p id="aucuneStat" class="discret">Aucun équipement sur ce héros.</p>
+  </section>
+
+</main>
+
+<div id="selecteur" class="modale" hidden>
+  <div class="modaleContenu">
+    <header class="modaleEntete">
+      <h2 id="selecteurTitre"></h2>
+      <button id="fermerSelecteur" class="bouton">Fermer</button>
+    </header>
+    <div class="filtres">
+      <input type="search" id="rechercheObjet" placeholder="Filtrer par set…" autocomplete="off">
+      <label class="caseACocher"><input type="checkbox" id="seulementLibres"> Masquer ceux portés par un autre héros</label>
+    </div>
+    <ul id="listeObjets"></ul>
+  </div>
+</div>
+
+<!-- donnees.js est facultatif : il n'existe que sur une copie locale où l'on a lancé
+     l'extraction. app.js le charge lui-même et se passe très bien de son absence. -->
+<script src="decodeur.js"></script>
+<script src="formules.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
