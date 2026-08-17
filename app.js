@@ -24,13 +24,10 @@ const NOM_STAT = {
 // Les seules statistiques pour lesquelles une valeur de base a du sens à saisir.
 const STATS_DE_BASE = ['Attack', 'Defense', 'MaxHitPoints'];
 
-const NOM_TYPE = {
-  Ranged: 'À distance',
-  Infantry: 'Infanterie',
-  HeavyInfantry: 'Infanterie lourde',
-  Cavalry: 'Cavalerie',
-  Siege: 'Siège',
-};
+const NOM_TYPE = () => (window.NOMS_FR || {}).types || {};
+
+// L'éveil s'affiche en chiffres romains dans le jeu, sur la vignette du héros.
+const ROMAIN = ['', 'I', 'II', 'III', 'IV', 'V'];
 
 // La rareté d'un héros va de 2 à 5 étoiles. On montre les cinq crans pour que
 // la valeur se lise d'un coup d'œil, les manquantes en creux.
@@ -63,7 +60,8 @@ const fiche = (id) => (window.HEROS_JEU || {})[id];
 const ficheDuHeros = (h) => (h && fiche(h.montee)) || fiche(h?.id);
 
 const nomHeros = (id) => libelles().heros?.[id] || fiche(id)?.nom || joliNom(id);
-const nomSet = (id) => libelles().sets?.[id] || joliNom(id);
+const nomSet = (id) => libelles().sets?.[id] || (window.NOMS_FR || {}).sets?.[id] || joliNom(id);
+const nomType = (t) => NOM_TYPE()[t] || t;
 const nomsReels = () => Boolean(libelles().heros);
 
 const nombre = (v) => Number(v).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
@@ -125,6 +123,7 @@ let equipeInitial = {};       // configuration réelle du compte
 let equipe = {};              // configuration simulée, modifiable
 let porteur = new Map();      // id de l'objet -> id du héros qui le porte (simulation)
 
+let taillesDeSet = new Map(); // identifiant du set -> nombre de pièces qui le composent
 let selection = null;
 let filtre = 'possedes';
 let recherche = '';
@@ -133,6 +132,16 @@ let slotEnCours = null;
 function indexer() {
   objets = new Map(donnees.compte.equipements.map((e) => [e.id, e]));
   herosParId = new Map(donnees.compte.heros.map((h) => [h.id, h]));
+
+  // Un set est soit un armement (main + vêtement), soit une parure (chapeau + cou +
+  // anneau) : jamais les deux. Sa taille se déduit donc des emplacements qu'il occupe,
+  // plutôt que de la supposer identique pour tous.
+  const emplacementsParSet = {};
+  for (const o of donnees.compte.equipements) (emplacementsParSet[o.set] ||= new Set()).add(o.emplacement);
+  taillesDeSet = new Map(Object.entries(emplacementsParSet).map(([set, emplacements]) => [
+    set,
+    [...emplacements].every((e) => e === 'Hand' || e === 'Garment') ? 2 : 3,
+  ]));
 
   equipeInitial = {};
   for (const o of donnees.compte.equipements) {
@@ -271,13 +280,14 @@ function rendreHeros() {
     const morceaux = [`Niveau ${h.niveau ?? '?'}<span class="surMax">/${h.niveauMax ?? '?'}</span>`];
     const rarete = ficheDuHeros(h)?.etoiles;
     if (rarete) morceaux.push(etoilesHtml(rarete));
+    if (h.eveil) morceaux.push(`Éveil ${ROMAIN[h.eveil] || h.eveil}`);
     if (h.competence) morceaux.push(`Compétence ${h.competence}`);
-    if (details?.type) morceaux.push(esc(NOM_TYPE[details.type] || details.type));
+    if (details?.type) morceaux.push(esc(nomType(details.type)));
     $('#infoHeros').innerHTML = morceaux.join('<span class="separateur">·</span>');
   } else {
     const morceaux = [];
     if (details?.etoiles) morceaux.push(etoilesHtml(details.etoiles));
-    if (details?.type) morceaux.push(esc(NOM_TYPE[details.type] || details.type));
+    if (details?.type) morceaux.push(esc(nomType(details.type)));
     morceaux.push("Pas sur ton compte — tu peux quand même simuler un équipement dessus.");
     $('#infoHeros').innerHTML = morceaux.join('<span class="separateur">·</span>');
   }
@@ -308,11 +318,14 @@ function rendreSets() {
 
   $('#sets').innerHTML = entrees.length
     ? entrees.map(([set, n]) => {
-        const actif = n >= FORMULES.SEUIL_SET_MINIMUM;
+        const taille = taillesDeSet.get(set) ?? 3;
+        const complet = n >= taille;
         const paliers = FORMULES.BONUS_DE_SET[set] || [];
         const bonus = paliers.filter((p) => n >= p.pieces).map((p) => p.texte).join(' · ');
-        return `<span class="badgeSet ${actif ? 'actif' : ''}" title="${esc(bonus || 'Bonus de set non encore connus')}">
-          ${imgSet(set)}${esc(nomSet(set))} ${n}/5${bonus ? ` — ${esc(bonus)}` : ''}
+        const infobulle = bonus
+          || (complet ? 'Set complet. Son effet exact reste à documenter.' : `Il manque ${taille - n} pièce(s) pour compléter ce set.`);
+        return `<span class="badgeSet ${complet ? 'complet' : ''}" title="${esc(infobulle)}">
+          ${imgSet(set)}${esc(nomSet(set))} ${n}/${taille}${bonus ? ` — ${esc(bonus)}` : ''}
         </span>`;
       }).join('')
     : '';

@@ -289,7 +289,12 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
   border-radius: 999px;
   color: var(--discret);
 }
-.badgeSet.actif { color: var(--accent); border-color: var(--accent-sombre); }
+.badgeSet.complet {
+  color: var(--accent);
+  border-color: var(--accent-sombre);
+  background: rgba(217, 164, 65, .09);
+  font-weight: 600;
+}
 
 /* ---------- Statistiques ---------- */
 

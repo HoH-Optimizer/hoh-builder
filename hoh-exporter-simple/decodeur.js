@@ -218,15 +218,16 @@
         //   f2  = niveau actuel
         //   f3  = nombre d'ascensions — le niveau maximum vaut (ascensions + 1) x 10
         //   f5  = niveau de compétence
+        //   f7  = niveau d'éveil — le jeu l'affiche en chiffres romains sur la vignette
         //   f10 = variante « montée en étoiles » (ex. AshokaTheGreatLegendary),
         //         qui remplace alors la rareté de base du héros
-        // f7 reste inexpliqué : ses valeurs ne correspondent à rien d'observé.
         heros: heros.map((h) => ({
           id: sansPrefixe(h.f1, 'hero.'),
           niveau: h.f2,
           ascensions: h.f3 ?? 0,
           niveauMax: ((h.f3 ?? 0) + 1) * 10,
           competence: h.f5 ?? 0,
+          eveil: h.f7 ?? 0,
           montee: sansPrefixe(h.f10, 'hero_star_up.') ?? null,
         })),
         // f6 = héros porteur ; absent lorsque l'objet est en réserve.
