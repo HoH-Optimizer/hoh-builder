@@ -78,9 +78,15 @@ const nomObjet = (o) => libelles().objets?.[o.id]
 
 // Le wiki dont proviennent les illustrations n'a pas toutes les icônes d'équipement :
 // on retombe alors sur l'icône du set, puis sur un carré neutre.
+// data-repli contient une suite d'adresses de secours, séparées par des virgules :
+// on les essaie l'une après l'autre avant de renoncer.
 window.repliIcone = (img) => {
-  const repli = img.getAttribute('data-repli');
-  if (repli) { img.removeAttribute('data-repli'); img.src = repli; return; }
+  const suite = (img.getAttribute('data-repli') || '').split(',').filter(Boolean);
+  if (suite.length) {
+    img.setAttribute('data-repli', suite.slice(1).join(','));
+    img.src = suite[0];
+    return;
+  }
   // Une petite pastille vide n'apporte rien : on la retire simplement.
   if (img.classList.contains('pastilleSet')) { img.remove(); return; }
   // Le portrait principal est retrouvé par son identifiant à chaque rendu : on le garde.
@@ -97,13 +103,25 @@ const imgHeros = (id) =>
   `<img class="vignette" src="images/heros/${encodeURIComponent(id)}.webp" alt="" loading="lazy"`
   + ` data-initiale="${esc(initiales(id))}" onerror="repliIcone(this)">`;
 
-const imgObjet = (o) =>
-  `<img class="icone" src="images/equipement/${encodeURIComponent(`${o.set}_${o.emplacement}`)}.webp"`
-  + ` data-repli="images/sets/${encodeURIComponent(o.set)}.webp" data-initiale="${esc(initiales(o.set))}"`
-  + ` alt="" loading="lazy" onerror="repliIcone(this)">`;
+// Sept sets n'ont pas d'icône sur le wiki : elles ont été découpées dans des captures
+// du jeu et enregistrées en .png, d'où le second repli.
+const imgObjet = (o) => {
+  const set = encodeURIComponent(o.set);
+  return `<img class="icone" src="images/equipement/${encodeURIComponent(`${o.set}_${o.emplacement}`)}.webp"`
+    + ` data-repli="images/sets/${set}.webp,images/sets/${set}.png" data-initiale="${esc(initiales(o.set))}"`
+    + ` alt="" loading="lazy" onerror="repliIcone(this)">`;
+};
 
 const imgSet = (set) =>
-  `<img class="pastilleSet" src="images/sets/${encodeURIComponent(set)}.webp" alt="" loading="lazy" onerror="repliIcone(this)">`;
+  `<img class="pastilleSet" src="images/sets/${encodeURIComponent(set)}.webp"`
+  + ` data-repli="images/sets/${encodeURIComponent(set)}.png" alt="" loading="lazy" onerror="repliIcone(this)">`;
+
+// Icônes officielles des statistiques. Certaines n'existent qu'en version
+// « pourcentage » : on essaie la variante avant d'abandonner.
+const imgStat = (stat) =>
+  `<img class="iconeStat" src="images/stats/${encodeURIComponent(stat)}.webp"`
+  + ` data-repli="images/stats/${encodeURIComponent(stat)}_percent.webp"`
+  + ` alt="" loading="lazy" onerror="repliIcone(this)">`;
 const detailObjet = (o) => `Rareté ${o.rarete} · Niveau ${o.niveau ?? 0}`;
 
 function texteAttribut(a) {
@@ -169,11 +187,11 @@ function reconstruirePorteurs() {
 // Le catalogue contient tous les héros du jeu ; on y superpose ceux qu'on possède.
 function tousLesHeros() {
   const ids = new Set([...donnees.catalogue.heros, ...herosParId.keys()]);
-  return [...ids].sort((a, b) => a.localeCompare(b, 'fr')).map((id) => ({
-    id,
-    ...(herosParId.get(id) || {}),
-    possede: herosParId.has(id),
-  }));
+  return [...ids]
+    .map((id) => ({ id, ...(herosParId.get(id) || {}), possede: herosParId.has(id) }))
+    // On trie sur le nom affiché, pas sur l'identifiant interne : sinon Cuauhtemoc
+    // se range à « A » (AztecTlacateccatl) et Barbe Noire à « B » (Blackbeard).
+    .sort((a, b) => nomHeros(a.id).localeCompare(nomHeros(b.id), 'fr'));
 }
 
 /* -------------------------------------------------------------- équipements */
@@ -371,7 +389,7 @@ function rendreStats() {
     ].filter(Boolean);
 
     return `<tr>
-      <td class="${STATS_DE_BASE.includes(stat) ? 'principal' : ''}">${esc(libelleStat(stat))}</td>
+      <td class="${STATS_DE_BASE.includes(stat) ? 'principal' : ''}">${imgStat(stat)}${esc(libelleStat(stat))}</td>
       <td>${apport}</td>
       <td class="${STATS_DE_BASE.includes(stat) ? 'principal' : ''}">${total}</td>
       <td>${morceaux.join(' ') || '<span class="discret">=</span>'}</td>

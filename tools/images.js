@@ -35,12 +35,34 @@ for (const paire of paires) {
   });
 }
 
+// Les icônes de statistiques du jeu portent le nom exact de la stat qu'elles illustrent.
+// Certaines n'existent qu'en version « pourcentage » : on tente les deux, les absences
+// sont sans conséquence puisque le site retombe sur du texte.
+for (const stat of donnees.catalogue.stats) {
+  aTelecharger.push({ url: `${BASE}/shared/icons/icon_unit_stat_${stat}.webp`, fichier: path.join(RACINE, 'stats', `${stat}.webp`), facultatif: true });
+  aTelecharger.push({ url: `${BASE}/shared/icons/icon_unit_stat_${stat}_percent.webp`, fichier: path.join(RACINE, 'stats', `${stat}_percent.webp`), facultatif: true });
+}
+
+// Classe du héros, type d'unité et couleur : trois familles d'icônes du jeu.
+for (const classe of ['singlestriker', 'areaattacker', 'defender', 'healer', 'manipulator', 'support', 'tank']) {
+  aTelecharger.push({ url: `${BASE}/heroes/intro/classIcons/icon_class_${classe}.webp`, fichier: path.join(RACINE, 'classes', `${classe}.webp`), facultatif: true });
+}
+for (const type of ['melee', 'ranged', 'cavalry', 'infantry', 'heavyinfantry', 'siege']) {
+  aTelecharger.push({ url: `${BASE}/heroes/intro/unitIcons/icon-flat-unit-${type}.webp`, fichier: path.join(RACINE, 'types', `${type}.webp`), facultatif: true });
+}
+for (const couleur of ['red', 'blue', 'green', 'yellow', 'purple']) {
+  aTelecharger.push({ url: `${BASE}/heroes/intro/colorIcons/icon-colour-${couleur}.webp`, fichier: path.join(RACINE, 'couleurs', `${couleur}.webp`), facultatif: true });
+}
+
+aTelecharger.push({ url: `${BASE}/heroes/intro/icon_star.webp`, fichier: path.join(RACINE, 'divers', 'etoile.webp'), facultatif: true });
+aTelecharger.push({ url: `${BASE}/heroes/battle_power.webp`, fichier: path.join(RACINE, 'divers', 'puissance.webp'), facultatif: true });
+
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let faits = 0, ignores = 0;
 const echecs = [];
 
-async function telecharger({ url, fichier }) {
+async function telecharger({ url, fichier, facultatif }) {
   if (fs.existsSync(fichier)) { ignores++; return; }
   try {
     // Sans ces en-têtes, le wiki refuse une partie des requêtes.
@@ -51,7 +73,8 @@ async function telecharger({ url, fichier }) {
         referer: `${BASE}/equipment`,
       },
     });
-    if (!reponse.ok) { echecs.push(`${reponse.status} ${url}`); return; }
+    // Une icône facultative absente est normale : on ne la signale pas comme un échec.
+    if (!reponse.ok) { if (!facultatif) echecs.push(`${reponse.status} ${url}`); return; }
     fs.mkdirSync(path.dirname(fichier), { recursive: true });
     fs.writeFileSync(fichier, Buffer.from(await reponse.arrayBuffer()));
     faits++;
