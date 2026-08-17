@@ -111,6 +111,19 @@ Elles proviennent du wiki communautaire [heroesofhistory.wiki](https://heroesofh
 dont les adresses reprennent exactement les identifiants internes du jeu. Merci à ses
 contributeurs. Les dessins appartiennent à InnoGames.
 
+| Dossier | Contenu |
+|---|---|
+| `images/heros/` | **130 portraits sur 130** |
+| `images/sets/` | **37 icônes de set sur 37** |
+| `images/equipement/` | 44 icônes sur les 62 combinaisons set + emplacement |
+| `images/stats/` | 26 icônes de statistiques (attaque, défense, points de vie…) |
+| `images/classes/`, `images/types/`, `images/couleurs/` | icônes de classe, d'unité et de couleur |
+
+Sept sets (Enchantress, Voyager, Dharma, Jackal, RoyalEgyptian, Ronin, HornedKing) ont
+des images **cassées sur le wiki lui-même**. Leurs icônes ont été découpées dans des
+captures du jeu et enregistrées en `.png`, d'où l'enchaînement de replis du site : icône
+d'emplacement, puis icône de set en `.webp`, puis en `.png`, puis l'initiale du set.
+
 ## Licence
 
 Le code est sous licence MIT (voir [LICENSE](LICENSE)). Cette licence ne couvre **pas**
