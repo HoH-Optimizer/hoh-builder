@@ -10,7 +10,11 @@
 # ---------------------------------------------------------------------------
 # Fichiers de travail locaux
 # ---------------------------------------------------------------------------
-/*.png
+# Les captures d'écran servent à décoder le jeu, elles ne font pas partie du site.
+# Attention : ne pas se contenter de /*.png, qui ne couvre que la racine.
+*.png
+!images/**
+/Nouveau dossier/
 /.claude/
 node_modules/
 .DS_Store
