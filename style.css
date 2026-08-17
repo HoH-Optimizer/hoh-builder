@@ -147,6 +147,15 @@ main.vide #accueil { display: block; max-width: 620px; margin-top: 24px; padding
   gap: 8px 14px;
   margin: 0 0 20px;
 }
+.etatExtension {
+  padding: 9px 12px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--accent);
+  background: rgba(217, 164, 65, .1);
+  border: 1px solid var(--accent-sombre);
+  border-radius: 7px;
+}
 .sourceProjet { margin: 22px 0 0; padding-top: 16px; border-top: 1px solid var(--bordure); }
 .accueil a { color: var(--accent); }
 

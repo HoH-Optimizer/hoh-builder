@@ -1,14 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "HoH Export Persos & Équipements",
-  "version": "2.2.0",
-  "description": "Exporte localement les données Heroes of History nécessaires aux héros et équipements. Lecture seule.",
+  "name": "HOH Builder — Export",
+  "version": "3.0.0",
+  "description": "Transmet les données de ton compte Heroes of History à HOH Builder. Lecture seule : ne clique jamais à ta place.",
   "permissions": ["storage", "unlimitedStorage"],
-  "action": {"default_popup": "popup.html", "default_title": "Exporter mes données HoH"},
-  "content_scripts": [{
-    "matches": ["*://*.heroesofhistorygame.com/*", "*://*.heroesofhistory.com/*"],
-    "js": ["content.js"],
-    "run_at": "document_start"
-  }],
-  "web_accessible_resources": [{"resources": ["page-hook.js"], "matches": ["*://*.heroesofhistorygame.com/*", "*://*.heroesofhistory.com/*"]}]
+  "action": {"default_popup": "popup.html", "default_title": "HOH Builder — Export"},
+  "content_scripts": [
+    {
+      "matches": ["*://*.heroesofhistorygame.com/*", "*://*.heroesofhistory.com/*"],
+      "js": ["decodeur.js", "content.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://thomaswalus7713.github.io/hoh-builder/*", "http://localhost:4173/*"],
+      "js": ["pont.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [{
+    "resources": ["page-hook.js"],
+    "matches": ["*://*.heroesofhistorygame.com/*", "*://*.heroesofhistory.com/*"]
+  }]
 }

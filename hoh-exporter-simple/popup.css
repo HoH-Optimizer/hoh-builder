@@ -1,38 +1,47 @@
 body {
-  width: 330px;
+  width: 320px;
   margin: 0;
-  padding: 14px;
+  padding: 15px;
   font: 13px/1.5 system-ui, sans-serif;
-  color: #1c1917;
-  background: #fafaf9;
+  color: #f0e9e2;
+  background: #1e1a17;
 }
-h1 { margin: 0 0 8px; font-size: 15px; }
-p { margin: 0 0 10px; color: #57534e; }
-ul { list-style: none; margin: 0 0 12px; padding: 0; max-height: 210px; overflow-y: auto; }
-li {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 5px 7px;
-  border-radius: 5px;
-  background: #fff;
-  border: 1px solid #e7e5e4;
-  margin-bottom: 4px;
+
+h1 { margin: 0 0 10px; font-size: 15px; color: #d9a441; }
+
+.etat {
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  background: #292320;
+  border: 1px solid #3a322c;
+  color: #a89d92;
 }
-li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-li span:last-child { color: #78716c; flex: none; font-variant-numeric: tabular-nums; }
-li.gros { border-color: #16a34a; background: #f0fdf4; }
+.etat.pret { color: #f0e9e2; border-color: #8a6420; background: rgba(217, 164, 65, .1); }
+.etat strong { color: #d9a441; }
+
 button {
+  display: block;
   width: 100%;
-  padding: 8px;
-  margin-bottom: 6px;
+  padding: 9px;
+  margin-bottom: 7px;
   font: inherit;
   font-weight: 600;
-  color: #fff;
-  background: #1c1917;
-  border: 0;
-  border-radius: 6px;
+  border: 1px solid #3a322c;
+  border-radius: 7px;
   cursor: pointer;
 }
 button:disabled { opacity: .4; cursor: default; }
-button.secondaire { color: #57534e; background: transparent; font-weight: 400; }
+
+.principal { color: #17130e; background: linear-gradient(175deg, #f4dcab, #d9a441); border-color: transparent; }
+.principal:hover:not(:disabled) { filter: brightness(1.07); }
+.secondaire { color: #f0e9e2; background: #292320; font-weight: 400; }
+.secondaire:hover:not(:disabled) { border-color: #d9a441; }
+.lien { color: #a89d92; background: none; border: 0; font-weight: 400; text-decoration: underline; padding: 4px; }
+
+details { margin-top: 12px; border-top: 1px solid #3a322c; padding-top: 10px; }
+summary { cursor: pointer; color: #a89d92; font-size: 12px; margin-bottom: 10px; }
+
+.case { display: flex; gap: 8px; margin-bottom: 10px; cursor: pointer; }
+.case input { margin-top: 2px; accent-color: #d9a441; flex: none; }
+.case em { display: block; margin-top: 2px; font-style: normal; font-size: 11.5px; color: #a89d92; }

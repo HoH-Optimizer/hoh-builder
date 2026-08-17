@@ -20,12 +20,16 @@ et ne clique jamais à ta place. Elle n'automatise rien.
 1. Télécharge [`hoh-exporter-simple.zip`](hoh-exporter-simple.zip), décompresse-le, et
    installe-le comme extension Chrome (mode développeur, « Charger l'extension non
    empaquetée »). Le [détail des étapes](hoh-exporter-simple/README.md) est dans l'archive.
-2. Ouvre Heroes of History dans Chrome, fais `Ctrl + F5`, attends l'écran principal,
-   puis ouvre un héros et son écran d'équipement.
-3. Clique sur l'icône de l'extension → **Télécharger mon export JSON**.
-4. Ouvre le site et clique sur **Charger un autre export**.
+2. Ouvre Heroes of History dans Chrome et fais `Ctrl + F5`.
+3. Ouvre le site : tes données y sont déjà.
 
-Le site lit directement le fichier de l'extension : aucune conversion à faire.
+**Aucun fichier à manipuler.** L'extension décode les données du compte et les transmet
+au site d'un onglet à l'autre, à l'intérieur du navigateur. Le site les retient ensuite
+pour les visites suivantes.
+
+Le bouton **Charger un autre export** reste disponible pour passer par un fichier —
+pratique pour ouvrir la configuration de quelqu'un d'autre, ou travailler sur un
+navigateur où l'extension n'est pas installée.
 
 ## Ce que fait le simulateur
 
@@ -83,12 +87,15 @@ node tools/images.js
 
 Récupère les illustrations manquantes. Ne retélécharge jamais ce qui est déjà là.
 
-**Après toute modification de l'extension**, régénérer l'archive proposée au
-téléchargement sur la page d'accueil (PowerShell, depuis la racine du dépôt) :
+**Après toute modification de l'extension ou du décodeur**, régénérer l'archive proposée
+au téléchargement sur la page d'accueil :
 
-```powershell
-Compress-Archive -Path hoh-exporter-simple -DestinationPath hoh-exporter-simple.zip -Force
+```bash
+node tools/extension.js
 ```
+
+Ce script recopie `decodeur.js` dans l'extension (elle décode elle-même, et ne peut pas
+lire un fichier hors de son dossier) puis reconstruit `hoh-exporter-simple.zip`.
 
 ## Illustrations
 

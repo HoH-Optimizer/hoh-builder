@@ -474,12 +474,60 @@ $('#fichier').addEventListener('change', async (e) => {
   e.target.value = '';
 });
 
-// Chargement facultatif des données locales : sur le site publié, ce fichier n'existe pas
-// et l'absence doit rester silencieuse plutôt que de casser la page.
+/* ------------------------------------------- provenance et mémoire des données */
+
+const CLE_MEMOIRE = 'hoh:dernierCompte';
+
+// Garder les données d'une visite à l'autre évite de tout recharger à chaque fois.
+// Elles restent dans ce navigateur : localStorage n'est jamais transmis à un serveur.
+function memoriser(donneesAGarder) {
+  try { localStorage.setItem(CLE_MEMOIRE, JSON.stringify(donneesAGarder)); }
+  catch { /* navigation privée, ou quota dépassé : on continue sans mémoriser */ }
+}
+
+function restaurer() {
+  try {
+    const texte = localStorage.getItem(CLE_MEMOIRE);
+    return texte ? JSON.parse(texte) : null;
+  } catch { return null; }
+}
+
+// L'extension dépose les données déjà décodées dans la page. Le message vient
+// forcément de cette fenêtre : rien ne transite par le réseau.
+window.addEventListener('message', (evenement) => {
+  const d = evenement.data;
+  if (evenement.source !== window || d?.source !== 'hoh-builder-pont') return;
+
+  if (d.type === 'presence') {
+    const note = $('#etatExtension');
+    note.hidden = false;
+    note.textContent = d.aDesDonnees
+      ? 'Extension détectée — chargement de tes données…'
+      : "Extension détectée, mais elle n'a encore rien lu. Ouvre Heroes of History et recharge la page (Ctrl+F5).";
+    return;
+  }
+
+  if (d.type === 'compte' && d.compte?.compte) {
+    charger(d.compte);
+    memoriser(d.compte);
+    $('#sousTitre').title = 'Reçu directement depuis l\'extension';
+  }
+});
+
+// Au démarrage, on affiche ce qu'on a de plus rapide sous la main. Si l'extension
+// répond ensuite, ses données sont plus fraîches et prennent le relais.
 (() => {
+  const memorise = restaurer();
   const script = document.createElement('script');
   script.src = 'donnees.js';
-  script.onload = () => (window.DONNEES ? charger(window.DONNEES) : etatVide());
-  script.onerror = () => etatVide();
+  const suite = () => {
+    if (window.DONNEES) charger(window.DONNEES);
+    else if (memorise) { charger(memorise); $('#sousTitre').title = 'Dernières données reçues, gardées dans ce navigateur'; }
+    else etatVide();
+    // On signale notre présence : si l'extension est là, elle répondra.
+    window.postMessage({ source: 'hoh-builder-site', type: 'demande' }, window.location.origin);
+  };
+  script.onload = suite;
+  script.onerror = suite;
   document.head.append(script);
 })();

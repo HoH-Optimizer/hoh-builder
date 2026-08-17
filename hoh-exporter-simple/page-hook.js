@@ -26,6 +26,18 @@
   const dejaJournalise = new Set();
   let compteurWs = 0;
 
+  // En usage normal, on ne recopie que le strict nécessaire au simulateur.
+  // Le mode diagnostic, réservé à la mise au point du décodeur, conserve tout :
+  // moteur du jeu, mémoire du navigateur, journal complet des adresses.
+  let diagnostic = false;
+  window.addEventListener('message', (evenement) => {
+    const d = evenement.data;
+    if (evenement.source !== window || d?.source !== SOURCE || d.kind !== 'config') return;
+    const etaitActif = diagnostic;
+    diagnostic = Boolean(d.diagnostic);
+    if (diagnostic && !etaitActif) demarrerDiagnostic();
+  });
+
   const enBase64 = (buffer) => {
     const octets = new Uint8Array(buffer);
     let binaire = '';
@@ -63,13 +75,16 @@
     if (dejaVu.has(url)) return false;
     if (EXCLU.test(url)) return false;
     if (PRIORITAIRE.test(url)) return true;
+    // Hors diagnostic, rien d'autre n'est recopié : c'est ce qui fait passer
+    // l'export de plusieurs dizaines de Mo à quelques centaines de Ko.
+    if (!diagnostic) return false;
     if (MEDIA.test(url) || MEDIA_TYPE.test(contentType || '')) return false;
     if (TEXTE_TYPE.test(contentType || '')) return bytes >= TAILLE_CANDIDATE_TEXTE;
     return bytes >= TAILLE_CANDIDATE;
   };
 
   const traiter = (buffer, url, contentType) => {
-    journal(url, contentType, buffer.byteLength);
+    if (diagnostic) journal(url, contentType, buffer.byteLength);
     if (!aCapturer(url, contentType, buffer.byteLength)) return;
     dejaVu.add(url);
     envoyer(buffer, url, contentType);
@@ -99,13 +114,14 @@
     return openOriginal.call(this, methode, url, ...reste);
   };
 
-  // Le jeu échange aussi par WebSocket. On ne garde que les gros messages entrants,
-  // qui sont les seuls susceptibles de contenir du catalogue ou un état complet.
+  // Le jeu échange aussi par WebSocket. Réservé au diagnostic : ces messages ne
+  // contiennent pas l'état du compte, seulement des mises à jour en cours de partie.
   const WebSocketOriginal = window.WebSocket;
   window.WebSocket = function (url, ...reste) {
     const socket = new WebSocketOriginal(url, ...reste);
     socket.addEventListener('message', (evenement) => {
       try {
+        if (!diagnostic) return;
         const donnees = evenement.data;
         if (!(donnees instanceof ArrayBuffer) && !(donnees instanceof Blob)) return;
         if (compteurWs >= 25) return;
@@ -137,9 +153,6 @@
       if (performance.clearResourceTimings) performance.clearResourceTimings();
     } catch { /* ignoré */ }
   };
-  relever();
-  setInterval(relever, 4000);
-
   /* --------------------------------------------------------------------------
      Lecture du stockage local du jeu.
 
@@ -216,7 +229,16 @@
     } catch { /* ignoré */ }
   };
 
-  // Le jeu doit avoir eu le temps d'ouvrir sa base avant qu'on la lise.
-  setTimeout(inspecterStockage, 8000);
-  setTimeout(inspecterStockage, 30000);
+  // Ces relevés ne servent qu'à la mise au point du décodeur : ils sont coûteux
+  // et sans intérêt pour le joueur, donc réservés au mode diagnostic.
+  let diagnosticDemarre = false;
+  function demarrerDiagnostic() {
+    if (diagnosticDemarre) return;
+    diagnosticDemarre = true;
+    relever();
+    setInterval(relever, 4000);
+    // Le jeu doit avoir eu le temps d'ouvrir sa base avant qu'on la lise.
+    setTimeout(inspecterStockage, 8000);
+    setTimeout(inspecterStockage, 30000);
+  }
 })();

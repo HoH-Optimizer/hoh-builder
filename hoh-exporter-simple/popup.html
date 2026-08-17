@@ -5,11 +5,27 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <h1>Export Heroes of History</h1>
-  <p id="status">Ouvre le jeu et recharge la page (Ctrl+R), puis reviens ici.</p>
-  <ul id="liste"></ul>
-  <button id="download" disabled>Télécharger mon export JSON</button>
-  <button id="clear" class="secondaire" disabled>Effacer la copie</button>
+  <h1>HOH Builder</h1>
+
+  <p id="etat" class="etat">Lecture en cours…</p>
+
+  <button id="ouvrir" class="principal">Ouvrir HOH Builder</button>
+  <button id="telecharger" class="secondaire" disabled>Enregistrer un fichier de secours</button>
+
+  <details id="avance">
+    <summary>Options avancées</summary>
+    <label class="case">
+      <input type="checkbox" id="diagnostic">
+      <span>
+        <strong>Mode diagnostic</strong>
+        <em>Conserve tout ce que le jeu échange, pour aider à décoder les données
+          manquantes. Ralentit le jeu et produit des fichiers très lourds.</em>
+      </span>
+    </label>
+    <button id="exportTechnique" class="secondaire" hidden>Export technique complet</button>
+    <button id="effacer" class="lien">Effacer les données mémorisées</button>
+  </details>
+
   <script src="popup.js"></script>
 </body>
 </html>
