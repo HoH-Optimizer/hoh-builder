@@ -244,7 +244,11 @@ main {
 /* La colonne des héros ne descend plus sous l'écran : elle se cale en haut et
    y reste pendant qu'on fait défiler les statistiques, la liste défilant à
    l'intérieur. On garde ainsi le choix du héros toujours sous la main. */
-#colonneHeros {
+/* « main:not(.vide) > » n''est pas décoratif : sans lui, le display: flex de
+   cette règle — portée par un identifiant, donc prioritaire — l''emportait sur
+   celle qui masque les panneaux tant qu''aucune donnée n''est chargée, et un
+   panneau Héros vide s''affichait au-dessus de l''écran d''accueil. */
+main:not(.vide) > #colonneHeros {
   grid-row: 1 / span 2;
   position: sticky;
   top: 16px;
