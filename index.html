@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HOH Builder</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- Le « ?v= » collé à chaque fichier force le navigateur à le retélécharger
+       quand on le change. Sans lui, un visiteur pouvait se retrouver avec la
+       nouvelle page et l'ancienne feuille de style, gardée en cache : la mise en
+       page partait alors en morceaux. Changer ce jeton à chaque mise en ligne,
+       partout à la fois — c'est ce qui garantit un jeu de fichiers cohérent. -->
+  <link rel="stylesheet" href="style.css?v=2026-08-18">
   <script>
     // Le thème retenu s'applique avant le premier affichage. Sans cela, la page
     // apparaîtrait une fraction de seconde en sombre avant de passer au clair.
@@ -37,12 +42,12 @@
   <div class="actions">
     <span id="avertissement" class="alerte" hidden></span>
     <button id="theme" class="bouton boutonTheme" type="button" title="Basculer entre le thème sombre et le thème clair">
-      <svg class="iconeTheme soleil" viewBox="0 0 24 24" aria-hidden="true">
+      <svg class="iconeTheme soleil" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="4.2" fill="currentColor"/>
         <path d="M12 2.2v2.5M12 19.3v2.5M2.2 12h2.5M19.3 12h2.5M5.2 5.2l1.8 1.8M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"
               stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
       </svg>
-      <svg class="iconeTheme lune" viewBox="0 0 24 24" aria-hidden="true">
+      <svg class="iconeTheme lune" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M20.5 14.8A8.6 8.6 0 0 1 9.2 3.5a8.9 8.9 0 1 0 11.3 11.3Z" fill="currentColor"/>
       </svg>
       <span class="libelleTheme versClair">Thème clair</span>
@@ -218,19 +223,19 @@
 
 <!-- donnees.js est facultatif : il n'existe que sur une copie locale où l'on a lancé
      l'extraction. app.js le charge lui-même et se passe très bien de son absence. -->
-<script src="decodeur.js"></script>
+<script src="decodeur.js?v=2026-08-18"></script>
 <!-- Catalogue du jeu : héros, ensembles d'équipement, paliers d'éveil et noms
      français. Ces données appartiennent au jeu et non au compte : elles sont
      livrées avec le site, et régénérées par `node tools/catalogue.js`. -->
-<script src="heros-jeu.js"></script>
-<script src="sets-jeu.js"></script>
-<script src="eveil-jeu.js"></script>
-<script src="casernes-jeu.js"></script>
-<script src="reliques-jeu.js"></script>
-<script src="ages-jeu.js"></script>
-<script src="pantheon-jeu.js"></script>
-<script src="noms-fr.js"></script>
-<script src="formules.js"></script>
-<script src="app.js"></script>
+<script src="heros-jeu.js?v=2026-08-18"></script>
+<script src="sets-jeu.js?v=2026-08-18"></script>
+<script src="eveil-jeu.js?v=2026-08-18"></script>
+<script src="casernes-jeu.js?v=2026-08-18"></script>
+<script src="reliques-jeu.js?v=2026-08-18"></script>
+<script src="ages-jeu.js?v=2026-08-18"></script>
+<script src="pantheon-jeu.js?v=2026-08-18"></script>
+<script src="noms-fr.js?v=2026-08-18"></script>
+<script src="formules.js?v=2026-08-18"></script>
+<script src="app.js?v=2026-08-18"></script>
 </body>
 </html>
