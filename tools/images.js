@@ -17,8 +17,19 @@ const donnees = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'data',
 
 const aTelecharger = [];
 
-for (const hero of donnees.catalogue.heros) {
-  aTelecharger.push({ url: `${BASE}/heroes/intro/icons/Unit_${hero}.webp`, fichier: path.join(RACINE, 'heros', `${hero}.webp`) });
+// Comme le site, on part du catalogue du jeu et non de l'export du compte : ce
+// dernier ne mentionne que les héros que le joueur a déjà croisés, et il en
+// manquait quatorze. Le portrait devient facultatif du même coup — le wiki peut
+// n'avoir pas encore publié celui d'un héros tout juste sorti.
+const herosDuJeu = (() => {
+  const contexte = {};
+  const chemin = path.resolve(__dirname, '..', 'heros-jeu.js');
+  if (fs.existsSync(chemin)) new Function('window', fs.readFileSync(chemin, 'utf8'))(contexte);
+  return new Set([...Object.keys(contexte.HEROS_JEU || {}), ...donnees.catalogue.heros]);
+})();
+
+for (const hero of herosDuJeu) {
+  aTelecharger.push({ url: `${BASE}/heroes/intro/icons/Unit_${hero}.webp`, fichier: path.join(RACINE, 'heros', `${hero}.webp`), facultatif: true });
   // Illustration en pied, affichée au centre du comparateur d'équipement.
   aTelecharger.push({ url: `${BASE}/heroes/intro/fullbody/Unit_${hero}_fullbody.webp`, fichier: path.join(RACINE, 'pied', `${hero}.webp`), facultatif: true });
 }

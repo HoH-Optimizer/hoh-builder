@@ -117,6 +117,10 @@ L'export du compte ne dit que ce qui appartient au **joueur** : quels héros, qu
 niveau, noms traduits, effets d'ensemble, paliers d'éveil — vit dans un catalogue que le
 client télécharge à part et que l'export ne capture pas.
 
+La **liste des héros** vient du catalogue, et non de l'export. La distinction n'est pas
+théorique : l'export ne mentionne que les héros que le joueur a déjà croisés, et il en
+manquait quatorze — dont Thomas Jefferson, que le filtre « Tous » ne montrait pas.
+
 Le site communautaire [Forge of Games](https://forgeofgames.com) rediffuse ce catalogue
 tel quel. [`tools/catalogue.js`](tools/catalogue.js) le récupère, le décode avec notre
 propre décodeur, et en tire sept fichiers livrés avec le site : `heros-jeu.js`,
@@ -226,7 +230,7 @@ Les dessins, les noms et les données du jeu appartiennent à InnoGames.
 
 | Dossier | Contenu |
 |---|---|
-| `images/heros/` | **130 portraits sur 130** |
+| `images/heros/` | 136 portraits sur 144 — les cinq variantes légendaires reprennent celui du héros qu'elles doublent, et le wiki n'a encore ni Marie Laveau, ni Ivar the Boneless, ni Cécile Fatiman |
 | `images/sets/` | **45 icônes de set sur 45** |
 | `images/equipement/` | 109 icônes sur les 126 combinaisons set + emplacement |
 | `images/stats/` | 26 icônes de statistiques (attaque, défense, points de vie…) |

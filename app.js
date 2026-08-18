@@ -143,8 +143,24 @@ const fiche = (id) => (window.HEROS_JEU || {})[id];
 // Un héros monté en étoiles prend la rareté et les stats de sa variante.
 const ficheDuHeros = (h) => (h && fiche(h.montee)) || fiche(h?.id);
 
-const nomHeros = (id) =>
-  libelles().heros?.[id] || (window.NOMS_FR || {}).heros?.[id] || fiche(id)?.nom || joliNom(id);
+// Le fichier de traduction du jeu laisse sept identifiants sans traduction : les
+// variantes légendaires, qu'il renvoie telles quelles. Chacune double un héros
+// existant, dont le nom, lui, est traduit — on le reprend et on le qualifie.
+const traduit = (id) => {
+  const nom = libelles().heros?.[id] || (window.NOMS_FR || {}).heros?.[id];
+  return nom && nom !== id ? nom : null;
+};
+
+const nomHeros = (id) => {
+  const direct = traduit(id) || fiche(id)?.nom;
+  if (direct && direct !== id) return direct;
+  const base = id.replace(/Legendary$/, '');
+  if (base !== id) {
+    const nomBase = traduit(base) || fiche(base)?.nom;
+    if (nomBase && nomBase !== base) return `${nomBase} (légendaire)`;
+  }
+  return joliNom(id);
+};
 const nomSet = (id) => libelles().sets?.[id] || (window.NOMS_FR || {}).sets?.[id] || joliNom(id);
 
 // sets-jeu.js vient du catalogue officiel : nombre de pièces et bonus d'ensemble.
@@ -203,9 +219,21 @@ window.repliIcone = (img) => {
 
 const initiales = (texte) => joliNom(texte).split(' ').map((m) => m[0]).join('').slice(0, 2).toUpperCase();
 
-const imgHeros = (id) =>
-  `<img class="vignette" src="images/heros/${encodeURIComponent(id)}.webp" alt="" loading="lazy"`
-  + ` data-initiale="${esc(initiales(id))}" onerror="repliIcone(this)">`;
+// Le wiki n'a pas de portrait pour les variantes légendaires. Faute de mieux, on
+// montre celui du héros qu'elles doublent : c'est le même personnage.
+const portraitsDe = (id, dossier = 'heros') => {
+  const chemins = [`images/${dossier}/${encodeURIComponent(id)}.webp`];
+  const base = id.replace(/Legendary$/, '');
+  if (base !== id) chemins.push(`images/${dossier}/${encodeURIComponent(base)}.webp`);
+  return chemins;
+};
+
+const imgHeros = (id) => {
+  const [premier, ...replis] = portraitsDe(id);
+  return `<img class="vignette" src="${premier}" alt="" loading="lazy"`
+    + ` data-repli="${replis.join(',')}"`
+    + ` data-initiale="${esc(initiales(id))}" onerror="repliIcone(this)">`;
+};
 
 // Sept sets n'ont pas d'icône sur le wiki : elles ont été découpées dans des captures
 // du jeu et enregistrées en .png, d'où le second repli.
@@ -317,7 +345,7 @@ function indexer() {
   // On ouvre sur un héros déjà équipé : c'est plus parlant qu'une fiche vide.
   if (!selection || !tousLesHeros().some((h) => h.id === selection)) {
     const equipes = Object.keys(equipeInitial).sort((a, b) => (herosParId.get(b)?.niveau ?? 0) - (herosParId.get(a)?.niveau ?? 0));
-    selection = equipes[0] ?? donnees.compte.heros[0]?.id ?? donnees.catalogue.heros[0] ?? null;
+    selection = equipes[0] ?? donnees.compte.heros[0]?.id ?? catalogueHeros()[0] ?? null;
   }
 }
 
@@ -328,9 +356,16 @@ function reconstruirePorteurs() {
   }
 }
 
-// Le catalogue contient tous les héros du jeu ; on y superpose ceux qu'on possède.
+// Les héros du jeu, dans l'ordre où le site les montre. La liste vient de
+// `heros-jeu.js`, le catalogue du jeu : l'export du compte, lui, ne mentionne que
+// les héros que le joueur a déjà croisés — il en manquait quatorze. On lui laisse
+// malgré tout son mot à dire, au cas où il serait en avance sur le catalogue.
+const catalogueHeros = () => [
+  ...new Set([...Object.keys(window.HEROS_JEU || {}), ...(donnees.catalogue.heros || [])]),
+];
+
 function tousLesHeros() {
-  const ids = new Set([...donnees.catalogue.heros, ...herosParId.keys()]);
+  const ids = new Set([...catalogueHeros(), ...herosParId.keys()]);
   return [...ids]
     .map((id) => ({ id, ...(herosParId.get(id) || {}), possede: herosParId.has(id) }))
     // On trie sur le nom affiché, pas sur l'identifiant interne : sinon Cuauhtemoc
@@ -516,7 +551,7 @@ function rendreEntete() {
   const separateur = '<span class="separateur">·</span>';
   const sousTitre = $('#sousTitre');
   sousTitre.innerHTML =
-    `<span class="chiffre">${c.heros.length}</span>/${donnees.catalogue.heros.length} héros`
+    `<span class="chiffre">${c.heros.length}</span>/${catalogueHeros().length} héros`
     + `${separateur}<span class="chiffre">${c.equipements.length}</span> équipements`
     + `${separateur}<span class="chiffre">${portes}</span> portés`;
   sousTitre.title = `Compte ${c.joueur.nom || 'inconnu'}`;
@@ -557,8 +592,9 @@ function carteHeros(h) {
   return `<li class="carteHeros ${h.id === selection ? 'actif' : ''} ${h.possede ? '' : 'nonPossede'}"
       data-hero="${esc(h.id)}" title="${esc(infobulle)}">
     <span class="vignetteCarte teinte-${esc(couleur)}">
-      <img class="portraitCarte" src="images/heros/${encodeURIComponent(h.id)}.webp" alt=""
-        loading="lazy" data-initiale="${esc(initiales(h.id))}" onerror="repliIcone(this)">
+      <img class="portraitCarte" src="${portraitsDe(h.id)[0]}" alt=""
+        loading="lazy" data-repli="${portraitsDe(h.id).slice(1).join(',')}"
+        data-initiale="${esc(initiales(h.id))}" onerror="repliIcone(this)">
       <span class="coins">
         <img class="pastilleCouleur" src="images/couleurs/${esc(couleur)}.webp" alt="" onerror="repliIcone(this)">
         ${classe ? `<img class="pastilleClasse" src="images/classes/${esc(classe)}.webp" alt="" onerror="repliIcone(this)">` : ''}
@@ -576,7 +612,8 @@ function rendreHeros() {
   $('#nomHeros').textContent = nomHeros(selection);
   const portrait = $('#portraitHeros');
   portrait.classList.remove('sansIcone');
-  portrait.src = `images/heros/${encodeURIComponent(selection)}.webp`;
+  portrait.setAttribute('data-repli', portraitsDe(selection).slice(1).join(','));
+  portrait.src = portraitsDe(selection)[0];
   const details = fiche(selection);
   if (h) {
     const morceaux = [`Niveau ${h.niveau ?? '?'}<span class="surMax">/${h.niveauMax ?? '?'}</span>`];
@@ -596,8 +633,9 @@ function rendreHeros() {
 
   const pied = $('#portraitPied');
   pied.classList.remove('sansIcone');
-  pied.src = `images/pied/${encodeURIComponent(selection)}.webp`;
-  pied.setAttribute('data-repli', `images/heros/${encodeURIComponent(selection)}.webp`);
+  const enPied = portraitsDe(selection, 'pied');
+  pied.setAttribute('data-repli', [...enPied.slice(1), ...portraitsDe(selection)].join(','));
+  pied.src = enPied[0];
 
   $('#emplacementsActuels').innerHTML = emplacementsHtml(equipeInitial[selection] || {}, false);
   $('#emplacements').innerHTML = emplacementsHtml(equipe[selection] || {}, true);
