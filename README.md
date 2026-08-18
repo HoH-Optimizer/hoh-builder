@@ -95,7 +95,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 | Dégâts de base | Le jeu affiche une valeur que le catalogue ne donne pas pour tous les héros. La ligne est masquée quand on ne la connaît pas, plutôt qu'affichée à zéro. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
 | 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
-| Icônes de 7 sets | Images cassées côté wiki : le site affiche l'initiale du set. |
+| Icônes de 17 pièces d'équipement | Le wiki ne les héberge pas, et aucune capture ne les montre encore. Le site affiche à la place l'icône de l'ensemble. Il manque RoyalEgyptian, Warden et Jackal (chapeau, cou, anneau), Berserker, Countess, Dharma et Ronin (main, vêtement). |
 
 Deux réglages restent à la main du joueur, parce que l'export ne les donne pas de
 façon sûre et qu'ils commandent directement les chiffres : le **niveau de la relique**
@@ -182,6 +182,20 @@ node tools/images.js
 Récupère les illustrations manquantes. Ne retélécharge jamais ce qui est déjà là.
 
 ```bash
+node tools/decouper.js --controle
+```
+
+Reconstitue les icônes d'équipement que le wiki n'héberge pas, à partir des captures
+de l'écran « Ensemble » du jeu. Le fond doré du jeu et les objets, dorés eux aussi,
+n'ont pas de couleur qui les sépare : c'est le trait de contour dessiné autour de
+chaque objet qui sert de frontière. `--controle` écrit en plus `controle-decoupe.png`,
+une planche des neuf icônes sur fond sombre — le seul moyen de voir les bavures.
+
+Une illustration déjà détourée vaut mieux que n'importe quel découpage : le tableau
+`DEJA_DETOUREES`, en tête du fichier, permet d'en fournir une, qui prend alors la
+place de la découpe.
+
+```bash
 node tools/catalogue.js
 ```
 
@@ -213,16 +227,17 @@ Les dessins, les noms et les données du jeu appartiennent à InnoGames.
 | Dossier | Contenu |
 |---|---|
 | `images/heros/` | **130 portraits sur 130** |
-| `images/sets/` | **37 icônes de set sur 37** |
-| `images/equipement/` | 44 icônes sur les 62 combinaisons set + emplacement |
+| `images/sets/` | **45 icônes de set sur 45** |
+| `images/equipement/` | 109 icônes sur les 126 combinaisons set + emplacement |
 | `images/stats/` | 26 icônes de statistiques (attaque, défense, points de vie…) |
 | `images/reliques/` | **32 illustrations de relique** |
 | `images/classes/`, `images/types/`, `images/couleurs/` | icônes de classe, d'unité et de couleur |
 
 Sept sets (Enchantress, Voyager, Dharma, Jackal, RoyalEgyptian, Ronin, HornedKing) ont
-des images **cassées sur le wiki lui-même**. Leurs icônes ont été découpées dans des
-captures du jeu et enregistrées en `.png`, d'où l'enchaînement de replis du site : icône
-d'emplacement, puis icône de set en `.webp`, puis en `.png`, puis l'initiale du set.
+des icônes d'ensemble **cassées sur le wiki lui-même**, et neuf n'y ont aucune icône
+d'équipement. Ce qui manque a été repris du jeu et enregistré en `.png`, d'où
+l'enchaînement de replis du site : icône d'emplacement en `.webp`, puis en `.png`, puis
+icône de set en `.webp`, puis en `.png`, puis l'initiale du set.
 
 ## Licence
 
