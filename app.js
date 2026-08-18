@@ -675,12 +675,14 @@ const celluleApport = (e) => [
   e.pourcentage ? signe(e.pourcentage, pourcent) : null,
 ].filter(Boolean).join(' ') || '<span class="discret">—</span>';
 
+let curseurEnCours = false;
+
 function rendreStats() {
   const contexte = contexteHeros(selection);
   const simule = feuille(contexte, agreger(objetsEquipes(selection)));
   const actuel = feuille(contexte, agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean)));
 
-  rendreProjection(contexte);
+  if (!curseurEnCours) rendreProjection(contexte);
 
   // Une statistique que le héros n'a pas du tout, et que rien n'alimente, n'a pas
   // à s'afficher : le jeu ne montre « Dégâts de base » que sur les héros qui en ont.
@@ -833,20 +835,31 @@ function detailHtml(stat, simule, actuel) {
 }
 
 // Le sélecteur de niveau : voir la même configuration à un autre niveau.
+//
+// TOUS les niveaux, pas seulement les dizaines : entre 151 et 152, le héros gagne
+// déjà de quoi changer un arbitrage d'équipement, et c'est précisément ce qu'on
+// vient regarder ici.
+//
+// Le nombre d'ascensions suit : le jeu en accorde une tous les dix niveaux de
+// plafond, donc un niveau 151 en demande quinze, comme un niveau 160. C'est ce
+// que fait formules.js à défaut de nombre connu.
 function rendreProjection(contexte) {
   const reel = contexte.hero?.niveau ?? 1;
-  const paliers = [];
-  for (let n = 10; n <= FORMULES.NIVEAU_MAX; n += 10) paliers.push(n);
-  if (!paliers.includes(reel)) paliers.push(reel);
-  paliers.sort((a, b) => a - b);
+  const affiche = niveauAffiche(contexte.hero);
+  const max = FORMULES.NIVEAU_MAX;
+
+  const options = [];
+  for (let n = 1; n <= max; n++) {
+    const marque = n === reel ? ' — son niveau' : n % 10 === 0 ? ' •' : '';
+    options.push(`<option value="${n}" ${n === affiche ? 'selected' : ''}>${n}${marque}</option>`);
+  }
 
   $('#projection').innerHTML = `
     <label for="niveauProjete">Voir au niveau</label>
-    <select id="niveauProjete">
-      ${paliers.map((n) => `<option value="${n}" ${n === niveauAffiche(contexte.hero) ? 'selected' : ''}>
-        ${n}${n === reel ? ' — son niveau' : ''}</option>`).join('')}
-    </select>
-    ${niveauProjete && niveauProjete !== reel
+    <select id="niveauProjete" size="1">${options.join('')}</select>
+    <input type="range" id="curseurNiveau" min="1" max="${max}" value="${affiche}"
+      aria-label="Niveau à simuler">
+    ${affiche !== reel
       ? `<button id="revenirNiveau" class="lienDiscret">revenir au niveau ${reel}</button>`
       : ''}`;
 }
@@ -1064,12 +1077,29 @@ $('#listeHeros').addEventListener('click', (e) => {
 
 // Se projeter à un autre niveau : le héros et son équipement ne bougent pas,
 // seule la montée en niveau est recalculée.
-$('#projection').addEventListener('change', (e) => {
-  if (e.target.id !== 'niveauProjete') return;
+// Le menu et le curseur commandent la même chose : on prend l'un ou l'autre.
+const changerNiveau = (valeur) => {
   const h = herosParId.get(selection);
-  const choisi = Number(e.target.value);
+  const choisi = Number(valeur);
   niveauProjete = choisi === h?.niveau ? null : choisi;
   rendreHeros();
+};
+
+$('#projection').addEventListener('change', (e) => {
+  if (e.target.id === 'niveauProjete' || e.target.id === 'curseurNiveau') changerNiveau(e.target.value);
+});
+
+// Le curseur se suit en direct : on ne redessine que les chiffres, pas le curseur
+// lui-même, sinon il perdrait le doigt qui le tient.
+$('#projection').addEventListener('input', (e) => {
+  if (e.target.id !== 'curseurNiveau') return;
+  const menu = $('#niveauProjete');
+  if (menu) menu.value = e.target.value;
+  const h = herosParId.get(selection);
+  niveauProjete = Number(e.target.value) === h?.niveau ? null : Number(e.target.value);
+  curseurEnCours = true;
+  rendreStats();
+  curseurEnCours = false;
 });
 
 // Les deux réglages de la relique : son niveau et l'ère du joueur.

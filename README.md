@@ -44,8 +44,9 @@ navigateur où l'extension n'est pas installée.
   « Stats » du jeu, avec les valeurs absolues et non plus seulement l'apport de
   l'équipement.
 - Colonne **écart** : ce que chaque modification gagne ou perd par rapport à l'équipement réel
-- **Se projeter à un autre niveau** : voir ce que la même configuration donnerait
-  au niveau 180 sur un héros qui est au 160
+- **Se projeter à un autre niveau**, au niveau près et pas seulement par dizaines :
+  ce que la même configuration donnerait au 151, au 163 ou au 200. Menu pour viser
+  juste, curseur pour balayer.
 - Chaque ligne se déplie sur **l'addition complète**, source par source, avec le
   cumul qui monte : base, niveau, éveil, caserne, relique, équipement
 - Tout est en français : héros, objets, ensembles et statistiques portent le nom
