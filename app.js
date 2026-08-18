@@ -312,15 +312,33 @@ function rendreListeHeros() {
     return true;
   });
 
-  $('#listeHeros').innerHTML = liste.map((h) => {
-    const nb = Object.keys(equipe[h.id] || {}).length;
-    return `<li data-hero="${esc(h.id)}" class="${h.id === selection ? 'actif' : ''} ${h.possede ? '' : 'nonPossede'}">
-      ${imgHeros(h.id)}
-      <span>${esc(nomHeros(h.id))}</span>
-      ${nb ? `<span class="pastille">${nb}/5</span>` : ''}
-      <span class="niveau">${h.possede ? `Niv. ${h.niveau ?? '?'}` : 'non possédé'}</span>
-    </li>`;
-  }).join('') || '<li class="nonPossede">Aucun héros ne correspond.</li>';
+  $('#listeHeros').innerHTML = liste.map(carteHeros).join('')
+    || '<li class="aucunHeros">Aucun héros ne correspond.</li>';
+}
+
+// Vignette dans l'esprit des cartes du jeu : portrait sur fond coloré, pastilles
+// de couleur et de classe, badge d'éveil en chiffres romains, étoiles et niveau.
+function carteHeros(h) {
+  const details = ficheDuHeros(h) || fiche(h.id) || {};
+  const couleur = details.couleur || 'red';
+  const classe = (details.classe || '').replace(/_/g, '');
+  const etoiles = details.etoiles || 0;
+  const infobulle = `${nomHeros(h.id)}${h.possede ? ` — niveau ${h.niveau}` : ' — pas sur ton compte'}`;
+
+  return `<li class="carteHeros ${h.id === selection ? 'actif' : ''} ${h.possede ? '' : 'nonPossede'}"
+      data-hero="${esc(h.id)}" title="${esc(infobulle)}">
+    <span class="vignetteCarte teinte-${esc(couleur)}">
+      <img class="portraitCarte" src="images/heros/${encodeURIComponent(h.id)}.webp" alt=""
+        loading="lazy" data-initiale="${esc(initiales(h.id))}" onerror="repliIcone(this)">
+      <span class="coins">
+        <img class="pastilleCouleur" src="images/couleurs/${esc(couleur)}.webp" alt="" onerror="repliIcone(this)">
+        ${classe ? `<img class="pastilleClasse" src="images/classes/${esc(classe)}.webp" alt="" onerror="repliIcone(this)">` : ''}
+      </span>
+      ${h.eveil ? `<span class="badgeEveil">${ROMAIN[h.eveil] || h.eveil}</span>` : ''}
+      ${etoiles ? `<span class="etoilesCarte">${'★'.repeat(etoiles)}</span>` : ''}
+    </span>
+    <span class="niveauCarte">${h.possede ? `NIV ${h.niveau ?? '?'}` : '—'}</span>
+  </li>`;
 }
 
 function rendreHeros() {

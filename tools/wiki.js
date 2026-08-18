@@ -32,6 +32,36 @@ async function trouverLeCatalogue(pageExemple) {
   throw new Error("Le script contenant les définitions de héros est introuvable. Le wiki a peut-être changé de structure.");
 }
 
+// Le wiki tient sa propre table de héros dans un petit script : nom affiché,
+// rareté, classe et couleur, sous une forme bien plus fiable à lire que le HTML.
+async function recupererLesFiches(pageExemple) {
+  const html = await recuperer(pageExemple);
+  const scripts = [...new Set([...html.matchAll(/src="(\/_next\/static\/[^"]+)"/g)].map((m) => m[1]))];
+  for (const chemin of scripts) {
+    const contenu = await recuperer(BASE + chemin);
+    if (!contenu.includes('heroClass:"')) continue;
+    const fiches = {};
+    // Chaque fiche commence par son identifiant interne ; on lit ensuite ses champs.
+    for (const [, bloc] of contenu.matchAll(/codeName:"([\s\S]{0,600}?)(?=codeName:"|$)/g)) {
+      const identifiant = bloc.match(/^([A-Za-z0-9_]+)"/);
+      if (!identifiant) continue;
+      const lire = (champ) => bloc.match(new RegExp(`\\b${champ}:"([^"]*)"`))?.[1];
+      const etoiles = bloc.match(/stars:(\d)/);
+      // Quelques fiches du wiki ont « heroClass » et « unit » intervertis
+      // (Wu Zetian par exemple) : on ne retient une valeur que si c'est bien une classe.
+      const CLASSES = ['single_striker', 'area_attacker', 'defender', 'healer', 'manipulator', 'supporter'];
+      const candidats = [lire('heroClass'), lire('unit')];
+      fiches[identifiant[1]] = {
+        classe: candidats.find((c) => CLASSES.includes(c)) || null,
+        couleur: lire('color') || null,
+        etoiles: etoiles ? Number(etoiles[1]) : null,
+      };
+    }
+    if (Object.keys(fiches).length > 50) return fiches;
+  }
+  return {};
+}
+
 // La correspondance identifiant interne → nom affiché vient de la page de liste,
 // où chaque lien porte l'icône Unit_<Identifiant>.webp.
 async function recupererLesNoms() {
@@ -87,7 +117,16 @@ function extraireLesHeros(catalogue, noms) {
   const noms = await recupererLesNoms();
   console.log(`  ${Object.keys(noms).length} noms affichés récupérés`);
 
+  const fiches = await recupererLesFiches(`${BASE}/heroes`);
+  console.log(`  ${Object.keys(fiches).length} fiches (classe, couleur) récupérées`);
+
   const tous = extraireLesHeros(catalogue, noms);
+  // La classe de combat n'est pas dans les définitions du jeu : elle vient de la table du wiki.
+  for (const [id, fiche] of Object.entries(fiches)) {
+    if (!tous[id]) continue;
+    tous[id].classe = fiche.classe;
+    if (fiche.couleur) tous[id].couleur = fiche.couleur;
+  }
 
   // Le script décrit aussi les unités ennemies : on ne garde que les héros jouables.
   // Les variantes « montées en étoiles » (AshokaTheGreatLegendary…) comptent aussi :
@@ -104,8 +143,9 @@ function extraireLesHeros(catalogue, noms) {
   Object.values(retenus).forEach((h) => { parEtoiles[h.etoiles] = (parEtoiles[h.etoiles] || 0) + 1; });
   const sansNom = Object.values(retenus).filter((h) => !h.nom).length;
   const sansStats = Object.values(retenus).filter((h) => !h.base.Attack).length;
+  const sansClasse = Object.values(retenus).filter((h) => !h.classe).length;
 
   console.log(`\nÉcrit heros-jeu.js — ${Object.keys(retenus).length} héros sur ${compte.catalogue.heros.length}`);
   console.log('  par nombre d\'étoiles :', JSON.stringify(parEtoiles));
-  console.log(`  sans nom affiché : ${sansNom} · sans statistiques : ${sansStats}`);
+  console.log(`  sans nom affiché : ${sansNom} · sans statistiques : ${sansStats} · sans classe : ${sansClasse}`);
 })();

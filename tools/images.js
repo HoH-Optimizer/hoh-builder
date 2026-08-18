@@ -46,7 +46,7 @@ for (const stat of donnees.catalogue.stats) {
 }
 
 // Classe du héros, type d'unité et couleur : trois familles d'icônes du jeu.
-for (const classe of ['singlestriker', 'areaattacker', 'defender', 'healer', 'manipulator', 'support', 'tank']) {
+for (const classe of ['singlestriker', 'areaattacker', 'defender', 'healer', 'manipulator', 'supporter', 'support', 'tank']) {
   aTelecharger.push({ url: `${BASE}/heroes/intro/classIcons/icon_class_${classe}.webp`, fichier: path.join(RACINE, 'classes', `${classe}.webp`), facultatif: true });
 }
 for (const type of ['melee', 'ranged', 'cavalry', 'infantry', 'heavyinfantry', 'siege']) {

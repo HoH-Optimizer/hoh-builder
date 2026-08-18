@@ -116,7 +116,9 @@ header p { margin: 0; color: var(--discret); font-size: 13px; }
    laisse au tableau toute la largeur dont il a besoin. */
 main {
   display: grid;
-  grid-template-columns: 290px minmax(0, 1fr);
+  /* Assez large pour que les cartes de héros restent lisibles : pastilles,
+     badge d'éveil et étoiles deviennent illisibles en dessous de ~100 px. */
+  grid-template-columns: 350px minmax(0, 1fr);
   gap: 16px;
   align-items: start;
   padding: 16px 20px 40px;
@@ -242,7 +244,6 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 }
 .filtre.actif { color: var(--fond); background: var(--accent); border-color: var(--accent); font-weight: 600; }
 
-#listeHeros { list-style: none; margin: 0; padding: 0; max-height: 68vh; overflow-y: auto; }
 /* ---------- Illustrations ---------- */
 
 .vignette, .portrait, .icone, .pastilleSet { object-fit: contain; flex: none; }
@@ -275,19 +276,84 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .enteteHeros h2 { margin: 0 0 4px; }
 .enteteHeros p { margin: 0; }
 
-#listeHeros li {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 6px 10px;
-  border-radius: 6px;
+/* ---------- Cartes de héros, dans l'esprit du jeu ---------- */
+
+#listeHeros {
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 72vh;
+  overflow-y: auto;
+}
+.aucunHeros { grid-column: 1 / -1; color: var(--discret); font-size: 13px; }
+
+.carteHeros {
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid var(--bordure);
   cursor: pointer;
 }
-#listeHeros li:hover { background: var(--panneau-clair); }
-#listeHeros li.actif { background: var(--accent-sombre); }
-#listeHeros li.nonPossede { color: var(--discret); }
-#listeHeros .niveau { margin-left: auto; font-size: 12px; color: var(--discret); font-variant-numeric: tabular-nums; }
-#listeHeros .pastille { font-size: 11px; color: var(--accent); }
+.carteHeros:hover { border-color: var(--accent); }
+.carteHeros.actif { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 3px 12px rgba(217, 164, 65, .25); }
+.carteHeros.nonPossede { opacity: .45; }
+.carteHeros.nonPossede:hover { opacity: .85; }
+
+.vignetteCarte { position: relative; display: block; aspect-ratio: 1 / 1; overflow: hidden; }
+/* Chaque héros a une couleur d'affinité : elle habille sa carte, comme en jeu. */
+.teinte-red { background: linear-gradient(165deg, #8e3226, #4a1d17); }
+.teinte-blue { background: linear-gradient(165deg, #2a5688, #16283f); }
+.teinte-green { background: linear-gradient(165deg, #3d7038, #1b2f1a); }
+.teinte-yellow { background: linear-gradient(165deg, #9a7723, #3f3010); }
+.teinte-purple { background: linear-gradient(165deg, #5d3a8e, #261741); }
+
+.portraitCarte { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.coins { position: absolute; top: 3px; left: 3px; display: grid; gap: 2px; }
+.pastilleCouleur, .pastilleClasse { width: 17px; height: 17px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
+.pastilleCouleur.sansIcone, .pastilleClasse.sansIcone { display: none; }
+
+/* Badge d'éveil : hexagone doré à chiffre romain, comme sur la vignette du jeu. */
+.badgeEveil {
+  position: absolute;
+  left: 3px;
+  bottom: 20px;
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 24px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #2a1f0d;
+  background: linear-gradient(180deg, #f6e2b2, #c08c26);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.etoilesCarte {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: -.5px;
+  color: #ffd35c;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .9);
+}
+
+.niveauCarte {
+  display: block;
+  padding: 3px 2px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--texte);
+  background: var(--panneau-clair);
+  font-variant-numeric: tabular-nums;
+}
+.carteHeros.actif .niveauCarte { color: var(--accent); }
 
 /* ---------- Emplacements d'équipement ---------- */
 
