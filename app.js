@@ -1,8 +1,6 @@
 /* Simulateur d'équipement Heroes of History — logique d'interface.
    Les règles de calcul sont volontairement isolées dans formules.js. */
 
-const ORDRE_SLOTS = ['Hand', 'Garment', 'Hat', 'Neck', 'Ring'];
-
 const NOM_SLOT = { Hand: 'Main', Garment: 'Vêtement', Hat: 'Chapeau', Neck: 'Cou', Ring: 'Anneau' };
 
 // Ce que le jeu dessine dans un emplacement vide : la silhouette de la pièce
@@ -108,7 +106,6 @@ const NOM_ERE = {
   FeudalAge: 'Époque féodale', IberianEra: 'Ère ibérique', KingdomOfSicily: 'Royaume de Sicile',
   HighMiddleAges: 'Haut Moyen Âge', EarlyGothicEra: 'Ère gothique précoce',
 };
-const nomEre = (e) => NOM_ERE[e] || joliNom(e || '');
 
 // L'éveil s'affiche en chiffres romains dans le jeu, sur la vignette du héros.
 const ROMAIN = ['', 'I', 'II', 'III', 'IV', 'V'];
@@ -228,12 +225,6 @@ const portraitsDe = (id, dossier = 'heros') => {
   return chemins;
 };
 
-const imgHeros = (id) => {
-  const [premier, ...replis] = portraitsDe(id);
-  return `<img class="vignette" src="${premier}" alt="" loading="lazy"`
-    + ` data-repli="${replis.join(',')}"`
-    + ` data-initiale="${esc(initiales(id))}" onerror="repliIcone(this)">`;
-};
 
 // Sept sets n'ont pas d'icône sur le wiki : elles ont été découpées dans des captures
 // du jeu et enregistrées en .png, d'où le second repli.
@@ -266,7 +257,6 @@ const imgStat = (stat) =>
   `<img class="iconeStat" src="images/stats/${encodeURIComponent(stat)}.webp"`
   + ` data-repli="images/stats/${encodeURIComponent(stat)}_percent.webp"`
   + ` alt="" loading="lazy" onerror="repliIcone(this)">`;
-const detailObjet = (o) => `Rareté ${o.rarete} · Niveau ${o.niveau ?? 0}`;
 
 // Tuile d'objet reprise du jeu : l'illustration sur un fond qui dit la rareté,
 // le niveau en pastille, les étoiles au pied. Plus besoin de l'écrire en toutes lettres.
@@ -294,14 +284,6 @@ function attributsObjetHtml(o) {
     + `${(o.secondaires || []).map((a) => ligne(a, false)).join('')}</span>`;
 }
 
-function texteAttribut(a) {
-  if (!a || !a.attribut) return '';
-  const nom = libelleStat(a.stat || a.attribut);
-  if (a.verrouille || typeof a.valeur !== 'number') {
-    return `<span class="verrouille">${esc(nom)} — verrouillé jusqu'au niveau ${a.debloqueAuNiveau ?? '?'}</span>`;
-  }
-  return `${esc(nom)} ${valeurAttribut(a.stat, a.valeur, a.type)}`;
-}
 
 /* ------------------------------------------------------------------- l'état */
 
@@ -707,11 +689,6 @@ const texteBonusSet = (def) => (def?.bonus || [])
   .map((b) => `${valeurAttribut(b.stat, b.valeur, b.type)} ${libelleStat(b.stat).toLowerCase()}`)
   .join(' · ') || def?.effet || '';
 
-// Une case du tableau : apport plat et/ou pourcentage, dans l'esprit du jeu.
-const celluleApport = (e) => [
-  e.plat ? signe(e.plat, nombre) : null,
-  e.pourcentage ? signe(e.pourcentage, pourcent) : null,
-].filter(Boolean).join(' ') || '<span class="discret">—</span>';
 
 let curseurEnCours = false;
 
