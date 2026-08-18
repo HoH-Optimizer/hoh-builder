@@ -90,6 +90,16 @@
       <button class="filtre" data-filtre="tous">Tous</button>
       <button class="filtre" data-filtre="equipes">Équipés</button>
     </div>
+    <div class="barreTri">
+      <button id="sensTri" class="boutonSens" type="button" title="Inverser l'ordre" aria-label="Inverser l'ordre">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h11M2 8h7.5M2 12h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/></svg>
+      </button>
+      <label class="champTri">
+        <span class="sr">Classer par</span>
+        <select id="tri"></select>
+      </label>
+      <span id="compteHeros" class="discret"></span>
+    </div>
     <ul id="listeHeros"></ul>
   </section>
 

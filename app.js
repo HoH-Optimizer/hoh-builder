@@ -304,10 +304,14 @@ let statOuverte = null;       // statistique dont on affiche le détail par obje
 let selection = null;
 let filtre = 'possedes';
 let recherche = '';
+// Le tri de la colonne de gauche, et son sens. Mémorisés d'une visite à l'autre.
+let tri = localStorage.getItem('hoh.tri') || 'attaque';
+let triDecroissant = localStorage.getItem('hoh.triSens') !== 'croissant';
 let slotEnCours = null;
 
 function indexer() {
   statParAttribut = null;
+  cacheStats = new Map();   // les statistiques servent au tri : elles changent avec le compte
   objets = new Map(donnees.compte.equipements.map((e) => [e.id, e]));
   herosParId = new Map(donnees.compte.heros.map((h) => [h.id, h]));
 
@@ -554,6 +558,38 @@ function rendreEntete() {
     + "« node tools/catalogue.js » le remet à jour.";
 }
 
+/* --------------------------------------------------------------------- tri */
+
+// Le jeu classe ses héros par « Puissance ». Ce nombre-là, on ne sait pas encore
+// le calculer : il mêle les statistiques, le niveau de capacité et sans doute les
+// crits, et cinq relevés d'écran ne suffisent pas à le reconstituer (voir README).
+// Plutôt qu'un classement approché présenté comme la puissance du jeu, on propose
+// les critères qu'on sait exacts — dont les statistiques que le site calcule.
+const TRIS = [
+  { cle: 'attaque', libelle: 'Attaque', valeur: (h) => statCalculee(h.id, 'Attack') },
+  { cle: 'defense', libelle: 'Défense', valeur: (h) => statCalculee(h.id, 'Defense') },
+  { cle: 'pv', libelle: 'Points de vie', valeur: (h) => statCalculee(h.id, 'MaxHitPoints') },
+  { cle: 'niveau', libelle: 'Niveau', valeur: (h) => (h.possede ? (h.niveau ?? 0) : -1) },
+  { cle: 'rarete', libelle: 'Rareté', valeur: (h) => (ficheDuHeros(h) || fiche(h.id) || {}).etoiles || 0 },
+  { cle: 'eveil', libelle: 'Éveil', valeur: (h) => h.eveil ?? 0 },
+  { cle: 'competence', libelle: 'Compétence', valeur: (h) => h.competence ?? 0 },
+  { cle: 'nom', libelle: 'Nom', valeur: (h) => nomHeros(h.id), texte: true },
+];
+
+// Calculer la feuille complète de cent quarante-quatre héros à chaque frappe dans
+// la recherche serait du gâchis : le résultat ne dépend que de l'équipement réel,
+// qui ne bouge pas. On le garde donc jusqu'au prochain chargement de compte.
+let cacheStats = new Map();
+
+function statCalculee(heroId, stat) {
+  if (!cacheStats.has(heroId)) {
+    const contexte = contexteHeros(heroId);
+    const porte = Object.values(equipeInitial[heroId] || {}).map((id) => objets.get(id)).filter(Boolean);
+    cacheStats.set(heroId, feuille(contexte, agreger(porte)));
+  }
+  return cacheStats.get(heroId)[stat]?.total ?? 0;
+}
+
 function rendreListeHeros() {
   const terme = recherche.trim().toLowerCase();
   const liste = tousLesHeros().filter((h) => {
@@ -563,17 +599,28 @@ function rendreListeHeros() {
     return true;
   });
 
+  const critere = TRIS.find((t) => t.cle === tri) || TRIS[0];
+  liste.sort((a, b) => {
+    const va = critere.valeur(a), vb = critere.valeur(b);
+    const ordre = critere.texte ? String(va).localeCompare(String(vb), 'fr') : vb - va;
+    return triDecroissant ? ordre : -ordre;
+  });
+
   $('#listeHeros').innerHTML = liste.map(carteHeros).join('')
     || '<li class="aucunHeros">Aucun héros ne correspond.</li>';
+  $('#compteHeros').textContent = liste.length ? `${liste.length} héros` : '';
 }
 
-// Vignette dans l'esprit des cartes du jeu : portrait sur fond coloré, pastilles
-// de couleur et de classe, badge d'éveil en chiffres romains, étoiles et niveau.
+// Vignette reprise de l'écran des héros du jeu : le portrait, et par-dessus, en
+// haut à gauche, un fanion qui empile la couleur d'affinité et la classe ; sous
+// lui l'écusson d'éveil en chiffres romains ; les étoiles au pied de l'image, et
+// le niveau sur un bandeau, avec la flèche qui dit qu'il reste de la marge.
 function carteHeros(h) {
   const details = ficheDuHeros(h) || fiche(h.id) || {};
   const couleur = details.couleur || 'red';
   const classe = (details.classe || '').replace(/_/g, '');
   const etoiles = details.etoiles || 0;
+  const ameliorable = h.possede && h.niveau != null && h.niveauMax != null && h.niveau < h.niveauMax;
   const infobulle = `${nomHeros(h.id)}${h.possede ? ` — niveau ${h.niveau}` : ' — pas sur ton compte'}`;
 
   return `<li class="carteHeros ${h.id === selection ? 'actif' : ''} ${h.possede ? '' : 'nonPossede'}"
@@ -582,14 +629,20 @@ function carteHeros(h) {
       <img class="portraitCarte" src="${portraitsDe(h.id)[0]}" alt=""
         loading="lazy" data-repli="${portraitsDe(h.id).slice(1).join(',')}"
         data-initiale="${esc(initiales(h.id))}" onerror="repliIcone(this)">
-      <span class="coins">
-        <img class="pastilleCouleur" src="images/couleurs/${esc(couleur)}.webp" alt="" onerror="repliIcone(this)">
-        ${classe ? `<img class="pastilleClasse" src="images/classes/${esc(classe)}.webp" alt="" onerror="repliIcone(this)">` : ''}
+      <span class="fanion">
+        <span class="fanionCouleur fond-${esc(couleur)}">
+          <img src="images/couleurs/${esc(couleur)}.webp" alt="" onerror="repliIcone(this)">
+        </span>
+        ${classe ? `<span class="fanionClasse">
+          <img src="images/classes/${esc(classe)}.webp" alt="" onerror="repliIcone(this)">
+        </span>` : ''}
       </span>
-      ${h.eveil ? `<span class="badgeEveil">${ROMAIN[h.eveil] || h.eveil}</span>` : ''}
+      ${h.eveil ? `<span class="badgeEveil" title="Éveil ${ROMAIN[h.eveil] || h.eveil}">${ROMAIN[h.eveil] || h.eveil}</span>` : ''}
       ${etoiles ? `<span class="etoilesCarte">${'★'.repeat(etoiles)}</span>` : ''}
     </span>
-    <span class="niveauCarte">${h.possede ? `NIV ${h.niveau ?? '?'}` : '—'}</span>
+    <span class="niveauCarte">${h.possede
+      ? `NIV ${h.niveau ?? '?'}${ameliorable ? '<span class="marge" title="Ce héros peut encore monter">▲</span>' : ''}`
+      : '—'}</span>
   </li>`;
 }
 
@@ -1173,6 +1226,35 @@ for (const bouton of document.querySelectorAll('.filtre')) {
     rendreListeHeros();
   });
 }
+
+// Le menu de tri est rempli depuis la table : une entrée de plus s'y ajoute sans
+// toucher au balisage.
+$('#tri').innerHTML = TRIS.map((t) => `<option value="${t.cle}">${esc(t.libelle)}</option>`).join('');
+$('#tri').value = TRIS.some((t) => t.cle === tri) ? tri : TRIS[0].cle;
+$('#tri').title = "Le jeu classe par « Puissance ». Ce nombre mêle les statistiques, la capacité "
+  + "et sans doute les crits, et sa formule n'a pas encore été reconstituée : le site propose "
+  + "à la place les critères qu'il sait exacts.";
+
+const rendreSensTri = () => {
+  const bouton = $('#sensTri');
+  bouton.classList.toggle('croissant', !triDecroissant);
+  bouton.title = triDecroissant ? 'Du plus grand au plus petit' : 'Du plus petit au plus grand';
+};
+
+$('#tri').addEventListener('change', (e) => {
+  tri = e.target.value;
+  localStorage.setItem('hoh.tri', tri);
+  rendreListeHeros();
+});
+
+$('#sensTri').addEventListener('click', () => {
+  triDecroissant = !triDecroissant;
+  localStorage.setItem('hoh.triSens', triDecroissant ? 'decroissant' : 'croissant');
+  rendreSensTri();
+  rendreListeHeros();
+});
+
+rendreSensTri();
 
 $('#emplacements').addEventListener('click', (e) => {
   const boutonRetirer = e.target.closest('[data-retirer]');

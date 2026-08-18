@@ -312,23 +312,72 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 
 .portraitCarte { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.coins { position: absolute; top: 3px; left: 3px; display: grid; gap: 2px; }
-.pastilleCouleur, .pastilleClasse { width: 17px; height: 17px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
-.pastilleCouleur.sansIcone, .pastilleClasse.sansIcone { display: none; }
-
-/* Badge d'éveil : hexagone doré à chiffre romain, comme sur la vignette du jeu. */
-.badgeEveil {
+/* Le fanion du jeu : deux cases empilées qui pendent du bord haut de la carte —
+   la couleur d'affinité au-dessus, la classe en dessous — et se terminent en
+   pointe, comme une bannière. */
+.fanion {
   position: absolute;
-  left: 3px;
-  bottom: 20px;
+  top: 0;
+  left: 4px;
+  display: grid;
+  width: 19px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .55));
+}
+.fanion > span {
   display: grid;
   place-items: center;
-  width: 21px;
-  height: 24px;
-  font-size: 10px;
+  height: 19px;
+}
+.fanion > span:last-child {
+  /* La pointe ne se dessine que sur la case du bas, quelle qu'elle soit. */
+  height: 22px;
+  padding-bottom: 3px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+}
+.fanion img { width: 13px; height: 13px; object-fit: contain; }
+.fanion img.sansIcone { display: none; }
+.fanionClasse { background: linear-gradient(180deg, #f2ecdd, #cfc5ae); }
+/* Les pictogrammes du wiki sont des silhouettes blanches. Sur la case colorée du
+   haut, c'est ce qu'il faut ; sur la case pâle de la classe, il faut les foncer,
+   comme le jeu les montre. brightness(0) rend le blanc noir en gardant la
+   transparence — le reste ne fait que le remonter à un gris d'encre. */
+.fanionClasse img { filter: brightness(0) opacity(.72); }
+
+/* Le fond de la case du haut dit l'affinité, à plat comme dans le jeu — sans le
+   dégradé de la vignette, qui la rendrait terne à cette taille. */
+.fond-red { background: #d5392c; }
+.fond-blue { background: #2f7fd0; }
+.fond-green { background: #3f9e46; }
+.fond-yellow { background: #e0a02a; }
+.fond-purple { background: #7b4bc4; }
+
+/* Écusson d'éveil : hexagone de bronze à chiffre romain, accroché sous le fanion
+   comme sur la vignette du jeu. */
+.badgeEveil {
+  position: absolute;
+  top: 40px;
+  left: 1px;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 28px;
+  font-size: 11px;
   font-weight: 800;
-  color: #2a1f0d;
-  background: linear-gradient(180deg, #f6e2b2, #c08c26);
+  line-height: 1;
+  letter-spacing: -.02em;
+  color: #f7ecd2;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .55);
+  background: linear-gradient(180deg, #a8802f 0%, #6d4a18 55%, #8a6524 100%);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .5));
+}
+/* Le liseré clair du jeu, obtenu en superposant un hexagone légèrement plus grand. */
+.badgeEveil::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  z-index: -1;
+  background: linear-gradient(180deg, #f0d79b, #8a6524);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
 }
 
