@@ -23,18 +23,30 @@ for (const hero of donnees.catalogue.heros) {
   aTelecharger.push({ url: `${BASE}/heroes/intro/fullbody/Unit_${hero}_fullbody.webp`, fichier: path.join(RACINE, 'pied', `${hero}.webp`), facultatif: true });
 }
 
-for (const set of donnees.catalogue.sets) {
+for (const set of new Set([...donnees.catalogue.sets, ...Object.keys((() => { const c = {}; const p = path.resolve(__dirname, '..', 'sets-jeu.js'); if (fs.existsSync(p)) new Function('window', fs.readFileSync(p, 'utf8'))(c); return c.SETS_JEU || {}; })())])) {
   aTelecharger.push({ url: `${BASE}/equipment/intro/sets/icon_equipmentset_${set.toLowerCase()}.webp`, fichier: path.join(RACINE, 'sets', `${set}.webp`) });
 }
 
-// Un set ne couvre que certains emplacements : on ne demande que les paires réellement utilisées.
-const paires = new Set(donnees.compte.equipements.map((e) => `${e.set}|${e.emplacement}`));
-for (const paire of paires) {
-  const [set, emplacement] = paire.split('|');
-  aTelecharger.push({
-    url: `${BASE}/equipment/intro/icons/icon_equipment_${set.toLowerCase()}_${emplacement.toLowerCase()}.webp`,
-    fichier: path.join(RACINE, 'equipement', `${set}_${emplacement}.webp`),
-  });
+// Toutes les pièces du catalogue, et pas seulement celles du compte : le site
+// sert aussi à regarder l'équipement qu'on n'a pas encore.
+{
+  const contexte = {};
+  const chemin = path.resolve(__dirname, '..', 'sets-jeu.js');
+  if (fs.existsSync(chemin)) new Function('window', fs.readFileSync(chemin, 'utf8'))(contexte);
+  const paires = new Set();
+  for (const [set, def] of Object.entries(contexte.SETS_JEU || {})) {
+    for (const emplacement of def.emplacements || []) paires.add(`${set}|${emplacement}`);
+  }
+  // Ce que le compte porte déjà, au cas où le catalogue serait en retard.
+  for (const e of donnees.compte.equipements) paires.add(`${e.set}|${e.emplacement}`);
+  for (const paire of paires) {
+    const [set, emplacement] = paire.split('|');
+    aTelecharger.push({
+      url: `${BASE}/equipment/intro/icons/icon_equipment_${set.toLowerCase()}_${emplacement.toLowerCase()}.webp`,
+      fichier: path.join(RACINE, 'equipement', `${set}_${emplacement}.webp`),
+      facultatif: true,
+    });
+  }
 }
 
 // Les icônes de statistiques du jeu portent le nom exact de la stat qu'elles illustrent.

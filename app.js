@@ -292,6 +292,7 @@ let recherche = '';
 let slotEnCours = null;
 
 function indexer() {
+  statParAttribut = null;
   objets = new Map(donnees.compte.equipements.map((e) => [e.id, e]));
   herosParId = new Map(donnees.compte.heros.map((h) => [h.id, h]));
 
@@ -454,6 +455,9 @@ function contexteHeros(heroId) {
     details,
     base: details?.base || {},
     niveau: niveauAffiche(h),
+    // Le compte connaît le vrai nombre d'ascensions : un héros niveau 160 en a
+    // quinze, pas seize. On ne le garde que si on regarde le héros à SON niveau.
+    ascensions: niveauProjete == null ? h?.ascensions : undefined,
     eveil: paliersEveil(h),
     caserne: apportCaserne(h),
     relique: apportRelique(h),
@@ -741,18 +745,18 @@ function detailHtml(stat, simule, actuel) {
     ['Caserne', d.caserne, 'plat'],
     ['Relique', d.relique, 'plat'],
     ['Équipement et ensembles', d.equipementPlat, 'plat'],
-    ['Équipement et ensembles, en pourcentage', d.equipementPourcentage, 'pourcentage'],
+    ['Équipement, en pourcentage de la base', d.apportPourcentage, 'plat', d.equipementPourcentage],
   ].filter(([, v]) => typeof v === 'number' && Math.abs(v) > 1e-9);
 
   let cumul = 0;
-  const lignes = etapes.map(([nom, v, nature]) => {
-    // Un pourcentage sur une statistique absolue multiplie tout ce qui précède.
-    if (nature === 'pourcentage' && !estPourcentage) cumul *= (1 + v);
-    else cumul += v;
+  const lignes = etapes.map(([nom, v, nature, taux]) => {
+    cumul += v;
     const apport = nature === 'pourcentage' ? signe(v, pourcent) : signe(v, ecrire);
+    // « +257 » ne dit pas d'où il sort : on rappelle le taux qui l'a produit.
+    const precision = taux ? ` <span class="taux">(${signe(taux, pourcent)})</span>` : '';
     return `<tr>
       <th>${esc(nom)}</th>
-      <td class="apport">${apport}</td>
+      <td class="apport">${apport}${precision}</td>
       <td class="cumul">${ecrire(cumul)}</td>
     </tr>`;
   }).join('');
@@ -872,21 +876,104 @@ function rendreRelique(contexte) {
 
 /* -------------------------------------------------- fenêtre de choix d'objet */
 
+/* ------------------------------------------------ recherche d'un équipement
+
+   Chercher « un chapeau avec de l'attaque en pourcentage, et si possible des
+   points de vie et de la vitesse d'attaque » est la vraie question qu'on se pose
+   devant son inventaire. Le filtre est donc bâti là-dessus : l'attribut
+   principal d'un côté, les attributs à trouver EN PLUS de l'autre.               */
+
+// L'attribut principal d'un objet, sous une forme comparable : la statistique
+// visée et sa nature. « Attaque en pourcentage » et « attaque à plat » sont deux
+// choses différentes quand on cherche une pièce.
+const clefAttribut = (a) => (a && a.stat ? `${a.stat}|${a.type}` : null);
+
+const libelleAttribut = (clef) => {
+  const [stat, type] = clef.split('|');
+  return `${libelleStat(stat)}${type === 'pourcentage' ? ' %' : ''}`;
+};
+
+// Un attribut verrouillé ne dit pas encore quelle statistique il vise — le jeu
+// garde la valeur pour lui. Mais le même attribut, déverrouillé sur une autre
+// pièce, la donne : on relève la correspondance une fois pour toutes.
+let statParAttribut = null;
+function statDeLAttribut(attribut) {
+  if (!statParAttribut) {
+    statParAttribut = new Map();
+    for (const o of donnees?.compte?.equipements || []) {
+      for (const a of [o.principal, ...(o.secondaires || [])]) {
+        if (a?.attribut && a.stat) statParAttribut.set(a.attribut, a.stat);
+      }
+    }
+  }
+  return statParAttribut.get(attribut) || attribut.replace(/Bonus$/, '');
+}
+
+// Toutes les statistiques qu'un objet porte, principal et secondaires confondus.
+// Les attributs verrouillés comptent : le joueur cherche ce que la pièce
+// DEVIENDRA, pas seulement ce qu'elle donne aujourd'hui.
+function clefsDeLObjet(o) {
+  const clefs = new Set();
+  for (const a of [o.principal, ...(o.secondaires || [])]) {
+    if (!a?.attribut && !a?.stat) continue;
+    clefs.add(`${a.stat || statDeLAttribut(a.attribut)}|${a.type}`);
+  }
+  return clefs;
+}
+
+let filtrePrincipal = '';
+let filtreSecondaires = new Set();
+
 function ouvrirSelecteur(slot) {
   slotEnCours = slot;
   $('#selecteurTitre').textContent = `${NOM_SLOT[slot]} pour ${nomHeros(selection)}`;
   $('#rechercheObjet').value = '';
+  filtrePrincipal = '';
+  filtreSecondaires = new Set();
   $('#selecteur').hidden = false;
+  rendreFiltresObjet();
   rendreSelecteur();
+}
+
+// Les choix proposés ne sont pas une liste figée : ce sont les attributs qui
+// existent réellement sur cet emplacement, dans cet inventaire. On ne propose
+// jamais un filtre qui ne rendrait rien.
+function rendreFiltresObjet() {
+  const pieces = donnees.compte.equipements.filter((o) => o.emplacement === slotEnCours);
+
+  const principaux = new Map();
+  const secondaires = new Map();
+  for (const o of pieces) {
+    const p = clefAttribut(o.principal);
+    if (p) principaux.set(p, (principaux.get(p) || 0) + 1);
+    for (const clef of clefsDeLObjet(o)) secondaires.set(clef, (secondaires.get(clef) || 0) + 1);
+  }
+  const parNom = (a, b) => libelleAttribut(a[0]).localeCompare(libelleAttribut(b[0]), 'fr');
+
+  $('#filtrePrincipal').innerHTML = '<option value="">Peu importe</option>'
+    + [...principaux].sort(parNom).map(([clef, n]) =>
+      `<option value="${esc(clef)}" ${clef === filtrePrincipal ? 'selected' : ''}>${esc(libelleAttribut(clef))} (${n})</option>`).join('');
+
+  $('#filtreSecondaires').innerHTML = [...secondaires].sort(parNom).map(([clef]) =>
+    `<button type="button" class="pastille ${filtreSecondaires.has(clef) ? 'active' : ''}" data-clef="${esc(clef)}">
+      ${imgStat(clef.split('|')[0])}${esc(libelleAttribut(clef))}
+    </button>`).join('');
 }
 
 function rendreSelecteur() {
   const terme = $('#rechercheObjet').value.trim().toLowerCase();
   const masquerPortes = $('#seulementLibres').checked;
+  const pieces = donnees.compte.equipements.filter((o) => o.emplacement === slotEnCours);
 
-  const candidats = donnees.compte.equipements
-    .filter((o) => o.emplacement === slotEnCours)
-    .filter((o) => !terme || nomSet(o.set).toLowerCase().includes(terme))
+  const candidats = pieces
+    .filter((o) => !terme || nomSet(o.set).toLowerCase().includes(terme) || nomObjet(o).toLowerCase().includes(terme))
+    .filter((o) => !filtrePrincipal || clefAttribut(o.principal) === filtrePrincipal)
+    // « Doit aussi porter » : toutes les cases cochées, pas seulement une.
+    .filter((o) => {
+      if (!filtreSecondaires.size) return true;
+      const clefs = clefsDeLObjet(o);
+      return [...filtreSecondaires].every((c) => clefs.has(c));
+    })
     .filter((o) => {
       const p = porteur.get(o.id);
       return !masquerPortes || !p || p === selection;
@@ -906,9 +993,10 @@ function rendreSelecteur() {
     </li>`;
   }).join('');
 
+  $('#compteObjets').textContent = `${candidats.length} sur ${pieces.length}`;
   $('#listeObjets').innerHTML =
     `<li data-objet="" class="titre">Aucun — laisser l'emplacement vide</li>`
-    + (lignes || '<li class="discret">Aucun objet ne correspond.</li>');
+    + (lignes || '<li class="discret">Aucune pièce ne réunit ces conditions.</li>');
 }
 
 /* ------------------------------------------------------------- branchements */
@@ -1017,6 +1105,28 @@ $('#listeObjets').addEventListener('click', (e) => {
 
 $('#rechercheObjet').addEventListener('input', rendreSelecteur);
 $('#seulementLibres').addEventListener('change', rendreSelecteur);
+
+$('#filtrePrincipal').addEventListener('change', (e) => { filtrePrincipal = e.target.value; rendreSelecteur(); });
+
+// Les attributs à trouver en plus se cochent et se décochent d'un clic.
+$('#filtreSecondaires').addEventListener('click', (e) => {
+  const pastille = e.target.closest('[data-clef]');
+  if (!pastille) return;
+  const clef = pastille.dataset.clef;
+  if (filtreSecondaires.has(clef)) filtreSecondaires.delete(clef);
+  else filtreSecondaires.add(clef);
+  pastille.classList.toggle('active', filtreSecondaires.has(clef));
+  rendreSelecteur();
+});
+
+$('#viderFiltres').addEventListener('click', () => {
+  $('#rechercheObjet').value = '';
+  filtrePrincipal = '';
+  filtreSecondaires = new Set();
+  $('#seulementLibres').checked = false;
+  rendreFiltresObjet();
+  rendreSelecteur();
+});
 $('#fermerSelecteur').addEventListener('click', () => { $('#selecteur').hidden = true; });
 $('#selecteur').addEventListener('click', (e) => { if (e.target.id === 'selecteur') $('#selecteur').hidden = true; });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#selecteur').hidden = true; });

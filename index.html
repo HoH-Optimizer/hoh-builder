@@ -159,9 +159,27 @@
       <h2 id="selecteurTitre"></h2>
       <button id="fermerSelecteur" class="bouton">Fermer</button>
     </header>
-    <div class="filtres">
-      <input type="search" id="rechercheObjet" placeholder="Filtrer par set…" autocomplete="off">
-      <label class="caseACocher"><input type="checkbox" id="seulementLibres"> Masquer ceux portés par un autre héros</label>
+    <div class="filtresObjet">
+      <label class="champFiltre">
+        <span>Ensemble</span>
+        <input type="search" id="rechercheObjet" placeholder="Tous les ensembles" autocomplete="off">
+      </label>
+
+      <label class="champFiltre">
+        <span>Attribut principal</span>
+        <select id="filtrePrincipal"><option value="">Peu importe</option></select>
+      </label>
+
+      <fieldset class="champFiltre secondaires">
+        <legend>Doit aussi porter</legend>
+        <div id="filtreSecondaires" class="pastilles"></div>
+      </fieldset>
+
+      <div class="optionsFiltre">
+        <label class="caseACocher"><input type="checkbox" id="seulementLibres"> Masquer ceux portés par un autre héros</label>
+        <button type="button" id="viderFiltres" class="lienDiscret">Tout effacer</button>
+        <span id="compteObjets" class="discret"></span>
+      </div>
     </div>
     <ul id="listeObjets"></ul>
   </div>

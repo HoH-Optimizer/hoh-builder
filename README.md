@@ -66,10 +66,19 @@ toutes, sauf une :
 | Équipement et bonus d'ensemble | du compte et du catalogue |
 | **Panthéon** | **manquant** : les nœuds débloqués sont dans l'export, leurs valeurs n'existent ni là, ni dans le catalogue |
 
-Sur un héros de référence vérifié écran contre écran avec le jeu, les chances de
-crit, les dégâts crit, l'esquive, les soins reçus, la charge initiale et la charge
-normale tombent **exactement** juste ; l'attaque, la défense et les points de vie
-restent à 1 % près, l'écart correspondant au panthéon.
+Sur un héros de référence vérifié écran contre écran avec le jeu, tout tombe juste
+à la source près : éveil, caserne, relique et équipement donnent exactement les
+mêmes nombres que le jeu, et les chances de crit, dégâts crit, esquive, soins reçus
+et durées de charge sont identiques au centième. Ce qui manque au total est
+exactement la contribution du panthéon.
+
+Deux règles ont été tirées de cette comparaison, et elles comptent :
+
+- **le nombre d'ascensions vient du compte**, pas d'un calcul sur le niveau. Un
+  héros niveau 160 en a quinze, pas seize ;
+- **un bonus en pourcentage porte sur la statistique de base** du héros, celle
+  qu'il tient de son niveau — pas sur tout ce qu'il a accumulé. « +17,65 %
+  d'attaque » sur une base de 1 454 fait 257, pas 441.
 
 ## Limites connues
 

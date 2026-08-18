@@ -31,11 +31,15 @@ window.FORMULES = {
      constantes, sur quatre héros de types, classes et raretés différents
      (Achille, Ramsès II, Montezuma Ier, Ada Lovelace) :
 
-         valeur = base x (1 + parNiveau x (niveau - 1) + parAscension x paliers)
+         valeur = base x (1 + parNiveau x (niveau - 1) + parAscension x ascensions)
 
-     `paliers` = le nombre de dizaines franchies, soit floor(niveau / 10). Chaque
-     ascension vaut un bonus en plus de la montée ordinaire — c'est ce qui fait
-     accélérer la courbe tous les dix niveaux.
+     Chaque ascension vaut un bonus en plus de la montée ordinaire — c'est ce qui
+     fait accélérer la courbe tous les dix niveaux.
+
+     ATTENTION : le nombre d'ascensions vient du COMPTE, pas d'un calcul sur le
+     niveau. Un héros niveau 160 en a quinze, pas seize : son niveau maximum est
+     (ascensions + 1) x 10. Le calculateur de Forge of Games se trompe d'une
+     ascension sur ce point, et c'est ce qui nous éloignait du jeu.
 
      Les taux « par niveau » se lisent tels quels dans le catalogue ; les taux
      « par ascension » ont été mesurés. Les points de vie tombent au point près,
@@ -99,8 +103,11 @@ window.FORMULES = {
     const base = typeof contexte.base === 'number' ? contexte.base : this.DEFAUTS[stat] ?? 0;
 
     const montee = this.MONTEE[stat];
+    // Sans nombre d'ascensions connu (projection à un autre niveau), on prend le
+    // minimum qu'il faudrait pour atteindre ce niveau.
+    const ascensions = contexte.ascensions ?? Math.max(0, Math.ceil(niveau / 10) - 1);
     const auNiveau = montee
-      ? base * (1 + montee.parNiveau * (niveau - 1) + montee.parAscension * Math.floor(niveau / 10))
+      ? base * (1 + montee.parNiveau * (niveau - 1) + montee.parAscension * ascensions)
       : base;
 
     // L'éveil s'applique à la valeur montée en niveau, avant tout le reste.
@@ -112,11 +119,17 @@ window.FORMULES = {
     const partCaserne = caserne[stat] || 0;
     const partRelique = relique[stat] || 0;
 
-    const avantPourcentage = apresEveil + partCaserne + partRelique + (apport.plat || 0);
+    // OÙ S'APPLIQUE UN POURCENTAGE. Un objet qui donne « +17,65 % d'attaque » ne
+    // majore pas tout ce que le héros a accumulé : il majore SA STATISTIQUE DE
+    // BASE, celle qu'il tient de son niveau. Le reste — caserne, relique,
+    // panthéon — s'ajoute ensuite, intact.
+    //
+    // Vérifié sur l'écran du jeu, pour Achille : 17,65 % de sa base (1 454) font
+    // 257, plus 49 à plat = 306, et le jeu compte bien 305 pour l'équipement.
+    // La lecture multiplicative en donnait 441.
     const pourcentage = apport.pourcentage || 0;
-    const total = this.ABSOLUES.has(stat)
-      ? avantPourcentage * (1 + pourcentage)   // le pourcentage multiplie
-      : avantPourcentage + pourcentage;        // le pourcentage s'ajoute en points
+    const partPourcentage = this.ABSOLUES.has(stat) ? auNiveau * pourcentage : pourcentage;
+    const total = apresEveil + partCaserne + partRelique + (apport.plat || 0) + partPourcentage;
 
     return {
       base,
@@ -126,6 +139,7 @@ window.FORMULES = {
       relique: partRelique,
       equipementPlat: apport.plat || 0,
       equipementPourcentage: pourcentage,
+      apportPourcentage: partPourcentage,
       total,
     };
   },
