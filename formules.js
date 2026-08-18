@@ -13,8 +13,11 @@
      5. la relique qu'il porte                              (reliques-jeu.js)
      6. son équipement, pièce par pièce, plus les bonus d'ensemble complet
 
-   Seul le panthéon manque encore : ses nœuds sont listés dans l'export, mais
-   leurs valeurs n'apparaissent ni là, ni dans le catalogue du jeu.
+     7. les nœuds de panthéon débloqués                     (pantheon-jeu.js)
+
+   Les valeurs du panthéon ne sont ni dans l'export ni dans le catalogue : elles
+   ont été relevées à l'écran, nœud par nœud. Seuls les attaquants individuels
+   sont couverts pour l'instant.
 
    Deux natures de bonus existent :
      - "plat"        : +20 Attaque
@@ -61,10 +64,10 @@ window.FORMULES = {
      en jeu, en retranchant ce que son équipement apportait.                   */
 
   DEFAUTS: {
-    CritChance: 0.10,   // 10 %
+    CritChance: 0.05,   // 5 %
     CritDamage: 1.50,   // 150 %
-    Evasion: 0.05,      // 5 %
-    HealTakenAmp: 0.10, // 10 %
+    // L'esquive et les soins reçus valent zéro au départ : les 5 % et 10 % qu'on
+    // lisait sur Achille venaient de son panthéon, pas de lui.
   },
 
   /* --------------------------------------------- deux natures de statistiques
@@ -119,6 +122,21 @@ window.FORMULES = {
     const partCaserne = caserne[stat] || 0;
     const partRelique = relique[stat] || 0;
 
+    // LE PANTHÉON. Trois façons d'agir, et la troisième est la plus surprenante :
+    // certains nœuds ne donnent rien par eux-mêmes, ils AMPLIFIENT ce qu'apporte
+    // une autre source. « Les gains d'ATQ provenant de l'Équipement augmentent de
+    // 50 % » vaut, sur Achille, autant que tous les autres nœuds réunis.
+    const noeuds = contexte.pantheon || [];
+    const partPantheon = noeuds
+      .filter((e) => e.stat === stat && (e.type === 'plat' || e.type === 'pourcentage'))
+      .reduce((s, e) => s + e.valeur, 0);
+    const proportionnel = noeuds
+      .filter((e) => e.stat === stat && e.type === 'proportionnel')
+      .reduce((s, e) => s + e.valeur, 0);
+    const amplifie = (source) => noeuds
+      .filter((e) => e.type === 'amplifie' && e.stat === stat && e.source === source)
+      .reduce((s, e) => s + e.valeur, 0);
+
     // OÙ S'APPLIQUE UN POURCENTAGE. Un objet qui donne « +17,65 % d'attaque » ne
     // majore pas tout ce que le héros a accumulé : il majore SA STATISTIQUE DE
     // BASE, celle qu'il tient de son niveau. Le reste — caserne, relique,
@@ -129,7 +147,18 @@ window.FORMULES = {
     // La lecture multiplicative en donnait 441.
     const pourcentage = apport.pourcentage || 0;
     const partPourcentage = this.ABSOLUES.has(stat) ? auNiveau * pourcentage : pourcentage;
-    const total = apresEveil + partCaserne + partRelique + (apport.plat || 0) + partPourcentage;
+
+    // Ce que l'équipement apporte en propre, avant que le panthéon ne l'amplifie.
+    // L'amplification ne porte pas sur les bonus d'ensemble, d'où « apport.set ».
+    const partEquipement = (apport.plat || 0) + partPourcentage;
+    const amplifiable = partEquipement - (apport.set || 0);
+
+    const pantheon = partPantheon
+      + proportionnel * apresEveil
+      + amplifiable * amplifie('equipement')
+      + partRelique * amplifie('relique');
+
+    const total = apresEveil + partCaserne + partRelique + partEquipement + pantheon;
 
     return {
       base,
@@ -140,6 +169,7 @@ window.FORMULES = {
       equipementPlat: apport.plat || 0,
       equipementPourcentage: pourcentage,
       apportPourcentage: partPourcentage,
+      pantheon,
       total,
     };
   },

@@ -64,13 +64,18 @@ toutes, sauf une :
 | Caserne de son arme | du catalogue, le palier venant du compte |
 | Relique portée | du catalogue, mise à l'échelle de l'ère du joueur |
 | Équipement et bonus d'ensemble | du compte et du catalogue |
-| **Panthéon** | **manquant** : les nœuds débloqués sont dans l'export, leurs valeurs n'existent ni là, ni dans le catalogue |
+| Panthéon | relevé à l'écran nœud par nœud (`pantheon-jeu.js`) — attaquants individuels seulement |
 
-Sur un héros de référence vérifié écran contre écran avec le jeu, tout tombe juste
-à la source près : éveil, caserne, relique et équipement donnent exactement les
-mêmes nombres que le jeu, et les chances de crit, dégâts crit, esquive, soins reçus
-et durées de charge sont identiques au centième. Ce qui manque au total est
-exactement la contribution du panthéon.
+Sur un héros de référence vérifié colonne par colonne contre l'écran « Stats de
+profil » du jeu, **les sept sources donnent les mêmes nombres que le jeu** —
+panthéon compris, à 217,3 contre 217. Dégâts uniques, vitesse d'attaque, chances
+de crit, dégâts crit, esquive, soins reçus et durées de charge sont identiques.
+L'attaque, la défense et les points de vie restent à 0,2 % près.
+
+Le panthéon réserve une surprise : deux de ses nœuds ne donnent rien par eux-mêmes,
+ils **amplifient une autre source** — « les gains d'ATQ provenant de l'Équipement
+augmentent de 50 % ». Sur le héros de référence, ces deux nœuds valent à eux seuls
+la totalité des 217 points que le jeu porte au crédit du panthéon.
 
 Deux règles ont été tirées de cette comparaison, et elles comptent :
 
@@ -84,7 +89,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 
 | Manque | Conséquence |
 |---|---|
-| Panthéon | Ses nœuds sont listés dans l'export, sans leurs valeurs. C'est l'essentiel de ce qui reste entre le chiffre du site et celui du jeu. |
+| Panthéon des cinq autres classes | L'arbre des attaquants individuels est relevé ; les cinq autres restent à faire. Un nœud inconnu est ignoré et signalé. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
 | Dégâts de base | Le jeu affiche une valeur que le catalogue ne donne pas pour tous les héros. La ligne est masquée quand on ne la connaît pas, plutôt qu'affichée à zéro. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
@@ -115,7 +120,8 @@ Le site communautaire [Forge of Games](https://forgeofgames.com) rediffuse ce ca
 tel quel. [`tools/catalogue.js`](tools/catalogue.js) le récupère, le décode avec notre
 propre décodeur, et en tire sept fichiers livrés avec le site : `heros-jeu.js`,
 `sets-jeu.js`, `eveil-jeu.js`, `casernes-jeu.js`, `reliques-jeu.js`, `ages-jeu.js`
-et `noms-fr.js`.
+et `noms-fr.js`. Un huitième, [`pantheon-jeu.js`](pantheon-jeu.js), ne vient pas
+de là : le panthéon n'existe dans aucune donnée, il a été relevé à l'écran.
 
 ### La montée en niveau
 

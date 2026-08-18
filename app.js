@@ -377,11 +377,13 @@ function agreger(liste) {
   // Un ensemble complet ajoute son bonus, qui compte autant que les objets eux-mêmes.
   // Il peut être plat comme un attribut d'objet : le set Voyageur apporte à lui seul
   // +5 % de dégâts uniques ET +9 coups/minute de vitesse d'attaque.
+  // On retient à part ce qui vient des ensembles : le panthéon amplifie les gains
+  // de l'équipement « hors bonus d'ensemble ».
   for (const { bonus } of setsComplets(liste)) {
     for (const b of bonus) {
-      const e = (total[b.stat] ||= { plat: 0, pourcentage: 0 });
+      const e = (total[b.stat] ||= { plat: 0, pourcentage: 0, set: 0 });
       if (b.type === 'pourcentage') e.pourcentage += b.valeur;
-      else e.plat += b.valeur;
+      else { e.plat += b.valeur; e.set = (e.set || 0) + b.valeur; }
     }
   }
   return total;
@@ -441,6 +443,29 @@ function apportRelique(h) {
   );
 }
 
+// Ce que le panthéon d'un héros lui apporte. L'export dit quels nœuds sont
+// débloqués ; pantheon-jeu.js dit ce que chacun rapporte, par classe de héros.
+const CLASSE_PANTHEON = {
+  single_striker: 'SingleStriker', area_attacker: 'AreaAttacker', defender: 'Defender',
+  healer: 'Healer', manipulator: 'Manipulator', supporter: 'Supporter',
+};
+
+function effetsPantheon(h) {
+  const classe = CLASSE_PANTHEON[(ficheDuHeros(h) || {}).classe];
+  const arbre = (window.PANTHEON_JEU || {})[classe];
+  if (!arbre) return { effets: [], inconnus: (h?.pantheon || []).length, classe: null };
+
+  const effets = [];
+  let inconnus = 0;
+  for (const noeud of h?.pantheon || []) {
+    // « layer3_node3_SingleStriker » → « layer3_node3 »
+    const fiche = arbre.noeuds[String(noeud).replace(/_[A-Za-z]+$/, '')];
+    if (!fiche) { inconnus++; continue; }
+    effets.push(...fiche.effets);
+  }
+  return { effets, inconnus, classe: arbre.nom };
+}
+
 // Le niveau auquel on regarde le héros. C'est son vrai niveau par défaut, mais
 // on peut se projeter plus haut pour voir ce que vaudrait la même configuration.
 let niveauProjete = null;
@@ -461,6 +486,7 @@ function contexteHeros(heroId) {
     eveil: paliersEveil(h),
     caserne: apportCaserne(h),
     relique: apportRelique(h),
+    pantheon: effetsPantheon(h).effets,
   };
 }
 
@@ -746,6 +772,7 @@ function detailHtml(stat, simule, actuel) {
     ['Relique', d.relique, 'plat'],
     ['Équipement et ensembles', d.equipementPlat, 'plat'],
     ['Équipement, en pourcentage de la base', d.apportPourcentage, 'plat', d.equipementPourcentage],
+    ['Panthéon', d.pantheon, 'plat'],
   ].filter(([, v]) => typeof v === 'number' && Math.abs(v) > 1e-9);
 
   let cumul = 0;
