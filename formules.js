@@ -52,6 +52,13 @@ window.FORMULES = {
     MaxHitPoints: { parNiveau: 0.04, parAscension: 0.06 },
     Attack: { parNiveau: 0.0465, parAscension: 0.186 },
     Defense: { parNiveau: 0.0465, parAscension: 0.186 },
+    // Les dégâts de base montent au même rythme que les points de vie. Mesuré sur
+    // onze héros de Thomas, relevés un par un sur l'écran d'amélioration du jeu :
+    // niveaux 20 à 110, trois à cinq étoiles, avec ou sans équipement. Les onze
+    // tombent à un point près, l'écart résiduel étant l'arrondi que le jeu affiche.
+    // Ils manquaient à cette table : le site les laissait à leur valeur de niveau 1,
+    // et annonçait 131 là où le jeu affiche 779.
+    BaseDamage: { parNiveau: 0.04, parAscension: 0.06 },
   },
 
   // Le niveau maximum d'un héros : dix par ascension. Le jeu s'arrête à 200.

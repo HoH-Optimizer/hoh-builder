@@ -815,3 +815,50 @@ td.principal { font-weight: 600; }
 .projection select { max-width: 150px; }
 .projection input[type="range"] { width: 140px; accent-color: var(--accent); cursor: pointer; }
 @media (max-width: 700px) { .projection input[type="range"] { display: none; } }
+
+/* Une valeur dont on ne connaît qu'une partie : le « ? » dit le reste. */
+.partielle { color: var(--discret); cursor: help; }
+
+/* ---------- Barre de tri de la colonne des héros ---------- */
+
+.barreTri { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.champTri { flex: 1; min-width: 0; }
+.champTri .sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+#tri {
+  width: 100%;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--texte);
+  background: var(--panneau-clair);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  cursor: pointer;
+}
+#tri:hover { border-color: var(--accent); }
+.boutonSens {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  padding: 0;
+  color: var(--texte);
+  background: var(--panneau-clair);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.boutonSens:hover { border-color: var(--accent); color: var(--accent); }
+/* Les barres du pictogramme vont du long au court : les retourner dit le sens. */
+.boutonSens.croissant svg { transform: scaleY(-1); }
+.boutonSens svg { width: 16px; height: 16px; }
+#compteHeros { flex: none; font-size: 11.5px; }
+
+/* La flèche du bandeau de niveau : ce héros n'est pas encore au bout. */
+.niveauCarte .marge { margin-left: 3px; font-size: 8px; color: var(--accent); vertical-align: 1px; }

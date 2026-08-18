@@ -86,6 +86,11 @@ const STATS_AFFICHEES = FAMILLES_STATS.flatMap((f) => f.stats).filter((s) => !s.
 // Les seules statistiques pour lesquelles une valeur de base a du sens à saisir.
 const STATS_DE_BASE = ['Attack', 'Defense', 'MaxHitPoints'];
 
+// La première famille de l'écran « Stats ». Ces quatre lignes restent affichées
+// d'un héros à l'autre, même quand on ne connaît pas leur valeur : un tableau
+// dont les lignes apparaissent et disparaissent se lit mal.
+const STATS_PRINCIPALES = FAMILLES_STATS[0].stats;
+
 // Comment écrire chaque statistique. Le jeu ne les montre pas toutes de la même
 // façon : la vitesse d'attaque se compte en coups par minute, la charge en
 // secondes, le reste en nombre ou en pourcentage.
@@ -700,15 +705,24 @@ function rendreStats() {
   if (!curseurEnCours) rendreProjection(contexte);
 
   // Une statistique que le héros n'a pas du tout, et que rien n'alimente, n'a pas
-  // à s'afficher : le jeu ne montre « Dégâts de base » que sur les héros qui en ont.
-  const utile = (stat) => stat.startsWith('charge_')
+  // à s'afficher. Les quatre principales font exception : elles restent en place
+  // d'un héros à l'autre, quitte à dire qu'on ne connaît pas leur valeur — un
+  // tableau dont les lignes changent de place est plus déroutant qu'un trou.
+  const utile = (stat) => STATS_PRINCIPALES.includes(stat)
+    || stat.startsWith('charge_')
     || typeof contexte.base[stat] === 'number'
     || FORMULES.DEFAUTS[stat] !== undefined
     || Math.abs(simule[stat]?.total || 0) > 1e-9
     || Math.abs(actuel[stat]?.total || 0) > 1e-9;
 
+  // Le catalogue ne donne les dégâts de base que de seize héros sur cent quarante-
+  // quatre, et rien ne permet de les déduire pour les autres : le rapport à
+  // l'attaque va de 0,21 à 1,19 d'un héros au suivant. Là où la valeur manque, on
+  // le dit — l'apport de l'équipement, lui, reste connu et l'écart reste juste.
+  const incomplete = (stat) => STATS_PRINCIPALES.includes(stat) && typeof contexte.base[stat] !== 'number';
+
   $('#tableStats tbody').innerHTML = FAMILLES_STATS.map((famille) => {
-    const lignes = famille.stats.filter(utile).map((stat) => ligneStat(stat, simule, actuel)).join('');
+    const lignes = famille.stats.filter(utile).map((stat) => ligneStat(stat, simule, actuel, incomplete(stat))).join('');
     return lignes ? `<tr class="famille"><th colspan="4">${esc(famille.titre)}</th></tr>${lignes}` : '';
   }).join('');
 
@@ -739,7 +753,7 @@ function valeurStat(stat, feuilleStats) {
   }
 }
 
-function ligneStat(stat, simule, actuel) {
+function ligneStat(stat, simule, actuel, incomplete = false) {
   const s = valeurStat(stat, simule);
   const a = valeurStat(stat, actuel);
   const delta = s.brut - a.brut;
@@ -751,12 +765,21 @@ function ligneStat(stat, simule, actuel) {
 
   const majeure = STATS_DE_BASE.includes(stat);
   const ouverte = statOuverte === stat;
+  // Faute de valeur de départ, on n'écrit pas un total qui serait faux : on montre
+  // ce qu'on sait, l'apport de l'équipement, et l'on signale le reste comme manquant.
+  const colonne = (v) => {
+    if (!incomplete) return v.texte;
+    const explication = "Le catalogue du jeu ne donne cette valeur que pour seize héros sur cent quarante-quatre, "
+      + "et rien ne permet de la déduire pour les autres. Ce que l'équipement y ajoute, en revanche, est connu.";
+    const connu = Math.abs(v.brut) > 1e-9 ? `&nbsp;+&nbsp;${v.texte}` : '';
+    return `<span class="partielle" title="${esc(explication)}">?${connu}</span>`;
+  };
   return `<tr class="${Math.abs(delta) > 1e-9 ? 'modifiee' : ''} ${ouverte ? 'ouverte' : ''}" data-stat="${esc(stat)}">
     <td class="libelle ${majeure ? 'principal' : ''}">
       <span class="chevron">${ouverte ? '▾' : '▸'}</span>${imgStat(stat)}${esc(libelleStat(stat))}
     </td>
-    <td>${a.texte}</td>
-    <td class="${majeure ? 'principal' : ''}">${s.texte}</td>
+    <td>${colonne(a)}</td>
+    <td class="${majeure ? 'principal' : ''}">${colonne(s)}</td>
     <td>${ecart}</td>
   </tr>${ouverte ? detailHtml(stat, simule, actuel) : ''}`;
 }

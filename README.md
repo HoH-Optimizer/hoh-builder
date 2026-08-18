@@ -92,7 +92,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 |---|---|
 | Panthéon des cinq autres classes | L'arbre des attaquants individuels est relevé ; les cinq autres restent à faire. Un nœud inconnu est ignoré et signalé. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
-| Dégâts de base | Le jeu affiche une valeur que le catalogue ne donne pas pour tous les héros. La ligne est masquée quand on ne la connaît pas, plutôt qu'affichée à zéro. |
+| Dégâts de base de 128 héros | Le catalogue ne donne cette statistique que pour 16 héros sur 144, et rien ne permet de la déduire pour les autres : son rapport à l'attaque va de 0,21 à 1,19 d'un héros au suivant. La ligne affiche alors « ? » plutôt qu'un nombre faux ; l'écart entre deux configurations, lui, reste exact. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
 | 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
 | Icônes de 7 pièces d'équipement | Le wiki ne les héberge pas et aucune capture ne les montre. Le site affiche à la place l'icône de l'ensemble. Il manque Warden (chapeau, cou, anneau), Berserker et Countess (main, vêtement). |
