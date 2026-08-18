@@ -942,20 +942,34 @@ function rendreProjection(contexte) {
   const affiche = niveauAffiche(contexte.hero);
   const max = FORMULES.NIVEAU_MAX;
 
+  // Le menu ne porte plus que le nombre : il tient dans une pastille, et ce
+  // qu'il fallait dire en toutes lettres — « son niveau » — se lit à côté.
+  // Le point des dizaines aide à se repérer dans une liste de 160 lignes, mais
+  // il n'a rien à faire dans la pastille : on l'enlève de la ligne choisie, la
+  // seule que le menu fermé donne à voir.
   const options = [];
   for (let n = 1; n <= max; n++) {
-    const marque = n === reel ? ' — son niveau' : n % 10 === 0 ? ' •' : '';
+    const marque = n % 10 === 0 && n !== affiche ? ' •' : '';
     options.push(`<option value="${n}" ${n === affiche ? 'selected' : ''}>${n}${marque}</option>`);
   }
 
-  $('#projection').innerHTML = `
-    <label for="niveauProjete">Voir au niveau</label>
-    <select id="niveauProjete" size="1">${options.join('')}</select>
+  const projection = $('#projection');
+  projection.classList.toggle('projete', affiche !== reel);
+  projection.innerHTML = `
+    <span class="etiquetteNiveau">Niveau</span>
+    <span class="reglageNiveau">
+      <button type="button" class="pasNiveau" data-pas="-1" ${affiche <= 1 ? 'disabled' : ''}
+        title="Un niveau de moins" aria-label="Un niveau de moins">−</button>
+      <label class="sr" for="niveauProjete">Niveau à simuler</label>
+      <select id="niveauProjete" size="1">${options.join('')}</select>
+      <button type="button" class="pasNiveau" data-pas="1" ${affiche >= max ? 'disabled' : ''}
+        title="Un niveau de plus" aria-label="Un niveau de plus">+</button>
+    </span>
     <input type="range" id="curseurNiveau" min="1" max="${max}" value="${affiche}"
       aria-label="Niveau à simuler">
     ${affiche !== reel
-      ? `<button id="revenirNiveau" class="lienDiscret">revenir au niveau ${reel}</button>`
-      : ''}`;
+      ? `<button id="revenirNiveau" class="lienDiscret">revenir au ${reel}</button>`
+      : '<span class="sonNiveau">son niveau</span>'}`;
 }
 
 
@@ -1207,6 +1221,15 @@ $('#relique').addEventListener('change', (e) => {
 });
 
 $('#projection').addEventListener('click', (e) => {
+  // Les deux boutons encadrant le nombre avancent d'un niveau à la fois : c'est
+  // ce que le curseur ne sait pas faire, et le menu fait mal sur 160 lignes.
+  const pas = e.target.closest('.pasNiveau');
+  if (pas) {
+    const h = herosParId.get(selection);
+    const vise = niveauAffiche(h) + Number(pas.dataset.pas);
+    if (vise >= 1 && vise <= FORMULES.NIVEAU_MAX) changerNiveau(vise);
+    return;
+  }
   if (e.target.id !== 'revenirNiveau') return;
   niveauProjete = null;
   rendreHeros();

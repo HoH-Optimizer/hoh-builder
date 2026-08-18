@@ -12,8 +12,10 @@
   --panneau: #1a1226;
   --panneau-clair: #241a34;
   --bordure: #3b2b56;
-  --texte: #f0e7f8;
-  --discret: #a496ba;
+  /* Le blanc pur fatigue sur un fond aussi sombre : on le pose un cran plus
+     bas. Le gris, lui, remonte — c'est lui qu'on n'arrivait plus à lire. */
+  --texte: #ddd3ec;
+  --discret: #b3a6c6;
   --accent: #4fdcaa;
   --accent-sombre: #1f7f60;
   /* Ce qui s'écrit PAR-DESSUS l'accent : pastille active, bouton principal. */
@@ -146,21 +148,28 @@ h2 { margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacin
 p { margin: 0 0 10px; }
 .discret { color: var(--discret); font-size: 13px; }
 
+/* Trois colonnes de largeur égale de part et d'autre : le logo tombe au milieu
+   de la page, quelle que soit la largeur des boutons de droite. */
 header {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   gap: 16px;
   align-items: center;
-  justify-content: space-between;
   padding: 14px 20px;
   border-bottom: 1px solid var(--bordure);
   /* Deux lueurs très discrètes, émeraude et améthyste, pour asseoir le titre. */
   background: var(--halo-entete), var(--panneau);
 }
 header p { margin: 0; color: var(--discret); font-size: 13px; }
-.actions { display: flex; gap: 8px; align-items: center; }
+.actions { grid-column: 3; display: flex; gap: 8px; align-items: center; justify-self: end; }
 
-.marque { display: flex; align-items: center; gap: 13px; }
+.marque { grid-column: 2; display: flex; align-items: center; gap: 13px; }
+/* Trop à l'étroit pour trois colonnes : tout se centre l'un sous l'autre. */
+@media (max-width: 1000px) {
+  header { grid-template-columns: 1fr; justify-items: center; }
+  .marque, .actions { grid-column: 1; justify-self: center; }
+  .actions { flex-wrap: wrap; justify-content: center; }
+}
 /* L'écusson était doré à l'époque où le site l'était : ses deux teintes suivent
    maintenant le thème, comme celles du titre. */
 .blason .hautBlason { stop-color: var(--blason-haut); }
@@ -429,6 +438,28 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 }
 .aucunHeros { grid-column: 1 / -1; color: var(--discret); font-size: 13px; }
 
+/* Les deux listes qui défilent portent une barre à la couleur du thème, fine et
+   arrondie, au lieu de celle du système qui jurait avec le reste. */
+#listeHeros, #listeObjets {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-sombre) transparent;
+}
+#listeHeros::-webkit-scrollbar,
+#listeObjets::-webkit-scrollbar { width: 11px; }
+#listeHeros::-webkit-scrollbar-track,
+#listeObjets::-webkit-scrollbar-track { background: transparent; }
+/* La bordure transparente et le découpage sur le contenu affinent le curseur
+   sans le coller au bord. */
+#listeHeros::-webkit-scrollbar-thumb,
+#listeObjets::-webkit-scrollbar-thumb {
+  background: var(--accent-sombre);
+  background-clip: content-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+}
+#listeHeros::-webkit-scrollbar-thumb:hover,
+#listeObjets::-webkit-scrollbar-thumb:hover { background: var(--accent); background-clip: content-box; }
+
 .carteHeros {
   /* Pas davantage : au-delà, le coin arrondi entame le fanion, qui pend du bord
      haut à quelques pixels de la gauche. */
@@ -566,7 +597,9 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 }
 .emplacement:hover { border-color: var(--accent); }
 /* La colonne de gauche montre l'équipement réel du compte : on ne la modifie pas. */
-.emplacement.fige { cursor: default; opacity: .82; }
+/* La colonne de gauche n'est pas modifiable, mais elle doit rester aussi
+   lisible que l'autre : c'est l'absence de croix qui dit la différence. */
+.emplacement.fige { cursor: default; opacity: .94; }
 .emplacement.fige:hover { border-color: var(--bordure); border-left-color: inherit; }
 .emplacement { min-height: 78px; }
 /* Aucune colonne ne doit imposer sa largeur : c'est ce qui faisait déborder la page. */
@@ -630,16 +663,64 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 
 /* ---------- Niveau de lecture ---------- */
 
-.enteteStats { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.projection { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--discret); }
-.projection select {
-  padding: 4px 8px;
+.enteteStats { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* Le réglage du niveau formait une ligne de commandes disparates posées côte à
+   côte. Il devient un objet unique : une pastille où le nombre est la vedette,
+   encadré de deux boutons pour avancer d'un cran, et suivi du curseur pour
+   balayer d'un geste. */
+.projection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 14px 5px 16px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--discret);
   background: var(--panneau-clair);
-  color: var(--texte);
   border: 1px solid var(--bordure);
-  border-radius: 12px;
-  font: inherit;
+  border-radius: 999px;
 }
+/* Dès qu'on ne regarde plus le vrai niveau du héros, la pastille le signale. */
+.projection.projete { color: var(--accent); background: var(--accent-voile); border-color: var(--accent-sombre); }
+
+.reglageNiveau { display: flex; align-items: center; gap: 4px; }
+.pasNiveau {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  padding: 0;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--texte);
+  background: var(--panneau);
+  border: 1px solid var(--bordure);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.pasNiveau:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+.pasNiveau:disabled { opacity: .3; cursor: default; }
+
+.projection select {
+  width: 58px;
+  padding: 2px 0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.projection select:focus-visible { outline: 2px solid var(--accent-sombre); border-radius: 8px; }
+.sonNiveau { white-space: nowrap; }
 .lienDiscret {
   background: none; border: 0; padding: 0;
   color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer;
@@ -845,7 +926,7 @@ td.principal { font-weight: 600; }
 #listeObjets .icone { grid-row: 1 / -1; align-self: center; }
 #listeObjets .detail { grid-column: 2 / -1; }
 #listeObjets .attributs { grid-column: 2 / -1; font-size: 12px; color: var(--discret); }
-#listeObjets .verrouille { opacity: .5; }
+#listeObjets .verrouille { opacity: .62; }
 #listeObjets .marque { font-size: 11px; color: var(--accent); text-align: right; }
 
 /* ---------- Tuiles d'objet, dans l'esprit du jeu ---------- */
@@ -905,7 +986,7 @@ td.principal { font-weight: 600; }
 .attr.principalAttr { font-size: 12.5px; }
 .attr.principalAttr b { color: var(--accent); }
 .attr .iconeStat { width: 14px; height: 14px; margin: 0; vertical-align: 0; }
-.attr.verrouille { opacity: .45; }
+.attr.verrouille { opacity: .62; }
 
 /* L'emplacement s'articule autour de la tuile : l'objet, puis ses statistiques.
    Le nom de l'emplacement n'y figure plus, il est passé dans l'infobulle. */
@@ -1012,10 +1093,10 @@ td.principal { font-weight: 600; }
 @media (max-width: 620px) { .filtresObjet { grid-template-columns: 1fr; } }
 .cascade .taux { color: var(--discret); font-size: 11.5px; }
 
-/* Le niveau se choisit au menu pour viser juste, au curseur pour balayer. */
-.projection select { max-width: 150px; }
-.projection input[type="range"] { width: 140px; accent-color: var(--accent); cursor: pointer; }
-@media (max-width: 700px) { .projection input[type="range"] { display: none; } }
+/* Le niveau se choisit au menu pour viser juste, aux boutons pour ajuster d'un
+   cran, au curseur pour balayer. */
+.projection input[type="range"] { width: 150px; accent-color: var(--accent); cursor: pointer; }
+@media (max-width: 760px) { .projection input[type="range"] { display: none; } }
 
 /* Une valeur dont on ne connaît qu'une partie : le « ? » dit le reste. */
 .partielle { color: var(--discret); cursor: help; }
@@ -1024,7 +1105,7 @@ td.principal { font-weight: 600; }
 
 .barreTri { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
 .champTri { flex: 1; min-width: 0; }
-.champTri .sr {
+.sr {
   position: absolute;
   width: 1px; height: 1px;
   overflow: hidden;
