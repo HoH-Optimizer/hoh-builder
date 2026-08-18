@@ -8,6 +8,10 @@
    =========================================================== */
 
 :root {
+  /* Ce que le navigateur doit savoir pour peindre ce que la page ne peint pas :
+     listes déroulantes des menus, barres de défilement, contrôles natifs. */
+  color-scheme: dark;
+
   --fond: #0f0a17;
   --panneau: #1a1226;
   --panneau-clair: #241a34;
@@ -61,6 +65,8 @@
 }
 
 :root[data-theme="clair"] {
+  color-scheme: light;
+
   --fond: #f1ecf8;
   --panneau: #fffdff;
   --panneau-clair: #f2ebfb;
@@ -724,6 +730,9 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
   cursor: pointer;
 }
 .projection select:focus-visible { outline: 2px solid var(--accent-sombre); border-radius: 8px; }
+/* La pastille montre le nombre en accent, mais la liste déroulée se lit mieux
+   en texte ordinaire sur le fond du panneau. */
+select option { color: var(--texte); background: var(--panneau); }
 .sonNiveau { white-space: nowrap; }
 .lienDiscret {
   background: none; border: 0; padding: 0;
