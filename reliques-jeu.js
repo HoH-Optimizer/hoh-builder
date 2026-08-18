@@ -5,6 +5,13 @@
    Version du catalogue : 2026-08-09_07-19-28
    Les paliers de chaque relique. Les valeurs sont celles du palier atteint,
    elles ne se cumulent pas entre paliers.
+   
+   ATTENTION : ce sont des valeurs DE RÉFÉRENCE. Le jeu les met à l'échelle de
+   l'âge du joueur — c'est ce que fait « relic_boost_age_modifier » dans le
+   catalogue. La valeur réellement accordée est arrondie au supérieur :
+     valeur = ceil(référence x modificateur de l'âge)   voir ages-jeu.js
+   Vérifié ligne à ligne contre le tableau du wiki, aux deux extrémités de
+   l'échelle (Âge de pierre, x1, et Haut Moyen Âge, x2,854).
    ========================================================================== */
 
 window.RELIQUES_JEU = {

@@ -39,6 +39,8 @@ async function telecharger(url) {
 // rubrique (bâtiments, unités, héros, technologies…). On ne s'intéresse qu'à
 // quatre d'entre elles, repérées en observant les données.
 const RUBRIQUE = {
+  AGES: 16,        // les âges du jeu et leur ordre
+  MODIF_AGE: 22,   // le multiplicateur que chaque âge applique aux reliques
   BATIMENTS: 2,    // tous les bâtiments de la ville, casernes comprises
   UNITES: 3,       // statistiques de base de chaque unité, héros compris
   HEROS: 4,        // fiche de héros : couleur, classe, éveil, capacité
@@ -303,6 +305,14 @@ async function principal() {
     }
   }
 
+  /* --- âges ---------------------------------------------------------------- */
+
+  // Chaque âge a un rang (pour savoir lequel est le plus avancé) et un
+  // multiplicateur, qui sert à mettre les reliques à l'échelle du joueur.
+  const ages = {};
+  for (const a of lire(RUBRIQUE.AGES)) if (typeof a.f1 === 'string') ages[a.f1] = { rang: a.f2 ?? 0, modificateur: 1 };
+  for (const a of lire(RUBRIQUE.MODIF_AGE)) if (ages[a.f1]) ages[a.f1].modificateur = a.f2 ?? 1;
+
   /* --- reliques ------------------------------------------------------------ */
 
   // Une relique se monte en paliers ; chaque palier remplace le précédent (les
@@ -424,7 +434,22 @@ async function principal() {
     entete('RELIQUES', version, [
       'Les paliers de chaque relique. Les valeurs sont celles du palier atteint,',
       'elles ne se cumulent pas entre paliers.',
+      '',
+      "ATTENTION : ce sont des valeurs DE RÉFÉRENCE. Le jeu les met à l'échelle de",
+      "l'âge du joueur — c'est ce que fait « relic_boost_age_modifier » dans le",
+      "catalogue. La valeur réellement accordée est arrondie au supérieur :",
+      '  valeur = ceil(référence x modificateur de l\'âge)   voir ages-jeu.js',
+      'Vérifié ligne à ligne contre le tableau du wiki, aux deux extrémités de',
+      "l'échelle (Âge de pierre, x1, et Haut Moyen Âge, x2,854).",
     ]) + `window.RELIQUES_JEU = ${objetParLigne(reliques)};\n`,
+  );
+
+  fs.writeFileSync(
+    path.join(RACINE, 'ages-jeu.js'),
+    entete('ÂGES', version, [
+      "Le rang de chaque âge (pour savoir lequel est le plus avancé) et le",
+      "multiplicateur qu'il applique aux reliques.",
+    ]) + `window.AGES_JEU = ${objetParLigne(ages)};\n`,
   );
 
   fs.writeFileSync(
@@ -439,6 +464,7 @@ async function principal() {
   console.log(`eveil-jeu.js  : ${Object.keys(eveil).length} héros (${Object.keys(tables).length} tables, ${sansEveil} héros sans éveil)`);
   console.log(`casernes-jeu.js : ${Object.keys(casernes).length} paliers de caserne`);
   console.log(`reliques-jeu.js : ${Object.keys(reliques).length} reliques`);
+  console.log(`ages-jeu.js   : ${Object.keys(ages).length} âges`);
   console.log(`noms-fr.js    : ${Object.keys(noms.heros).length} héros, ${Object.keys(nomsSets).length} ensembles, ${Object.keys(nomsObjets).length} objets`);
 }
 

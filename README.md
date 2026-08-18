@@ -60,20 +60,21 @@ toutes, sauf une :
 | Montée en niveau et ascensions | formule reconstituée, voir plus bas |
 | Paliers d'éveil | du catalogue du jeu |
 | Caserne de son arme | du catalogue, le palier venant du compte |
-| Relique portée | du catalogue du jeu |
+| Relique portée | du catalogue, mise à l'échelle de l'ère du joueur |
 | Équipement et bonus d'ensemble | du compte et du catalogue |
 | **Panthéon** | **manquant** : les nœuds débloqués sont dans l'export, leurs valeurs n'existent ni là, ni dans le catalogue |
 
 Sur un héros de référence vérifié écran contre écran avec le jeu, les chances de
 crit, les dégâts crit, l'esquive, les soins reçus, la charge initiale et la charge
 normale tombent **exactement** juste ; l'attaque, la défense et les points de vie
-restent à 1 à 4 % près, l'écart correspondant au panthéon.
+restent à 1 % près, l'écart correspondant au panthéon.
 
 ## Limites connues
 
 | Manque | Conséquence |
 |---|---|
-| Panthéon | Ses nœuds sont listés dans l'export, sans leurs valeurs. C'est ce qui reste entre le chiffre du site et celui du jeu. |
+| Panthéon | Ses nœuds sont listés dans l'export, sans leurs valeurs. C'est l'essentiel de ce qui reste entre le chiffre du site et celui du jeu. |
+| Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale. Elle commande la valeur des reliques. |
 | Dégâts de base | Le jeu affiche une valeur que le catalogue ne donne pas pour tous les héros. La ligne est masquée quand on ne la connaît pas, plutôt qu'affichée à zéro. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
 | 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
@@ -100,8 +101,9 @@ client télécharge à part et que l'export ne capture pas.
 
 Le site communautaire [Forge of Games](https://forgeofgames.com) rediffuse ce catalogue
 tel quel. [`tools/catalogue.js`](tools/catalogue.js) le récupère, le décode avec notre
-propre décodeur, et en tire six fichiers livrés avec le site : `heros-jeu.js`,
-`sets-jeu.js`, `eveil-jeu.js`, `casernes-jeu.js`, `reliques-jeu.js` et `noms-fr.js`.
+propre décodeur, et en tire sept fichiers livrés avec le site : `heros-jeu.js`,
+`sets-jeu.js`, `eveil-jeu.js`, `casernes-jeu.js`, `reliques-jeu.js`, `ages-jeu.js`
+et `noms-fr.js`.
 
 ### La montée en niveau
 
@@ -117,6 +119,24 @@ Les deux taux « par niveau » se lisent tels quels dans le catalogue (4 % pour 
 de vie, 4,65 % pour l'attaque et la défense). Les taux « par ascension » ont été mesurés :
 6 % pour les points de vie, 18,6 % pour l'attaque et la défense. Le détail et la
 vérification sont dans [`formules.js`](formules.js).
+
+### Les reliques changent de valeur avec l'ère
+
+Le catalogue donne pour chaque palier de relique une valeur **de référence**, que le jeu
+met ensuite à l'échelle de l'ère du joueur avant de l'arrondir au supérieur :
+
+```
+valeur = ceil(référence × modificateur de l'ère)
+```
+
+Le modificateur va de 1 à l'Âge de pierre à 3,0635 à l'Ère gothique précoce. Un Gant de
+Fauconnerie niveau 15 vaut ainsi +45 attaque de référence, mais **+129 au Haut Moyen Âge**.
+Les quinze paliers ont été vérifiés un par un contre le tableau du wiki, aux deux bouts de
+l'échelle.
+
+Deuxième piège, sur le **niveau** : le compte range le niveau d'une relique dans un champ
+qui **plafonne à 11**, et met les niveaux suivants dans un second champ. Une relique lue
+« 11 + 4 » est au niveau 15, pas au niveau 11.
 
 ### Outils en ligne de commande (facultatifs)
 
@@ -146,11 +166,12 @@ Récupère les illustrations manquantes. Ne retélécharge jamais ce qui est dé
 node tools/catalogue.js
 ```
 
-Régénère les six fichiers de catalogue depuis le jeu : `heros-jeu.js` (144 héros —
+Régénère les sept fichiers de catalogue depuis le jeu : `heros-jeu.js` (144 héros —
 nom français, rareté, type, couleur, classe, statistiques de base), `sets-jeu.js`
 (48 ensembles et leurs effets), `eveil-jeu.js` (paliers d'éveil), `casernes-jeu.js`
-(183 paliers de caserne), `reliques-jeu.js` (39 reliques) et `noms-fr.js` (noms des
-héros, des ensembles et des objets). À relancer à chaque mise à jour du jeu.
+(183 paliers de caserne), `reliques-jeu.js` (39 reliques), `ages-jeu.js` (le
+multiplicateur de chaque ère) et `noms-fr.js` (noms des héros, des ensembles et des
+objets). À relancer à chaque mise à jour du jeu.
 
 **Après toute modification de l'extension ou du décodeur**, régénérer l'archive proposée
 au téléchargement sur la page d'accueil :

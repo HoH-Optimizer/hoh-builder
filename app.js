@@ -100,6 +100,16 @@ const FORMAT_STAT = {
 
 const NOM_TYPE = () => (window.NOMS_FR || {}).types || {};
 
+// Les ères du jeu, telles qu'il les nomme en français.
+const NOM_ERE = {
+  DawnAge: 'Aube des temps', StoneAge: 'Âge de pierre', BronzeAge: 'Âge de bronze',
+  MinoanEra: 'Ère minoenne', ClassicGreece: 'Grèce classique', EarlyRome: 'Rome antique',
+  RomanEmpire: 'Empire romain', ByzantineEra: 'Ère byzantine', AgeOfTheFranks: 'Âge des Francs',
+  FeudalAge: 'Époque féodale', IberianEra: 'Ère ibérique', KingdomOfSicily: 'Royaume de Sicile',
+  HighMiddleAges: 'Haut Moyen Âge', EarlyGothicEra: 'Ère gothique précoce',
+};
+const nomEre = (e) => NOM_ERE[e] || joliNom(e || '');
+
 // L'éveil s'affiche en chiffres romains dans le jeu, sur la vignette du héros.
 const ROMAIN = ['', 'I', 'II', 'III', 'IV', 'V'];
 
@@ -407,13 +417,27 @@ function apportCaserne(h) {
   return (window.CASERNES_JEU || {})[caserne?.batiment] || {};
 }
 
+// L'ère du joueur, déduite de sa capitale. Elle met les reliques à l'échelle.
+const ereDuJoueur = () => donnees?.compte?.age || null;
+const modificateurDEre = () => (window.AGES_JEU || {})[ereDuJoueur()]?.modificateur ?? 1;
+
 // Ce que sa relique lui apporte, au palier où elle est montée.
+//
+// Les valeurs du catalogue sont des valeurs DE RÉFÉRENCE : le jeu les met à
+// l'échelle de l'ère du joueur, puis arrondit au supérieur. À l'Âge de pierre le
+// multiplicateur vaut 1, au Haut Moyen Âge 2,854 — d'où un Gant de Fauconnerie
+// niveau 15 qui donne +45 attaque de référence, mais +129 en jeu.
+// Vérifié ligne à ligne contre le tableau du wiki, aux deux bouts de l'échelle.
 function apportRelique(h) {
   const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
   if (!portee) return {};
   const fiche = (window.RELIQUES_JEU || {})[portee.relique];
   const palier = fiche?.paliers?.filter((p) => p.niveau <= portee.niveau).pop();
-  return palier?.apports || {};
+  if (!palier) return {};
+  const modificateur = modificateurDEre();
+  return Object.fromEntries(
+    Object.entries(palier.apports).map(([stat, valeur]) => [stat, Math.ceil(valeur * modificateur)]),
+  );
 }
 
 // Le niveau auquel on regarde le héros. C'est son vrai niveau par défaut, mais
@@ -791,15 +815,18 @@ function rendreReliqueEtSources(contexte, simule) {
     .filter(([stat]) => !stat.startsWith('stat_'))
     .map(([stat, v]) => `${signe(v, nombre)} ${libelleStat(stat).toLowerCase()}`).join(' · ');
 
-  $('#relique').innerHTML = portee ? `
+  const ere = ereDuJoueur();
+  $('#relique').innerHTML = (portee ? `
     <div class="carteRelique">
       ${imgRelique(portee.relique)}
       <div class="texteRelique">
         <span class="nomRelique">${esc(ficheRelique?.nom || joliNom(portee.relique))}</span>
-        <span class="discret">niveau ${portee.niveau}${portee.etoiles ? ` · ${etoilesHtml(portee.etoiles)}` : ''}</span>
+        <span class="discret">niveau ${portee.niveau}</span>
         <span class="apportRelique">${listeApports || '<span class="discret">effet non chiffré</span>'}</span>
       </div>
-    </div>` : '<p class="discret">Aucune relique sur ce héros.</p>';
+    </div>` : '<p class="discret">Aucune relique sur ce héros.</p>')
+    // L'ère commande la valeur des reliques : on dit laquelle on a retenue.
+    + (ere ? `<p class="discret noteEre">Valeurs à l'échelle de ton ère : ${esc(nomEre(ere))} (x${modificateurDEre().toFixed(3).replace(/0+$/, "").replace(".", ",")}).</p>` : '');
 
   const noeuds = h?.pantheon?.length || 0;
   const caserne = donnees?.compte?.casernes?.[contexte.details?.type];
