@@ -153,9 +153,12 @@
         <details id="blocBase">
           <summary>Statistiques de base du héros</summary>
           <p class="discret">
-            Ces valeurs ne sont pas dans l'export du jeu. Relève-les en jeu sur un héros
-            <strong>sans aucun équipement</strong> et saisis-les ici : elles sont mémorisées
-            par héros dans ce navigateur, et donnent les totaux absolus.
+            Ces valeurs sont calculées à partir du catalogue du jeu : statistiques du
+            héros au niveau 1, montées à son niveau réel, éveil compris. Elles ne
+            comptent pas la caserne, le panthéon ni les reliques.
+            Si un chiffre ne colle pas au jeu, relève-le sur un héros
+            <strong>sans aucun équipement</strong> et saisis-le ici : ta valeur
+            l'emportera, et sera mémorisée par héros dans ce navigateur.
           </p>
           <div class="saisieBase">
             <label>Attaque <input type="number" data-base="Attack" min="0" step="1"></label>
@@ -188,12 +191,12 @@
 <!-- donnees.js est facultatif : il n'existe que sur une copie locale où l'on a lancé
      l'extraction. app.js le charge lui-même et se passe très bien de son absence. -->
 <script src="decodeur.js"></script>
-<!-- Catalogue des héros (noms, rareté, statistiques de base) extrait du wiki
-     communautaire par `node tools/wiki.js`. Ces données appartiennent au jeu,
-     pas au compte : elles sont donc livrées avec le site. -->
+<!-- Catalogue du jeu : héros, ensembles d'équipement, paliers d'éveil et noms
+     français. Ces données appartiennent au jeu et non au compte : elles sont
+     livrées avec le site, et régénérées par `node tools/catalogue.js`. -->
 <script src="heros-jeu.js"></script>
-<!-- Noms français relevés en jeu, en attendant le fichier de traduction officiel. -->
 <script src="sets-jeu.js"></script>
+<script src="eveil-jeu.js"></script>
 <script src="noms-fr.js"></script>
 <script src="formules.js"></script>
 <script src="app.js"></script>

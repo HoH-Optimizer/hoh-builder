@@ -14,6 +14,9 @@ const NOM_STAT = {
   HitPoints: 'Points de vie',
   BaseDamage: 'Dégâts de base',
   InitialFocusInSecondsBonus: 'Charge initiale',
+  // Le jeu donne le même nom à deux choses : le pourcentage de jauge apporté par
+  // les objets, et les secondes gagnées par certains ensembles. On les distingue.
+  InitialFocusSeconds: "Charge initiale (secondes d'avance)",
   Focus: 'Charge',
   FocusRegen: 'Régén. de charge',
   SingleTargetDamageAmp: 'Dégâts uniques',
@@ -100,9 +103,10 @@ const nombre = (v) => Number(v).toLocaleString('fr-FR', { maximumFractionDigits:
 const pourcent = (v) => `${(v * 100).toFixed(2).replace(/\.?0+$/, '').replace('.', ',')} %`;
 const signe = (v, f) => (v > 0 ? '+' : v < 0 ? '−' : '') + f(Math.abs(v));
 
-// Le jeu donne un vrai nom à chaque objet, absent de l'export tant qu'on n'a pas
-// les traductions. En attendant on décrit l'objet : « Main · set Archer ».
+// Le jeu donne un vrai nom à chaque pièce d'équipement (« Chevalière de Voyageur »),
+// qui dépend de son ensemble et de son emplacement. À défaut, on décrit l'objet.
 const nomObjet = (o) => libelles().objets?.[o.id]
+  || (window.NOMS_FR || {}).objets?.[`${o.set}_${o.emplacement}`]
   || `${NOM_SLOT[o.emplacement] || o.emplacement} · set ${nomSet(o.set)}`;
 
 /* ------------------------------------------------------------------- images */
@@ -295,10 +299,15 @@ function agreger(liste) {
       else e.plat += a.valeur;
     }
   }
-  // Un ensemble complet ajoute son bonus. Il compte autant que les objets eux-mêmes :
-  // le set Voyageur apporte à lui seul +15 % de vitesse d'attaque.
+  // Un ensemble complet ajoute son bonus, qui compte autant que les objets eux-mêmes.
+  // Il peut être plat comme un attribut d'objet : le set Voyageur apporte à lui seul
+  // +5 % de dégâts uniques ET +9 coups/minute de vitesse d'attaque.
   for (const { bonus } of setsComplets(liste)) {
-    for (const b of bonus) (total[b.stat] ||= { plat: 0, pourcentage: 0 }).pourcentage += b.valeur;
+    for (const b of bonus) {
+      const e = (total[b.stat] ||= { plat: 0, pourcentage: 0 });
+      if (b.type === 'pourcentage') e.pourcentage += b.valeur;
+      else e.plat += b.valeur;
+    }
   }
   return total;
 }
@@ -326,6 +335,29 @@ function enregistrerBase(heroId, stat, valeur) {
   try { localStorage.setItem(cleBase(heroId), JSON.stringify(bases)); } catch { /* navigation privée */ }
 }
 
+// Les paliers d'éveil déjà atteints par un héros. Le jeu les cumule : éveil III
+// = les trois premiers paliers.
+const paliersEveil = (h) => ((window.EVEIL_JEU || {})[h?.id] || []).slice(0, h?.eveil || 0);
+
+// Les statistiques de base du héros À SON NIVEAU. Le catalogue du jeu ne donne
+// que le niveau 1 ; formules.js s'occupe de la montée et de l'éveil.
+function basesCalculees(heroId) {
+  const h = herosParId.get(heroId);
+  const details = ficheDuHeros(h) || fiche(heroId);
+  if (!details?.base) return {};
+  const eveil = paliersEveil(h);
+  const sortie = {};
+  for (const stat of STATS_DE_BASE) {
+    const valeur = FORMULES.statAuNiveau(details.base[stat], stat, h?.niveau ?? 1, eveil);
+    if (typeof valeur === 'number') sortie[stat] = valeur;
+  }
+  return sortie;
+}
+
+// Ce qu'on utilise vraiment pour les totaux : le calcul, sauf là où le joueur a
+// saisi une valeur relevée en jeu — elle fait alors foi.
+const basesEffectives = (heroId) => ({ ...basesCalculees(heroId), ...basesDe(heroId) });
+
 /* ------------------------------------------------------------------- rendus */
 
 function rendreEntete() {
@@ -340,11 +372,14 @@ function rendreEntete() {
   sousTitre.title = `Compte ${c.joueur.nom || 'inconnu'}`;
 
   // L'avertissement se réduit à une pastille : l'explication tient dans l'infobulle.
+  // Les noms français sont livrés avec le site (noms-fr.js, tiré du fichier de
+  // traduction du jeu) : il ne reste à signaler que les héros trop récents pour y figurer.
+  const inconnus = c.heros.filter((h) => !nomsReels() && !(window.NOMS_FR || {}).heros?.[h.id]).length;
   const alerte = $('#avertissement');
-  alerte.hidden = nomsReels();
-  alerte.textContent = 'Noms en anglais';
-  alerte.title = "Les noms viennent du wiki communautaire et sont donc en anglais. "
-    + "Les noms français demandent le fichier de traduction du jeu, pas encore capturé.";
+  alerte.hidden = inconnus === 0;
+  alerte.textContent = `${inconnus} héros sans nom traduit`;
+  alerte.title = "Ces héros sont plus récents que le fichier de traduction livré avec le site. "
+    + "« node tools/catalogue.js » le remet à jour.";
 }
 
 function rendreListeHeros() {
@@ -468,8 +503,8 @@ function setsHtml(identifiants) {
 }
 
 const texteBonusSet = (def) => (def?.bonus || [])
-  .map((b) => `${signe(b.valeur, pourcent)} ${libelleStat(b.stat).toLowerCase()}`)
-  .join(' · ');
+  .map((b) => `${signe(b.valeur, b.type === 'pourcentage' ? pourcent : nombre)} ${libelleStat(b.stat).toLowerCase()}`)
+  .join(' · ') || def?.effet || '';
 
 // Une case du tableau : apport plat et/ou pourcentage, dans l'esprit du jeu.
 const celluleApport = (e) => [
@@ -480,9 +515,17 @@ const celluleApport = (e) => [
 function rendreStats() {
   const simule = agreger(objetsEquipes(selection));
   const actuel = agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean));
-  const bases = basesDe(selection);
+  const bases = basesEffectives(selection);
+  const saisies = basesDe(selection);
+  const calculees = basesCalculees(selection);
 
-  for (const champ of document.querySelectorAll('[data-base]')) champ.value = bases[champ.dataset.base] ?? '';
+  // Le champ ne montre que ce que le joueur a saisi ; la valeur calculée s'affiche
+  // en filigrane, pour qu'on voie ce qu'on remplacerait en tapant dedans.
+  for (const champ of document.querySelectorAll('[data-base]')) {
+    const stat = champ.dataset.base;
+    champ.value = saisies[stat] ?? '';
+    champ.placeholder = typeof calculees[stat] === 'number' ? Math.round(calculees[stat]) : '—';
+  }
 
   // On suit l'ordre du jeu, puis on ajoute à la suite les statistiques qu'il ne
   // montre pas sur cet écran mais que l'équipement peut apporter.
@@ -576,18 +619,37 @@ function rendreSources() {
 
   const complets = setsComplets(objetsEquipes(selection));
 
+  // Un bonus d'ensemble ou d'éveil, écrit comme le jeu l'écrit.
+  const texteBonus = (b) => `${signe(b.valeur, b.type === 'pourcentage' ? pourcent : nombre)} ${libelleStat(b.stat).toLowerCase()}`;
+
+  const eveil = paliersEveil(h);
+  const eveilLisible = eveil.filter((p) => !p.stat.startsWith('stat_'));
+
   $('#sources').innerHTML = [
+    ligne(
+      'Héros',
+      `niveau ${h?.niveau ?? '?'}`,
+      ficheDuHeros(h)?.base ? 'statistiques de base montées au niveau' : 'héros inconnu du catalogue',
+      Boolean(ficheDuHeros(h)?.base),
+    ),
     ligne('Équipement', `${objetsPortes} objet${objetsPortes > 1 ? 's' : ''}`, 'détaillé ci-contre', true),
     ligne(
       'Bonus de set',
       complets.length ? complets.map((c) => nomSet(c.set)).join(', ') : 'aucun set complet',
-      complets.length ? complets.flatMap((c) => c.bonus).map((b) => `${signe(b.valeur, pourcent)} ${libelleStat(b.stat).toLowerCase()}`).join(' · ') : '—',
+      complets.length ? complets.flatMap((c) => c.bonus).map(texteBonus).join(' · ') : '—',
       complets.length > 0,
+    ),
+    ligne(
+      'Éveil',
+      h?.eveil ? `niveau ${ROMAIN[h.eveil] || h.eveil}` : '—',
+      // Quelques paliers portent sur des statistiques que le catalogue désigne par
+      // un numéro qu'on n'a pas encore su nommer : on ne les compte pas.
+      eveil.length ? [eveilLisible.map(texteBonus).join(' · '), eveil.length > eveilLisible.length ? `+ ${eveil.length - eveilLisible.length} palier(s) non identifié(s)` : ''].filter(Boolean).join(' · ') : '—',
+      eveilLisible.length > 0,
     ),
     ligne('Panthéon', noeuds ? `${noeuds} nœuds` : 'aucun', noeuds ? 'valeurs inconnues' : '—', false),
     ligne('Reliques', reliques.length ? reliques.map((r) => `${joliNom(r.relique)} niv. ${r.niveau}`).join(', ') : 'aucune', reliques.length ? 'valeurs inconnues' : '—', false),
     ligne('Caserne', '—', "absent de l'export", false),
-    ligne('Éveil', h?.eveil ? `niveau ${ROMAIN[h.eveil] || h.eveil}` : '—', h?.eveil ? 'valeurs inconnues' : '—', false),
   ].join('');
 }
 

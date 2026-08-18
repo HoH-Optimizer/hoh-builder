@@ -33,25 +33,28 @@ navigateur où l'extension n'est pas installée.
 
 ## Ce que fait le simulateur
 
-- Les **130 héros du jeu**, avec filtres (possédés / tous / équipés) et recherche
+- Les **144 héros du jeu**, avec filtres (possédés / tous / équipés) et recherche
 - Les **5 emplacements** de chaque héros, pré-remplis avec l'équipement réel du compte
 - Choix d'objet parmi tout l'inventaire, trié par rareté, avec les attributs détaillés
   et le nom du héros qui le porte déjà
 - **Échange automatique** : équiper un objet porté par un autre héros le lui retire
 - Les **attributs verrouillés** sont grisés et non comptés, comme dans le jeu
 - Colonne **écart** : ce que chaque modification gagne ou perd par rapport à l'équipement réel
-- Détection des **sets** et du nombre de pièces portées
+- **Totaux absolus** : les statistiques de base du héros sont montées à son niveau réel
+  et son niveau d'éveil, puis l'équipement s'y ajoute
+- **Bonus d'ensemble** chiffrés dès qu'un set est complet
+- Tout est en français : héros, objets, ensembles et statistiques portent le nom
+  que le jeu leur donne
 
 ## Limites connues
 
-Elles viennent toutes du même endroit : le catalogue du jeu (téléchargé séparément de
-l'état du compte) n'est pas encore décodé.
-
 | Manque | Conséquence |
 |---|---|
-| Progression des stats par niveau | Les statistiques de base niveau 1 sont connues, mais pas la formule qui les fait monter. Les écarts entre configurations sont exacts, les totaux absolus non. On peut saisir les valeurs à la main par héros. |
-| Noms français | Le site affiche les noms anglais du wiki. Les noms traduits demandent le fichier de traduction du jeu, pas encore décodé. |
-| Bonus de set | Le nombre de pièces est affiché, pas encore l'effet. |
+| Panthéon | Les nœuds débloqués sont listés, leurs valeurs restent inconnues : elles ne sont ni dans l'export, ni dans le catalogue téléchargé. |
+| Reliques | Idem : la relique portée et son niveau sont connus, pas son effet chiffré. |
+| Caserne | Elle ajoute un montant fixe à tous les héros (+40 attaque, +40 défense, +400 points de vie au premier palier, davantage ensuite). Son niveau n'apparaît nulle part dans l'export : ce bonus n'est donc pas compté. |
+| Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité du chiffre affiché en jeu, qui arrondit à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
+| 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
 | Icônes de 7 sets | Images cassées côté wiki : le site affiche l'initiale du set. |
 
 ## Pour les curieux : comment ça marche
@@ -62,6 +65,33 @@ observant les données, et sont documentées dans [`decodeur.js`](decodeur.js).
 
 Les **formules de calcul** sont isolées dans [`formules.js`](formules.js), court et commenté :
 c'est le seul fichier à modifier si les valeurs affichées ne collent pas au jeu.
+
+### Deux sources, deux natures de données
+
+L'export du compte ne dit que ce qui appartient au **joueur** : quels héros, quels objets,
+à quel niveau. Tout ce qui appartient au **jeu** — statistiques de base, progression par
+niveau, noms traduits, effets d'ensemble, paliers d'éveil — vit dans un catalogue que le
+client télécharge à part et que l'export ne capture pas.
+
+Le site communautaire [Forge of Games](https://forgeofgames.com) rediffuse ce catalogue
+tel quel. [`tools/catalogue.js`](tools/catalogue.js) le récupère, le décode avec notre
+propre décodeur, et en tire quatre fichiers livrés avec le site : `heros-jeu.js`,
+`sets-jeu.js`, `eveil-jeu.js` et `noms-fr.js`.
+
+### La montée en niveau
+
+Le catalogue ne donne les statistiques d'un héros qu'au niveau 1, et la façon dont elles
+montent n'y figure sous aucune forme de table. C'est une formule, reconstituée en
+comparant le calculateur de Forge of Games à ses propres constantes :
+
+```
+valeur = base × (1 + parNiveau × (niveau − 1) + parAscension × floor(niveau / 10))
+```
+
+Les deux taux « par niveau » se lisent tels quels dans le catalogue (4 % pour les points
+de vie, 4,65 % pour l'attaque et la défense). Les taux « par ascension » ont été mesurés :
+6 % pour les points de vie, 18,6 % pour l'attaque et la défense. Le détail et la
+vérification sont dans [`formules.js`](formules.js).
 
 ### Outils en ligne de commande (facultatifs)
 
@@ -88,12 +118,13 @@ node tools/images.js
 Récupère les illustrations manquantes. Ne retélécharge jamais ce qui est déjà là.
 
 ```bash
-node tools/wiki.js
+node tools/catalogue.js
 ```
 
-Régénère `heros-jeu.js` : noms, rareté (étoiles) et statistiques de base des 136 héros.
-Ces données appartiennent au jeu et non au compte — elles ne sont donc pas dans l'export,
-et sont extraites du catalogue que le wiki communautaire embarque dans ses pages.
+Régénère les quatre fichiers de catalogue depuis le jeu : `heros-jeu.js` (144 héros —
+nom français, rareté, type, couleur, classe, statistiques de base), `sets-jeu.js`
+(48 ensembles et leurs effets), `eveil-jeu.js` (paliers d'éveil) et `noms-fr.js`
+(noms des héros, des ensembles et des objets). À relancer à chaque mise à jour du jeu.
 
 **Après toute modification de l'extension ou du décodeur**, régénérer l'archive proposée
 au téléchargement sur la page d'accueil :
@@ -105,11 +136,13 @@ node tools/extension.js
 Ce script recopie `decodeur.js` dans l'extension (elle décode elle-même, et ne peut pas
 lire un fichier hors de son dossier) puis reconstruit `hoh-exporter-simple.zip`.
 
-## Illustrations
+## Sources communautaires
 
-Elles proviennent du wiki communautaire [heroesofhistory.wiki](https://heroesofhistory.wiki),
-dont les adresses reprennent exactement les identifiants internes du jeu. Merci à ses
-contributeurs. Les dessins appartiennent à InnoGames.
+Les **illustrations** proviennent du wiki [heroesofhistory.wiki](https://heroesofhistory.wiki),
+dont les adresses reprennent exactement les identifiants internes du jeu. Le **catalogue du
+jeu** et son **fichier de traduction** proviennent de [forgeofgames.com](https://forgeofgames.com),
+qui les rediffuse tels que le jeu les publie. Merci à leurs contributeurs.
+Les dessins, les noms et les données du jeu appartiennent à InnoGames.
 
 | Dossier | Contenu |
 |---|---|
