@@ -709,9 +709,12 @@ function emplacementsHtml(slots, modifiable) {
         : `<span class="tuile libre">${SILHOUETTE[slot]}${modifiable ? '<span class="plus">+</span>' : ''}</span>
            <span class="vide">${modifiable ? 'Vide — cliquer pour choisir' : 'Vide'}</span><span></span>`;
       // Un <div> et non un <bouton> : il contient déjà le bouton « Retirer ».
+      // Le nom de l'emplacement n'est plus écrit dans la ligne — la silhouette et
+      // l'objet lui-même le disent — mais il reste dans l'infobulle.
       return `<div class="emplacement ${o ? `r${o.rarete}` : 'estLibre'} ${modifiable ? '' : 'fige'}"
+          title="${NOM_SLOT[slot]}"
           ${modifiable ? `data-slot="${slot}" role="button" tabindex="0"` : ''}>
-        <span class="type">${NOM_SLOT[slot]}</span>${corps}
+        ${corps}
       </div>`;
     }).join('');
     return `<div class="groupeEmplacements" data-groupe="${nom}">${cases}</div>`;
@@ -1307,6 +1310,15 @@ $('#viderFiltres').addEventListener('click', () => {
 $('#fermerSelecteur').addEventListener('click', () => { $('#selecteur').hidden = true; });
 $('#selecteur').addEventListener('click', (e) => { if (e.target.id === 'selecteur') $('#selecteur').hidden = true; });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#selecteur').hidden = true; });
+
+// Deux thèmes améthyste, l'un sombre et l'autre clair. Le choix reste dans ce
+// navigateur, et c'est le petit script d'index.html qui le repose au chargement
+// suivant — assez tôt pour qu'on ne voie jamais la mauvaise couleur.
+$('#theme').addEventListener('click', () => {
+  const clair = document.documentElement.dataset.theme !== 'clair';
+  document.documentElement.dataset.theme = clair ? 'clair' : 'sombre';
+  try { localStorage.setItem('hoh.theme', clair ? 'clair' : 'sombre'); } catch { /* navigation privée */ }
+});
 
 $('#reinitialiser').addEventListener('click', () => {
   equipe = JSON.parse(JSON.stringify(equipeInitial));

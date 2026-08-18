@@ -51,6 +51,8 @@ navigateur où l'extension n'est pas installée.
   cumul qui monte : base, niveau, éveil, caserne, relique, équipement
 - Tout est en français : héros, objets, ensembles et statistiques portent le nom
   que le jeu leur donne
+- **Deux thèmes**, améthyste sombre et améthyste clair, au bouton du bandeau. Le
+  choix reste dans ce navigateur d'une visite à l'autre.
 
 ## D'où vient chaque chiffre
 
