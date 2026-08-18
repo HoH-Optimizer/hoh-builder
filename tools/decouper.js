@@ -69,10 +69,63 @@ const CAPTURES = [
 // a plus qu'à rogner le vide autour et à mettre à la taille des autres icônes.
 // Un dessin propre en pleine résolution vaut toujours mieux qu'un découpage
 // automatique, si soigneux soit-il : quand il y en a un, il passe devant.
+// Les noms de fichiers viennent de Thomas et décrivent l'objet, pas l'ensemble :
+// le rapprochement a été fait sur les noms français du jeu (`noms-fr.js`) et
+// vérifié image par image. Deux d'entre eux portent « dharma » alors qu'ils
+// appartiennent ailleurs — c'est le dessin qui tranche, pas le nom du fichier.
 const DEJA_DETOUREES = [
   { fichier: 'Nouveau dossier/logo/bague-enchanteresse.png', nom: 'Enchantress_Ring' },
   { fichier: 'Nouveau dossier/logo/amulette-enchanteresse.png', nom: 'Enchantress_Neck' },
+  { fichier: 'Nouveau dossier/logo/diademe-enchanteresse-v3.png', nom: 'Enchantress_Hat' },
+  { fichier: 'Nouveau dossier/logo/casque-voyageur.png', nom: 'Voyager_Hat' },
+  { fichier: 'Nouveau dossier/logo/cape-voyageur.png', nom: 'Voyager_Neck' },
+  { fichier: 'Nouveau dossier/logo/casque-anubis.png', nom: 'Jackal_Hat' },
+  { fichier: 'Nouveau dossier/logo/collier-anubis.png', nom: 'Jackal_Neck' },
+  { fichier: 'Nouveau dossier/logo/bague-anubis.png', nom: 'Jackal_Ring' },
+  { fichier: 'Nouveau dossier/logo/tenue-egyptienne.png', nom: 'RoyalEgyptian_Hat' },
+  { fichier: 'Nouveau dossier/logo/collier-egyptien.png', nom: 'RoyalEgyptian_Neck' },
+  // La chevalière royale égyptienne : « dharma » dans le nom du fichier, mais
+  // c'est bien la bague à pierre verte de l'ensemble égyptien.
+  { fichier: 'Nouveau dossier/logo/bague-pierre-verte dharma.png', nom: 'RoyalEgyptian_Ring' },
+  // Le chakram du Dharma, que son cerclage de cuir et d'argent fait passer pour
+  // un torque.
+  { fichier: 'Nouveau dossier/logo/torque-cuir-argent.png', nom: 'Dharma_Hand' },
+  { fichier: 'Nouveau dossier/logo/veste-beige dharma.png', nom: 'Dharma_Garment' },
+  { fichier: 'Nouveau dossier/logo/lames-ronin.png', nom: 'Ronin_Hand' },
+  { fichier: 'Nouveau dossier/logo/gilet-ronin.png', nom: 'Ronin_Garment' },
 ];
+
+// L'autre écran où les pièces d'un ensemble sont visibles : le panneau
+// d'équipement d'un héros, où elles s'empilent en colonne. Il est bien plus
+// commode que l'écran « Ensemble » — le fond des tuiles y est violet, et non
+// doré, si bien que les objets s'en détachent d'eux-mêmes.
+const PANNEAUX = [
+  // Ici le décor de fond est du même violet que les tuiles : le repérage
+  // automatique confond les deux, et les tuiles sont donc relevées à la main.
+  {
+    fichier: 'Nouveau dossier/logo/2026-08-18 14_48_18-Greenshot.png',
+    set: 'RoyalEgyptian',
+    pieces: ['Hat', 'Neck', 'Ring'],
+    tuiles: [
+      { x: 34, y: 58, largeur: 99, hauteur: 132 },
+      { x: 34, y: 222, largeur: 99, hauteur: 132 },
+      { x: 34, y: 386, largeur: 99, hauteur: 132 },
+    ],
+  },
+  { fichier: 'Nouveau dossier/logo/2026-08-18 14_48_30-Calculatrice.png', set: 'Dharma', pieces: ['Hand', 'Garment'] },
+  { fichier: 'Nouveau dossier/logo/2026-08-18 14_49_05-Calculatrice.png', set: 'Jackal', pieces: ['Hat', 'Neck', 'Ring'] },
+];
+
+// Sur ces tuiles-là, plus petites que celles de l'écran « Ensemble », le blason
+// mord franchement sur l'objet et le découpage laisse des trous. Les neuf pièces
+// qu'elles donnent ont toutes, depuis, une illustration détourée qui prend leur
+// place : ce chemin ne sert plus qu'à un ensemble dont on n'aurait qu'une capture.
+//
+// `garder`, facultatif, restreint la liste des pièces à retenir.
+
+// Le violet du fond des tuiles, relevé sur les trois captures, et l'écart admis.
+const VIOLET = [148, 84, 214];
+const ECART_VIOLET = 60;
 
 // Proportions du carré d'illustration, mesurées sur les captures. Elles ne
 // changent pas d'une capture à l'autre : seuls le cadrage et le zoom changent,
@@ -274,7 +327,11 @@ const SEUIL_ENFERME = 32;
 const PART_ENFERMEE = 0.004;   // sous ce dixième de pour cent du carré, c'est un reflet
 const DEBORDEMENT = 0.4;       // au-delà de cette part de l'objet, le remplissage a fui
 
-const amorcerFondEnferme = (img, fond) => {
+// `famille` restreint les candidats à une teinte donnée. Sur l'écran « Ensemble »
+// c'est indispensable — les ors de l'objet ressemblent trop au fond doré pour
+// qu'on s'en remette au seul écart. Sur le panneau d'équipement, où le fond est
+// violet et les objets ne le sont pas, l'écart suffit et la restriction nuirait.
+const amorcerFondEnferme = (img, fond, famille = null) => {
   const { largeur, hauteur, pixels } = img;
   const teinte = new Int32Array(largeur * hauteur).fill(-1);
   let file = [];
@@ -305,11 +362,7 @@ const amorcerFondEnferme = (img, fond) => {
       Math.abs(pixels[a + 1] - pixels[b + 1]),
       Math.abs(pixels[a + 2] - pixels[b + 2]),
     );
-    // Deux conditions, parce qu'aucune ne suffit seule : la couleur du fond doré,
-    // que les ors de l'objet imitent de près, et la ressemblance avec le fond
-    // voisin, que le halo caché par l'objet met en défaut à lui seul.
-    const jaune = pixels[a] > 232 && pixels[a + 1] > 185 && pixels[a + 2] < 95;
-    if (jaune && ecart <= SEUIL_ENFERME) candidat[i] = 1;
+    if (ecart <= SEUIL_ENFERME && (!famille || famille(pixels[a], pixels[a + 1], pixels[a + 2]))) candidat[i] = 1;
   }
 
   // Les reflets de l'objet qui ressemblent au fond forment des rubans étroits le
@@ -481,7 +534,7 @@ const extraire = (capture) => {
     // le blason d'abord le ferait passer pour du fond brun sombre, et le creux
     // du bijou juste à côté ne ressemblerait plus à rien.
     const fond = marquerFond(carre);
-    amorcerFondEnferme(carre, fond);
+    amorcerFondEnferme(carre, fond, (r, v, b) => r > 232 && v > 185 && b < 95);
 
     // Deux éléments d'interface sont posés par-dessus l'illustration : le blason
     // de l'ensemble en bas à gauche, la pastille de niveau en haut à droite. On
@@ -505,6 +558,119 @@ const extraire = (capture) => {
   });
 };
 
+// Repère les tuiles d'un panneau d'équipement : leur fond violet forme, autour de
+// chaque objet, une plage d'un seul tenant. Une plage par tuile, du haut vers le bas.
+const trouverTuiles = (img) => {
+  const { largeur, hauteur, pixels } = img;
+  const violet = new Uint8Array(largeur * hauteur);
+  for (let i = 0; i < violet.length; i++) {
+    const o = i * 4;
+    const ecart = Math.max(
+      Math.abs(pixels[o] - VIOLET[0]),
+      Math.abs(pixels[o + 1] - VIOLET[1]),
+      Math.abs(pixels[o + 2] - VIOLET[2]),
+    );
+    if (ecart <= ECART_VIOLET) violet[i] = 1;
+  }
+
+  const vues = new Uint8Array(largeur * hauteur);
+  const tuiles = [];
+  for (let depart = 0; depart < violet.length; depart++) {
+    if (!violet[depart] || vues[depart]) continue;
+    const pile = [depart];
+    vues[depart] = 1;
+    let n = 0, x0 = largeur, y0 = hauteur, x1 = -1, y1 = -1;
+    while (pile.length) {
+      const i = pile.pop();
+      const x = i % largeur, y = (i / largeur) | 0;
+      n++;
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= largeur || ny >= hauteur) continue;
+        const j = ny * largeur + nx;
+        if (!violet[j] || vues[j]) continue;
+        vues[j] = 1;
+        pile.push(j);
+      }
+    }
+    // Une tuile occupe une bonne part de la largeur du panneau, et son fond forme
+    // un cadre plein autour de l'objet. Le reste — un reflet du décor, un bout de
+    // ciel entre deux tuiles — échoue à l'une ou l'autre de ces conditions.
+    const l = x1 - x0 + 1, h = y1 - y0 + 1;
+    if (l > largeur * 0.4 && h > largeur * 0.35 && n > l * h * 0.12) {
+      tuiles.push({ x: x0, y: y0, largeur: l, hauteur: h });
+    }
+  }
+
+  // Un objet large coupe parfois le cadre violet en deux plages distinctes : elles
+  // décrivent alors la même tuile, et il faut les réunir.
+  tuiles.sort((a, b) => a.y - b.y);
+  const reunies = [];
+  for (const t of tuiles) {
+    const dernier = reunies[reunies.length - 1];
+    const recouvre = dernier && t.y < dernier.y + dernier.hauteur * 0.5;
+    if (!recouvre) { reunies.push({ ...t }); continue; }
+    const x1 = Math.max(dernier.x + dernier.largeur, t.x + t.largeur);
+    const y1 = Math.max(dernier.y + dernier.hauteur, t.y + t.hauteur);
+    dernier.x = Math.min(dernier.x, t.x);
+    dernier.y = Math.min(dernier.y, t.y);
+    dernier.largeur = x1 - dernier.x;
+    dernier.hauteur = y1 - dernier.y;
+  }
+  return reunies;
+};
+
+// La tuile sur laquelle le joueur a cliqué est surlignée en doré : son fond n'est
+// plus violet et elle échappe au repérage. Les tuiles étant régulièrement espacées,
+// on la retrouve en prolongeant le pas des autres.
+const completerTuiles = (tuiles, attendues, hauteurImage) => {
+  if (tuiles.length >= attendues || tuiles.length < 2) return tuiles;
+  const pas = tuiles[1].y - tuiles[0].y;
+  const complete = [...tuiles];
+  for (let rang = 1; complete.length < attendues; rang++) {
+    const y = tuiles[0].y + pas * (tuiles.length - 1 + rang);
+    if (y + tuiles[0].hauteur > hauteurImage) break;
+    complete.push({ ...tuiles[0], y });
+  }
+  return complete.sort((a, b) => a.y - b.y);
+};
+
+const extraireDuPanneau = (panneau) => {
+  const img = png.lire(path.join(RACINE, panneau.fichier));
+  const tuiles = panneau.tuiles || completerTuiles(trouverTuiles(img), panneau.pieces.length, img.hauteur);
+  if (tuiles.length < panneau.pieces.length) {
+    throw new Error(`${panneau.fichier} : ${tuiles.length} tuile(s) trouvée(s), ${panneau.pieces.length} attendues`);
+  }
+
+  return panneau.pieces.flatMap((emplacement, rang) => {
+    if (panneau.garder && !panneau.garder.includes(emplacement)) return [];
+    const t = tuiles[rang];
+    // On rentre d'un peu partout pour laisser dehors le liseré de la tuile, puis
+    // on s'arrête au-dessus des étoiles, qui occupent le bas comme sur l'autre écran.
+    const marge = Math.max(2, Math.round(t.largeur * 0.05));
+    const x = t.x + marge, y = t.y + marge;
+    const l = t.largeur - marge * 2;
+    const h = Math.round(t.hauteur * 0.86) - marge;
+    const tuile = png.decouper(img, x, y, l, h);
+
+    const fond = marquerFond(tuile);
+    amorcerFondEnferme(tuile, fond);
+    const masquer = (x0, y0, x1, y1) => {
+      for (let yy = Math.max(0, y0); yy < Math.min(h, y1); yy++) {
+        for (let xx = Math.max(0, x0); xx < Math.min(l, x1); xx++) fond[yy * l + xx] = 1;
+      }
+    };
+    masquer(0, Math.round(h * 0.42), Math.round(l * 0.30), h);                 // blason de l'ensemble
+    masquer(Math.round(l * 0.72), 0, l, Math.round(h * 0.20));                 // pastille de niveau
+
+    const garde = tachesPrincipales(fond, l, h);
+    const alpha = adoucir(garde, l, h);
+    return { nom: `${panneau.set}_${emplacement}`, image: mettreALaTaille(cadrerSurLObjet(tuile, alpha)) };
+  });
+};
+
 const mettreALaTaille = (objet) => {
   const echelle = LARGEUR_FINALE / Math.max(objet.largeur, objet.hauteur);
   return echelle < 1
@@ -518,39 +684,68 @@ const mettreALaTaille = (objet) => {
 // la réduction pondère les couleurs par elle — aucun liseré ne s'invite.
 const reprendre = ({ fichier, nom }) => {
   const img = png.lire(path.join(RACINE, fichier));
-  const alpha = new Uint8Array(img.largeur * img.hauteur);
-  for (let i = 0; i < alpha.length; i++) alpha[i] = img.pixels[i * 4 + 3];
+  const { largeur, hauteur } = img;
+
+  // Certains outils de détourage laissent traîner les arêtes du damier qui figure
+  // la transparence : un fin quadrillage de pixels opaques tout autour de l'objet.
+  // On ne garde donc que les taches principales, comme sur une découpe.
+  const dehors = new Uint8Array(largeur * hauteur);
+  for (let i = 0; i < dehors.length; i++) if (img.pixels[i * 4 + 3] <= 24) dehors[i] = 1;
+  const garde = tachesPrincipales(dehors, largeur, hauteur);
+
+  const alpha = new Uint8Array(largeur * hauteur);
+  for (let i = 0; i < alpha.length; i++) alpha[i] = garde[i] ? img.pixels[i * 4 + 3] : 0;
   return { nom, image: mettreALaTaille(cadrerSurLObjet(img, alpha)) };
 };
 
 const controle = process.argv.includes('--controle');
 const resultats = new Map();
-for (const capture of CAPTURES) {
-  for (const { nom, image } of extraire(capture)) resultats.set(nom, { nom, image, source: 'capture' });
-}
-// Après, pour que le dessin fourni l'emporte sur le découpage de la même pièce.
+
+// Les illustrations fournies d'abord : elles valent mieux que tout découpage, et
+// les connaître dès le départ évite de découper treize pièces pour les jeter.
 for (const pretes of DEJA_DETOUREES) {
   const { nom, image } = reprendre(pretes);
   resultats.set(nom, { nom, image, source: 'fournie' });
 }
 
-for (const { nom, image, source } of resultats.values()) {
+// Les deux écrans du jeu ne servent ensuite qu'à combler les trous.
+const manquantes = (set, emplacements) => emplacements.filter((e) => !resultats.has(`${set}_${e}`));
+
+for (const capture of CAPTURES) {
+  const attendues = capture.pieces.map((p) => p.emplacement);
+  if (!manquantes(capture.set, attendues).length) continue;
+  for (const { nom, image } of extraire(capture)) {
+    if (!resultats.has(nom)) resultats.set(nom, { nom, image, source: 'capture' });
+  }
+}
+
+for (const panneau of PANNEAUX) {
+  if (!manquantes(panneau.set, panneau.pieces).length) continue;
+  for (const { nom, image } of extraireDuPanneau(panneau)) {
+    if (!resultats.has(nom)) resultats.set(nom, { nom, image, source: 'panneau' });
+  }
+}
+
+const PROVENANCE = { fournie: '(illustration fournie)', panneau: "(panneau d'équipement)", capture: '(écran « Ensemble »)' };
+for (const { nom, image, source } of [...resultats.values()].sort((a, b) => a.nom.localeCompare(b.nom))) {
   png.ecrire(path.join(DESTINATION, `${nom}.png`), image);
-  console.log(`  ${nom}.png  ${image.largeur}×${image.hauteur}  ${source === 'fournie' ? '(illustration fournie)' : ''}`);
+  console.log(`  ${nom}.png`.padEnd(30) + `${image.largeur}×${image.hauteur}`.padStart(8) + '  ' + PROVENANCE[source]);
 }
 
 if (controle) {
   // Une planche unique, sur un fond sombre proche de celui des tuiles du site :
   // c'est là que se voient les bavures qu'un fond clair cacherait.
   const cellule = LARGEUR_FINALE + 20;
-  const planche = png.vide(cellule * 3, cellule * 3);
+  const colonnes = Math.ceil(Math.sqrt(resultats.size));
+  const rangs = Math.ceil(resultats.size / colonnes);
+  const planche = png.vide(cellule * colonnes, cellule * rangs);
   for (let i = 0; i < planche.largeur * planche.hauteur; i++) {
     planche.pixels[i * 4] = 58; planche.pixels[i * 4 + 1] = 42;
     planche.pixels[i * 4 + 2] = 18; planche.pixels[i * 4 + 3] = 255;
   }
   [...resultats.values()].forEach(({ image }, k) => {
-    const dx = (k % 3) * cellule + ((cellule - image.largeur) >> 1);
-    const dy = ((k / 3) | 0) * cellule + ((cellule - image.hauteur) >> 1);
+    const dx = (k % colonnes) * cellule + ((cellule - image.largeur) >> 1);
+    const dy = ((k / colonnes) | 0) * cellule + ((cellule - image.hauteur) >> 1);
     for (let y = 0; y < image.hauteur; y++) {
       for (let x = 0; x < image.largeur; x++) {
         const s = (y * image.largeur + x) * 4;

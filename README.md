@@ -95,7 +95,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 | Dégâts de base | Le jeu affiche une valeur que le catalogue ne donne pas pour tous les héros. La ligne est masquée quand on ne la connaît pas, plutôt qu'affichée à zéro. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
 | 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
-| Icônes de 17 pièces d'équipement | Le wiki ne les héberge pas, et aucune capture ne les montre encore. Le site affiche à la place l'icône de l'ensemble. Il manque RoyalEgyptian, Warden et Jackal (chapeau, cou, anneau), Berserker, Countess, Dharma et Ronin (main, vêtement). |
+| Icônes de 7 pièces d'équipement | Le wiki ne les héberge pas et aucune capture ne les montre. Le site affiche à la place l'icône de l'ensemble. Il manque Warden (chapeau, cou, anneau), Berserker et Countess (main, vêtement). |
 
 Deux réglages restent à la main du joueur, parce que l'export ne les donne pas de
 façon sûre et qu'ils commandent directement les chiffres : le **niveau de la relique**
@@ -232,7 +232,7 @@ Les dessins, les noms et les données du jeu appartiennent à InnoGames.
 |---|---|
 | `images/heros/` | 136 portraits sur 144 — les cinq variantes légendaires reprennent celui du héros qu'elles doublent, et le wiki n'a encore ni Marie Laveau, ni Ivar the Boneless, ni Cécile Fatiman |
 | `images/sets/` | **45 icônes de set sur 45** |
-| `images/equipement/` | 109 icônes sur les 126 combinaisons set + emplacement |
+| `images/equipement/` | 119 icônes sur les 126 combinaisons set + emplacement |
 | `images/stats/` | 26 icônes de statistiques (attaque, défense, points de vie…) |
 | `images/reliques/` | **32 illustrations de relique** |
 | `images/classes/`, `images/types/`, `images/couleurs/` | icônes de classe, d'unité et de couleur |
