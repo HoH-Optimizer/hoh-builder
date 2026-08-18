@@ -42,10 +42,12 @@ navigateur où l'extension n'est pas installée.
 - Les **attributs verrouillés** sont grisés et non comptés, comme dans le jeu
 - **La feuille de statistiques complète**, rangée en quatre familles comme l'écran
   « Stats » du jeu, avec les valeurs absolues et non plus seulement l'apport de
-  l'équipement. Chaque ligne se déplie sur le détail de ses sources.
+  l'équipement.
 - Colonne **écart** : ce que chaque modification gagne ou perd par rapport à l'équipement réel
 - **Se projeter à un autre niveau** : voir ce que la même configuration donnerait
   au niveau 180 sur un héros qui est au 160
+- Chaque ligne se déplie sur **l'addition complète**, source par source, avec le
+  cumul qui monte : base, niveau, éveil, caserne, relique, équipement
 - Tout est en français : héros, objets, ensembles et statistiques portent le nom
   que le jeu leur donne
 
@@ -74,14 +76,15 @@ restent à 1 % près, l'écart correspondant au panthéon.
 | Manque | Conséquence |
 |---|---|
 | Panthéon | Ses nœuds sont listés dans l'export, sans leurs valeurs. C'est l'essentiel de ce qui reste entre le chiffre du site et celui du jeu. |
-| Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale. Elle commande la valeur des reliques. |
+| Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
 | Dégâts de base | Le jeu affiche une valeur que le catalogue ne donne pas pour tous les héros. La ligne est masquée quand on ne la connaît pas, plutôt qu'affichée à zéro. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
 | 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
 | Icônes de 7 sets | Images cassées côté wiki : le site affiche l'initiale du set. |
 
-Si un chiffre ne colle pas au jeu, le bloc **Corriger les statistiques de base**
-permet de saisir la valeur relevée en jeu : elle l'emporte sur le calcul.
+Deux réglages restent à la main du joueur, parce que l'export ne les donne pas de
+façon sûre et qu'ils commandent directement les chiffres : le **niveau de la relique**
+et l'**ère**. Ils sont sous la relique, et mémorisés dans le navigateur.
 
 ## Pour les curieux : comment ça marche
 

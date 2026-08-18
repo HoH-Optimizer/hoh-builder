@@ -154,6 +154,10 @@ const nomsReels = () => Boolean(libelles().heros);
 
 const nombre = (v) => Number(v).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 
+// Un multiplicateur s'écrit avec ce qu'il faut de décimales, et pas une de plus :
+// « x1 », « x1,156 », « x2,854 ».
+const multiplicateur = (v) => Number(v).toFixed(3).replace(/.?0+$/, '').replace('.', ',');
+
 // Le jeu n'écrit pas toutes les valeurs de la même façon. Deux pièges, vus sur
 // l'infobulle d'un objet en jeu :
 //   - la charge initiale se compte en SECONDES, et s'écrit en négatif : la valeur
@@ -253,10 +257,10 @@ function attributsObjetHtml(o) {
     const nom = libelleStat(a.stat || a.attribut.replace(/Bonus$/, ''));
     if (a.verrouille || typeof a.valeur !== 'number') {
       return `<span class="attr verrouille" title="Se débloque au niveau ${a.debloqueAuNiveau ?? '?'}">`
-        + `${esc(nom)} <b>verrouillé</b></span>`;
+        + `<span class="nomAttr">${esc(nom)}</span><b>verrouillé</b></span>`;
     }
     const valeur = valeurAttribut(a.stat, a.valeur, a.type);
-    return `<span class="attr ${principal ? 'principalAttr' : ''}">${imgStat(a.stat)}${esc(nom)} <b>${valeur}</b></span>`;
+    return `<span class="attr ${principal ? 'principalAttr' : ''}">${imgStat(a.stat)}<span class="nomAttr">${esc(nom)}</span><b>${valeur}</b></span>`;
   };
   return `<span class="attributsObjet">${ligne(o.principal, true)}`
     + `${(o.secondaires || []).map((a) => ligne(a, false)).join('')}</span>`;
@@ -392,18 +396,18 @@ function setsComplets(liste) {
     .map(({ set, def }) => ({ set, bonus: def.bonus }));
 }
 
-const cleBase = (heroId) => `hoh:base:${heroId}`;
+// Deux réglages que l'export ne donne pas de façon sûre, et que le joueur peut
+// donc corriger. Ils restent dans ce navigateur.
+const lireReglage = (cle, defaut) => { try { return JSON.parse(localStorage.getItem(cle)) ?? defaut; } catch { return defaut; } };
+const ecrireReglage = (cle, valeur) => { try { localStorage.setItem(cle, JSON.stringify(valeur)); } catch { /* navigation privée */ } };
 
-function basesDe(heroId) {
-  try { return JSON.parse(localStorage.getItem(cleBase(heroId))) || {}; } catch { return {}; }
-}
+// L'ère commande la valeur des reliques. On la déduit de la capitale, mais le
+// joueur a le dernier mot.
+const ereDuJoueur = () => lireReglage('hoh:ere', null) || donnees?.compte?.age || null;
+const modificateurDEre = () => (window.AGES_JEU || {})[ereDuJoueur()]?.modificateur ?? 1;
 
-function enregistrerBase(heroId, stat, valeur) {
-  const bases = basesDe(heroId);
-  if (valeur === '' || valeur == null || Number.isNaN(Number(valeur))) delete bases[stat];
-  else bases[stat] = Number(valeur);
-  try { localStorage.setItem(cleBase(heroId), JSON.stringify(bases)); } catch { /* navigation privée */ }
-}
+// Le niveau d'une relique, tel qu'on l'a lu ou tel que le joueur l'a corrigé.
+const niveauRelique = (portee) => lireReglage(`hoh:relique:${portee?.porteParHero}`, null) ?? portee?.niveau ?? 0;
 
 // Les paliers d'éveil déjà atteints par un héros. Le jeu les cumule : éveil III
 // = les trois premiers paliers.
@@ -417,10 +421,6 @@ function apportCaserne(h) {
   return (window.CASERNES_JEU || {})[caserne?.batiment] || {};
 }
 
-// L'ère du joueur, déduite de sa capitale. Elle met les reliques à l'échelle.
-const ereDuJoueur = () => donnees?.compte?.age || null;
-const modificateurDEre = () => (window.AGES_JEU || {})[ereDuJoueur()]?.modificateur ?? 1;
-
 // Ce que sa relique lui apporte, au palier où elle est montée.
 //
 // Les valeurs du catalogue sont des valeurs DE RÉFÉRENCE : le jeu les met à
@@ -432,7 +432,7 @@ function apportRelique(h) {
   const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
   if (!portee) return {};
   const fiche = (window.RELIQUES_JEU || {})[portee.relique];
-  const palier = fiche?.paliers?.filter((p) => p.niveau <= portee.niveau).pop();
+  const palier = fiche?.paliers?.filter((p) => p.niveau <= niveauRelique(portee)).pop();
   if (!palier) return {};
   const modificateur = modificateurDEre();
   return Object.fromEntries(
@@ -457,7 +457,6 @@ function contexteHeros(heroId) {
     eveil: paliersEveil(h),
     caserne: apportCaserne(h),
     relique: apportRelique(h),
-    saisies: basesDe(heroId),
   };
 }
 
@@ -474,8 +473,7 @@ function feuille(contexte, apports) {
     ...contexte.eveil.map((p) => p.stat),
   ]);
   for (const stat of stats) {
-    const base = contexte.saisies[stat] ?? contexte.base[stat];
-    sortie[stat] = FORMULES.detail(stat, { ...contexte, base }, apports[stat]);
+    sortie[stat] = FORMULES.detail(stat, { ...contexte, base: contexte.base[stat] }, apports[stat]);
   }
   return sortie;
 }
@@ -653,7 +651,6 @@ function rendreStats() {
   const actuel = feuille(contexte, agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean)));
 
   rendreProjection(contexte);
-  rendreSaisieBase(contexte);
 
   // Une statistique que le héros n'a pas du tout, et que rien n'alimente, n'a pas
   // à s'afficher : le jeu ne montre « Dégâts de base » que sur les héros qui en ont.
@@ -670,7 +667,7 @@ function rendreStats() {
 
   $('#aucuneStat').hidden = true;
   $('#tableStats').hidden = false;
-  rendreReliqueEtSources(contexte, simule);
+  rendreRelique(contexte);
 }
 
 // La valeur d'une statistique, écrite comme le jeu l'écrit.
@@ -717,37 +714,60 @@ function ligneStat(stat, simule, actuel) {
   </tr>${ouverte ? detailHtml(stat, simule, actuel) : ''}`;
 }
 
-// Le détail d'une statistique : d'où vient chaque point, source par source.
-// C'est la réponse concrète à « pourquoi ce chiffre ? ».
+// Le détail d'une statistique. Il répond à une seule question — « pourquoi ce
+// chiffre ? » — et y répond comme on additionne à la main : une source par ligne,
+// avec le sous-total qui monte au fil de la colonne de droite.
 function detailHtml(stat, simule, actuel) {
   if (stat.startsWith('charge_')) {
     return `<tr class="detail"><td colspan="4"><div class="detailStat">
-      <p class="transition discret">Le jeu recalcule cette durée à partir de la charge :
-      (charge maximale − charge initiale) ÷ charge par seconde, moins l'avance donnée par l'équipement.</p>
+      <p class="explication">Le jeu ne stocke pas cette durée, il la recalcule :
+      <b>(charge maximale − charge initiale) ÷ charge par seconde</b>, moins l'avance
+      donnée par l'équipement.</p>
     </div></td></tr>`;
   }
 
   const d = simule[stat] || {};
-  const parts = [
+  const estPourcentage = !FORMULES.ABSOLUES.has(stat);
+  const ecrire = (v) => (estPourcentage ? pourcent(v)
+    : FORMAT_STAT[stat] === 'coups' ? `${nombre(FORMULES.coupsParMinute(v))} coups/min`
+    : nombre(v));
+
+  // Les sources, dans l'ordre où le jeu les empile. On garde le cumul à chaque
+  // étape : c'est ce qui rend l'addition lisible sans avoir à la refaire.
+  const etapes = [
     ['Base du héros au niveau 1', d.base, 'plat'],
-    ['Montée en niveau', d.niveau, 'plat'],
+    [`Montée au niveau ${contexteHeros(selection).niveau}`, d.niveau, 'plat'],
     ['Éveil', d.eveil, 'plat'],
     ['Caserne', d.caserne, 'plat'],
     ['Relique', d.relique, 'plat'],
     ['Équipement et ensembles', d.equipementPlat, 'plat'],
-    ['Équipement et ensembles', d.equipementPourcentage, 'pourcentage'],
+    ['Équipement et ensembles, en pourcentage', d.equipementPourcentage, 'pourcentage'],
   ].filter(([, v]) => typeof v === 'number' && Math.abs(v) > 1e-9);
 
-  const format = (v, nature) => (nature === 'pourcentage' ? signe(v, pourcent)
-    : signe(v, FORMAT_STAT[stat] === 'coups' ? (x) => `${nombre(FORMULES.coupsParMinute(x))} coups/min` : nombre));
+  let cumul = 0;
+  const lignes = etapes.map(([nom, v, nature]) => {
+    // Un pourcentage sur une statistique absolue multiplie tout ce qui précède.
+    if (nature === 'pourcentage' && !estPourcentage) cumul *= (1 + v);
+    else cumul += v;
+    const apport = nature === 'pourcentage' ? signe(v, pourcent) : signe(v, ecrire);
+    return `<tr>
+      <th>${esc(nom)}</th>
+      <td class="apport">${apport}</td>
+      <td class="cumul">${ecrire(cumul)}</td>
+    </tr>`;
+  }).join('');
 
-  const sources = parts.length
-    ? parts.map(([nom, v, nature]) => `<li><span>${esc(nom)}</span><span>${format(v, nature)}</span></li>`).join('')
-    : '<li class="discret">Rien n\'alimente cette statistique.</li>';
+  const cascade = etapes.length
+    ? `<table class="cascade">
+         <thead><tr><th>Source</th><th>Apport</th><th>Cumul</th></tr></thead>
+         <tbody>${lignes}</tbody>
+         <tfoot><tr><th>Total</th><td></td><td class="cumul">${valeurStat(stat, simule).texte}</td></tr></tfoot>
+       </table>`
+    : '<p class="explication">Rien n\'alimente cette statistique sur ce héros.</p>';
 
-  // Ce que chaque pièce d'équipement apporte, dans les deux configurations.
+  // Ce que chaque pièce apporte, côte à côte, pour voir ce que le changement fait.
   const colonne = (config) => {
-    const lignes = Object.values(config || {}).map((id) => objets.get(id)).filter(Boolean).map((o) => {
+    const lignesObjets = Object.values(config || {}).map((id) => objets.get(id)).filter(Boolean).map((o) => {
       let plat = 0, pourcentage = 0;
       for (const at of [o.principal, ...(o.secondaires || [])]) {
         if (!at || at.stat !== stat || !FORMULES.attributCompte(at)) continue;
@@ -755,23 +775,28 @@ function detailHtml(stat, simule, actuel) {
         else plat += at.valeur;
       }
       if (!plat && !pourcentage) return '';
-      return `<li><span>${imgObjet(o)}${esc(nomObjet(o))}</span><span>${celluleApport({ plat, pourcentage })}</span></li>`;
+      const apport = [
+        plat ? valeurAttribut(stat, plat, 'plat') : null,
+        pourcentage ? signe(pourcentage, pourcent) : null,
+      ].filter(Boolean).join(' ');
+      return `<li>${imgObjet(o)}<span class="nomPiece">${esc(nomObjet(o))}</span><span class="apport">${apport}</span></li>`;
     }).filter(Boolean).join('');
-    return lignes || '<li class="discret">Aucun objet n\'apporte cette statistique.</li>';
+    return lignesObjets || '<li class="rien">Aucune pièce n\'y touche.</li>';
   };
 
   const change = Math.abs((simule[stat]?.total || 0) - (actuel[stat]?.total || 0)) > 1e-9;
-  const resume = change
-    ? `<p class="transition">${esc(libelleStat(stat))} : <span class="depuis">${valeurStat(stat, actuel).texte}</span>
-       <span class="fleche">→</span> <span class="vers">${valeurStat(stat, simule).texte}</span></p>`
-    : `<p class="transition discret">${esc(libelleStat(stat))} : inchangé par rapport à ton équipement actuel.</p>`;
 
   return `<tr class="detail"><td colspan="4">
     <div class="detailStat">
-      ${resume}
-      <div><h4>Toutes les sources</h4><ul>${sources}</ul></div>
-      <div><h4>Équipement actuel</h4><ul>${colonne(equipeInitial[selection])}</ul></div>
-      <div><h4>Équipement simulé</h4><ul>${colonne(equipe[selection])}</ul></div>
+      ${change ? `<p class="transition">Ton changement fait passer ${esc(libelleStat(stat).toLowerCase())} de
+        <span class="depuis">${valeurStat(stat, actuel).texte}</span>
+        <span class="fleche">→</span>
+        <span class="vers">${valeurStat(stat, simule).texte}</span></p>` : ''}
+      ${cascade}
+      <div class="pieces">
+        <div><h4>Équipement actuel</h4><ul>${colonne(equipeInitial[selection])}</ul></div>
+        <div><h4>Équipement simulé</h4><ul>${colonne(equipe[selection])}</ul></div>
+      </div>
     </div>
   </td></tr>`;
 }
@@ -795,50 +820,54 @@ function rendreProjection(contexte) {
       : ''}`;
 }
 
-// Les statistiques de base, saisissables à la main quand le calcul ne colle pas.
-function rendreSaisieBase(contexte) {
-  for (const champ of document.querySelectorAll('[data-base]')) {
-    const stat = champ.dataset.base;
-    champ.value = contexte.saisies[stat] ?? '';
-    champ.placeholder = typeof contexte.base[stat] === 'number' ? Math.round(contexte.base[stat]) : '—';
-  }
-}
 
-// Ce que le héros doit à autre chose qu'à son équipement, et ce qu'on ne sait
-// toujours pas chiffrer. La relique a sa place réservée ici.
-function rendreReliqueEtSources(contexte, simule) {
+// La relique portée, avec ses deux réglages : son niveau et l'ère du joueur.
+// Les deux commandent directement les chiffres, et aucun des deux n'est fiable
+// à 100 % dans l'export — autant les rendre modifiables.
+function rendreRelique(contexte) {
   const h = contexte.hero;
   const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
-  const ficheRelique = portee && (window.RELIQUES_JEU || {})[portee.relique];
-  const apports = contexte.relique;
-  const listeApports = Object.entries(apports)
-    .filter(([stat]) => !stat.startsWith('stat_'))
-    .map(([stat, v]) => `${signe(v, nombre)} ${libelleStat(stat).toLowerCase()}`).join(' · ');
+
+  if (!portee) {
+    $('#relique').innerHTML = '<p class="discret">Aucune relique sur ce héros.</p>';
+    return;
+  }
+
+  const ficheRelique = (window.RELIQUES_JEU || {})[portee.relique];
+  const paliers = ficheRelique?.paliers || [];
+  const niveau = niveauRelique(portee);
+  const apports = Object.entries(contexte.relique).filter(([stat]) => !stat.startsWith('stat_'));
 
   const ere = ereDuJoueur();
-  $('#relique').innerHTML = (portee ? `
+  const eres = Object.entries(window.AGES_JEU || {})
+    .filter(([nom]) => NOM_ERE[nom])
+    .sort((a, b) => a[1].rang - b[1].rang);
+
+  $('#relique').innerHTML = `
     <div class="carteRelique">
       ${imgRelique(portee.relique)}
       <div class="texteRelique">
         <span class="nomRelique">${esc(ficheRelique?.nom || joliNom(portee.relique))}</span>
-        <span class="discret">niveau ${portee.niveau}</span>
-        <span class="apportRelique">${listeApports || '<span class="discret">effet non chiffré</span>'}</span>
+        <span class="apportRelique">${apports.length
+          ? apports.map(([stat, v]) => `${signe(v, nombre)} ${libelleStat(stat).toLowerCase()}`).join(' · ')
+          : '<span class="discret">effet non chiffré</span>'}</span>
       </div>
-    </div>` : '<p class="discret">Aucune relique sur ce héros.</p>')
-    // L'ère commande la valeur des reliques : on dit laquelle on a retenue.
-    + (ere ? `<p class="discret noteEre">Valeurs à l'échelle de ton ère : ${esc(nomEre(ere))} (x${modificateurDEre().toFixed(3).replace(/0+$/, "").replace(".", ",")}).</p>` : '');
-
-  const noeuds = h?.pantheon?.length || 0;
-  const caserne = donnees?.compte?.casernes?.[contexte.details?.type];
-  const apportsCaserne = Object.entries(contexte.caserne)
-    .map(([stat, v]) => `${signe(v, nombre)} ${libelleStat(stat).toLowerCase()}`).join(' · ');
-
-  $('#manques').innerHTML = [
-    caserne
-      ? `<span class="chiffree">Caserne ${esc(nomType(contexte.details?.type) || '')} palier ${caserne.palier ?? '?'} : ${apportsCaserne}</span>`
-      : '<span>Caserne : absente de l\'export</span>',
-    noeuds ? `<span>Panthéon : ${noeuds} nœuds, valeurs inconnues du catalogue</span>` : '',
-  ].filter(Boolean).join('');
+    </div>
+    <div class="reglagesRelique">
+      <label>Niveau
+        <select id="niveauRelique">
+          ${paliers.map((p) => `<option value="${p.niveau}" ${p.niveau === niveau ? 'selected' : ''}>${p.niveau}</option>`).join('')}
+        </select>
+      </label>
+      <label>Ère
+        <select id="ereJoueur">
+          ${eres.map(([nom, a]) => `<option value="${nom}" ${nom === ere ? 'selected' : ''}>${esc(NOM_ERE[nom])} (x${multiplicateur(a.modificateur)})</option>`).join('')}
+        </select>
+      </label>
+    </div>
+    <p class="discret noteRelique">Le jeu met les reliques à l'échelle de ton ère : c'est elle qui
+    fait passer ce palier de ${paliers.find((p) => p.niveau === niveau)?.apports.Attack ?? '?'} à
+    ${contexte.relique.Attack ?? '?'} d'attaque.</p>`;
 }
 
 /* -------------------------------------------------- fenêtre de choix d'objet */
@@ -928,6 +957,16 @@ $('#projection').addEventListener('change', (e) => {
   rendreHeros();
 });
 
+// Les deux réglages de la relique : son niveau et l'ère du joueur.
+$('#relique').addEventListener('change', (e) => {
+  if (e.target.id === 'niveauRelique') {
+    ecrireReglage(`hoh:relique:${selection}`, Number(e.target.value));
+  } else if (e.target.id === 'ereJoueur') {
+    ecrireReglage('hoh:ere', e.target.value);
+  } else return;
+  rendreHeros();
+});
+
 $('#projection').addEventListener('click', (e) => {
   if (e.target.id !== 'revenirNiveau') return;
   niveauProjete = null;
@@ -989,9 +1028,6 @@ $('#reinitialiser').addEventListener('click', () => {
   rendreHeros();
 });
 
-for (const champ of document.querySelectorAll('[data-base]')) {
-  champ.addEventListener('input', () => { enregistrerBase(selection, champ.dataset.base, champ.value); rendreStats(); });
-}
 
 // Le site accepte aussi bien l'export brut de l'extension que le fichier déjà extrait.
 $('#fichier').addEventListener('change', async (e) => {

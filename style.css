@@ -135,7 +135,7 @@ main {
 
 .comparateur {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(150px, 230px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 250px) minmax(0, 1fr);
   gap: 18px;
   align-items: start;
 }
@@ -162,8 +162,9 @@ main {
 .personnage { display: grid; justify-items: center; gap: 8px; padding-top: 8px; }
 .pied {
   width: 100%;
-  max-width: 220px;
+  height: 300px;
   object-fit: contain;
+  object-position: center bottom;
   filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .5));
 }
 .pied.sansIcone { display: none; }
@@ -377,7 +378,12 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 /* La colonne de gauche montre l'équipement réel du compte : on ne la modifie pas. */
 .emplacement.fige { cursor: default; opacity: .82; }
 .emplacement.fige:hover { border-color: var(--bordure); border-left-color: inherit; }
-.emplacement .type { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--discret); }
+.emplacement { min-height: 78px; }
+/* Aucune colonne ne doit imposer sa largeur : c'est ce qui faisait déborder la page. */
+.emplacement .type { min-width: 0; overflow-wrap: anywhere; }
+.attr { min-width: 0; }
+.attr .nomAttr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.emplacement .type { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--discret); line-height: 1.25; }
 .emplacement .titre { font-size: 13px; }
 .emplacement .titre { font-weight: 600; }
 .emplacement .detail { font-size: 12px; color: var(--discret); }
@@ -417,10 +423,6 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 
 /* ---------- Statistiques ---------- */
 
-#blocBase { margin-bottom: 14px; padding: 10px 12px; background: var(--panneau-clair); border-radius: 8px; }
-#blocBase summary { cursor: pointer; font-size: 13px; color: var(--discret); }
-.saisieBase { display: grid; gap: 8px; margin-top: 10px; }
-.saisieBase label { display: grid; gap: 4px; font-size: 12px; color: var(--discret); }
 
 /* Le tableau n'a pas besoin de toute la largeur : la saisie des statistiques de
    base et les totaux occupent la place restante plutôt que de la laisser vide. */
@@ -433,7 +435,6 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 @media (max-width: 900px) { .grilleStats { grid-template-columns: 1fr; } }
 
 .coteStats { display: grid; gap: 12px; align-content: start; }
-#blocBase { margin: 0; }
 
 /* ---------- Niveau de lecture ---------- */
 
@@ -454,7 +455,7 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 
 /* ---------- Relique portée ---------- */
 
-.blocRelique, .blocManques {
+.blocRelique {
   padding: 12px 14px;
   background: var(--panneau-clair);
   border: 1px solid var(--bordure);
@@ -466,8 +467,22 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .texteRelique { display: grid; gap: 2px; min-width: 0; }
 .nomRelique { font-weight: 700; }
 .apportRelique { color: var(--accent); font-size: 12.5px; }
-.blocManques { display: grid; gap: 6px; font-size: 12px; color: var(--discret); line-height: 1.45; }
-.blocManques .chiffree { color: var(--accent); }
+/* Le nom des ères est long : sans ces bornes, le menu imposait sa largeur au
+   panneau entier et faisait déborder la page. */
+.reglagesRelique { display: grid; grid-template-columns: minmax(0, 68px) minmax(0, 1fr); gap: 10px; margin-top: 12px; }
+.reglagesRelique label { display: grid; gap: 4px; min-width: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--discret); }
+.reglagesRelique select {
+  width: 100%;
+  min-width: 0;
+  padding: 5px 6px;
+  background: var(--panneau);
+  color: var(--texte);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12.5px;
+}
+.noteRelique { margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; }
 
 /* ---------- Familles de statistiques ---------- */
 
@@ -481,36 +496,84 @@ tr.famille th {
   border-bottom: 1px solid var(--bordure);
 }
 
-/* ---------- Détail d'une statistique, objet par objet ---------- */
+/* ---------- Détail d'une statistique ---------- */
 
 tr[data-stat] { cursor: pointer; }
 tr[data-stat]:hover td { background: rgba(217, 164, 65, .08); }
 tr.ouverte td { background: rgba(217, 164, 65, .1); }
 .chevron { display: inline-block; width: 12px; color: var(--discret); font-size: 10px; }
 tr.detail td { padding: 0; border-bottom: 1px solid var(--bordure); }
+
 .detailStat {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  padding: 10px 14px 14px;
+  gap: 14px;
+  padding: 14px 16px 18px;
   background: var(--fond);
 }
-.detailStat .transition { grid-column: 1 / -1; margin: 0 0 4px; font-size: 13px; }
+.detailStat .explication { margin: 0; font-size: 13px; line-height: 1.55; color: var(--discret); }
+.detailStat .transition { margin: 0; font-size: 13.5px; }
 .transition .depuis { color: var(--discret); }
-.transition .fleche { margin: 0 4px; color: var(--accent); }
-.transition .vers { font-weight: 700; }
-.detailStat h4 { margin: 0 0 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--discret); }
-.detailStat ul { list-style: none; margin: 0; padding: 0; }
-.detailStat li {
-  display: flex;
+.transition .fleche { margin: 0 6px; color: var(--accent); }
+.transition .vers { font-weight: 700; color: var(--accent); }
+
+/* L'addition, une source par ligne, avec le cumul qui monte à droite.
+   C'est le cœur du panneau : il doit se lire sans effort. */
+.cascade {
+  width: 100%;
+  max-width: none;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.cascade thead th {
+  padding: 0 0 6px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--discret);
+  text-align: right;
+  font-weight: 600;
+  border-bottom: 1px solid var(--bordure);
+}
+.cascade thead th:first-child { text-align: left; }
+.cascade tbody th {
+  padding: 7px 12px 7px 0;
+  font-weight: 400;
+  text-align: left;
+  color: var(--texte);
+}
+.cascade td { padding: 7px 0 7px 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.cascade .apport { color: var(--accent); white-space: nowrap; }
+.cascade .cumul { color: var(--discret); white-space: nowrap; }
+.cascade tbody tr + tr th, .cascade tbody tr + tr td { border-top: 1px solid rgba(58, 50, 44, .5); }
+.cascade tfoot th, .cascade tfoot td {
+  padding-top: 9px;
+  border-top: 2px solid var(--bordure);
+  font-weight: 700;
+}
+.cascade tfoot .cumul { color: var(--texte); font-size: 15px; }
+
+/* Les pièces d'équipement, côte à côte pour comparer d'un coup d'œil. */
+.pieces { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 700px) { .pieces { grid-template-columns: 1fr; } }
+.pieces h4 {
+  margin: 0 0 8px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--discret);
+}
+.pieces ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pieces li {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
-  padding: 3px 0;
   font-size: 12.5px;
 }
-.detailStat li > span:first-child { display: flex; align-items: center; gap: 7px; text-align: left; }
-.detailStat .icone { width: 24px; height: 24px; }
+.pieces li.rien { display: block; color: var(--discret); font-style: italic; }
+.pieces .icone { width: 30px; height: 30px; }
+.pieces .nomPiece { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pieces .apport { color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* Le panneau occupe toute la largeur, mais quatre colonnes courtes n'en ont pas
    besoin : on borne la table pour que les chiffres restent près de leur libellé. */
@@ -599,10 +662,10 @@ td.principal { font-weight: 600; }
   position: relative;
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 60px;
+  height: 60px;
   flex: none;
-  border-radius: 7px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, .45);
 }
@@ -611,7 +674,7 @@ td.principal { font-weight: 600; }
 .tuile.r3 { background: linear-gradient(160deg, #3f77ab, #1e344b); }
 .tuile.r4 { background: linear-gradient(160deg, #7c4aa6, #3a1f52); }
 .tuile.r5 { background: linear-gradient(160deg, #d9a441, #7a5312); }
-.tuile .icone { width: 46px; height: 46px; }
+.tuile .icone { width: 58px; height: 58px; }
 
 .niveauTuile {
   position: absolute;
@@ -637,15 +700,15 @@ td.principal { font-weight: 600; }
 }
 
 .attributsObjet { display: grid; gap: 1px; min-width: 0; }
-.attr { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--discret); }
-.attr b { color: var(--texte); font-variant-numeric: tabular-nums; }
+.attr { display: flex; align-items: baseline; gap: 5px; font-size: 12px; color: var(--discret); }
+.attr b { color: var(--texte); font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: auto; }
 .attr.principalAttr { font-size: 12.5px; }
 .attr.principalAttr b { color: var(--accent); }
 .attr .iconeStat { width: 14px; height: 14px; margin: 0; vertical-align: 0; }
 .attr.verrouille { opacity: .45; }
 
 /* L'emplacement s'articule autour de la tuile : libellé, objet, ses statistiques. */
-.emplacement { grid-template-columns: 58px 54px minmax(0, 1fr) auto; align-items: center; }
+.emplacement { grid-template-columns: minmax(0, 52px) 60px minmax(0, 1fr) auto; align-items: center; }
 .corpsObjet { display: grid; gap: 3px; min-width: 0; }
 .tuile.vide { background: var(--panneau); border: 1px dashed var(--bordure); }
 .tuile.libre {
