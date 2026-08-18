@@ -122,7 +122,10 @@
   </section>
 
   <section id="colonneStats" class="panneau">
-    <h2>Statistiques</h2>
+    <div class="enteteStats">
+      <h2>Statistiques</h2>
+      <div id="projection" class="projection"></div>
+    </div>
 
     <div class="grilleStats">
       <table id="tableStats">
@@ -138,27 +141,23 @@
       </table>
 
       <aside class="coteStats">
-        <div class="blocSources">
-          <h3>D'où viennent les statistiques</h3>
-          <div id="sources"></div>
-          <p class="discret noteSources">
-            Le jeu additionne toutes ces sources. Seul l'équipement est chiffré dans
-            l'export : les autres y figurent sans leurs valeurs, qui appartiennent au
-            catalogue du jeu.
-          </p>
+        <div class="blocRelique">
+          <h3>Relique</h3>
+          <div id="relique"></div>
         </div>
 
-        <div id="totaux" class="totaux" hidden></div>
+        <div class="blocManques">
+          <div id="manques"></div>
+        </div>
 
         <details id="blocBase">
-          <summary>Statistiques de base du héros</summary>
+          <summary>Corriger les statistiques de base</summary>
           <p class="discret">
-            Ces valeurs sont calculées à partir du catalogue du jeu : statistiques du
-            héros au niveau 1, montées à son niveau réel, éveil compris. Elles ne
-            comptent pas la caserne, le panthéon ni les reliques.
-            Si un chiffre ne colle pas au jeu, relève-le sur un héros
+            Les chiffres ci-contre viennent du catalogue du jeu : statistiques du héros
+            au niveau 1, montées à son niveau, puis éveil, caserne, relique et
+            équipement. Si l'un d'eux ne colle pas au jeu, relève-le sur ce héros
             <strong>sans aucun équipement</strong> et saisis-le ici : ta valeur
-            l'emportera, et sera mémorisée par héros dans ce navigateur.
+            l'emporte, et reste mémorisée dans ce navigateur.
           </p>
           <div class="saisieBase">
             <label>Attaque <input type="number" data-base="Attack" min="0" step="1"></label>
@@ -197,6 +196,8 @@
 <script src="heros-jeu.js"></script>
 <script src="sets-jeu.js"></script>
 <script src="eveil-jeu.js"></script>
+<script src="casernes-jeu.js"></script>
+<script src="reliques-jeu.js"></script>
 <script src="noms-fr.js"></script>
 <script src="formules.js"></script>
 <script src="app.js"></script>

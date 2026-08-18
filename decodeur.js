@@ -131,7 +131,13 @@
       attribut,
       stat: sansPrefixe(detail?.f3, 'unit_stat.'),
       valeur: detail?.f4,
-      type: /Bonus$/.test(attribut || '') || attribut === 'CritChance' || attribut === 'CritDamage' ? 'pourcentage' : 'plat',
+      // Le nom finissant par « Bonus » annonce en principe un pourcentage.
+      // EXCEPTION : InitialFocusInSecondsBonus se compte en SECONDES, comme son nom
+      // le dit. Vérifié sur l'infobulle du jeu, qui affiche « -0,36 s » là où la
+      // donnée vaut 0,36. Le traiter comme un pourcentage annulait son effet.
+      type: attribut === 'InitialFocusInSecondsBonus' ? 'plat'
+        : /Bonus$/.test(attribut || '') || attribut === 'CritChance' || attribut === 'CritDamage' ? 'pourcentage'
+        : 'plat',
       debloqueAuNiveau: a.f3,
       verrouille: detail ? undefined : true,
     };
@@ -185,6 +191,18 @@
     const heros = parType('HeroPush').flatMap((p) => tableau(p.f1));
     const equipements = parType('EquipmentPush').flatMap((p) => tableau(p.f1));
 
+    // LES CASERNES. Elles ajoutent un forfait aux statistiques de tous les héros,
+    // et il y en a une par arme : un héros d'infanterie profite de la caserne
+    // d'infanterie, pas des autres. Chaque ville liste ses bâtiments dans f4 ;
+    // le nom du bâtiment (f2) porte l'arme et le palier, f18 l'ordre du palier.
+    const casernes = {};
+    for (const ville of parType('CityDTO')) {
+      for (const batiment of tableau(ville.f4)) {
+        const m = /^building\.(Building_\w+?_Barracks_(\w+?)_\d+)$/.exec(batiment.f2 || '');
+        if (m) casernes[m[2]] = { batiment: m[1], palier: batiment.f18 ?? null };
+      }
+    }
+
     // Le jeu compose ses statistiques à partir de plusieurs sources. L'export en
     // contient deux de plus que l'équipement : les nœuds de panthéon débloqués et
     // les reliques portées. Leurs valeurs, elles, appartiennent au catalogue du jeu
@@ -232,6 +250,7 @@
       },
       compte: {
         joueur: { id: joueur?.f1, nom: joueur?.f2 },
+        casernes,
         // Correspondances vérifiées en comparant l'export à l'écran du jeu :
         //   f2  = niveau actuel
         //   f3  = nombre d'ascensions — le niveau maximum vaut (ascensions + 1) x 10

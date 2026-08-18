@@ -5,6 +5,24 @@ const ORDRE_SLOTS = ['Hand', 'Garment', 'Hat', 'Neck', 'Ring'];
 
 const NOM_SLOT = { Hand: 'Main', Garment: 'Vêtement', Hat: 'Chapeau', Neck: 'Cou', Ring: 'Anneau' };
 
+// Ce que le jeu dessine dans un emplacement vide : la silhouette de la pièce
+// attendue. Redessinées en SVG plutôt que découpées dans une capture, pour rester
+// nettes à toutes les tailles et suivre la couleur du thème.
+const SILHOUETTE = {
+  Hand: `<svg class="silhouette" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M13.2 3.4 19 9.2l-1.6 1.6-1-1-5.8 5.8 1 1-1.6 1.6-1.5-1.5-3.3 3.3-1.6-1.6 3.3-3.3-1.5-1.5 1.6-1.6 1 1 5.8-5.8-1-1 1.4-1.8Z"/></svg>`,
+  Garment: `<svg class="silhouette" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M9 3 5 5.2v5.3c0 4.2 2.9 7.7 7 8.9 4.1-1.2 7-4.7 7-8.9V5.2L15 3l-3 1.8L9 3Z"/></svg>`,
+  Hat: `<svg class="silhouette" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M8 4h8v10H8z"/><path d="M3 15h18v2.2H3z"/></svg>`,
+  Neck: `<svg class="silhouette" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 3a7 7 0 0 0-7 7h2.2A4.8 4.8 0 0 1 12 5.2 4.8 4.8 0 0 1 16.8 10H19a7 7 0 0 0-7-7Z"/>
+    <path d="M12 11.5 8.6 17.3h6.8L12 11.5Z"/></svg>`,
+  Ring: `<svg class="silhouette" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 8.5a5.8 5.8 0 1 0 0 11.6 5.8 5.8 0 0 0 0-11.6Zm0 2.3a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z"/>
+    <path d="m9.6 3 2.4 4 2.4-4h-4.8Z"/></svg>`,
+};
+
 // Libellés repris mot pour mot de l'écran « Stats de profil » du jeu.
 // Ceux qui n'y figuraient pas sont traduits dans le même esprit.
 const NOM_STAT = {
@@ -14,9 +32,10 @@ const NOM_STAT = {
   HitPoints: 'Points de vie',
   BaseDamage: 'Dégâts de base',
   InitialFocusInSecondsBonus: 'Charge initiale',
-  // Le jeu donne le même nom à deux choses : le pourcentage de jauge apporté par
-  // les objets, et les secondes gagnées par certains ensembles. On les distingue.
-  InitialFocusSeconds: "Charge initiale (secondes d'avance)",
+  AttackRange: "Portée d'attaque",
+  // Le jeu ne stocke pas ces deux durées : il les recalcule à partir de la charge.
+  charge_initiale: 'Charge initiale',
+  charge_normale: 'Charge normale',
   Focus: 'Charge',
   FocusRegen: 'Régén. de charge',
   SingleTargetDamageAmp: 'Dégâts uniques',
@@ -42,18 +61,42 @@ const NOM_STAT = {
   DefenseDebuffGivenAmp: 'Réduction de défense infligée',
 };
 
-// Ordre d'affichage du jeu, pour retrouver ses repères d'un écran à l'autre.
-const ORDRE_STATS = [
-  'Attack', 'Defense', 'MaxHitPoints', 'BaseDamage',
-  'InitialFocusInSecondsBonus', 'Focus', 'FocusRegen',
-  'SingleTargetDamageAmp', 'AoeDamageAmp', 'DotDamageAmp',
-  'HealGivenAmp', 'ShieldGivenAmp', 'BasicAttackDamageAmp',
-  'AttackSpeed', 'CritChance', 'CritDamage',
-  'MoveSpeed', 'Evasion', 'HealTakenAmp', 'ShieldTakenAmp',
+// L'écran « Stats » du jeu range les statistiques en quatre familles, dans cet
+// ordre. On le reprend tel quel pour qu'on retrouve ses repères d'un écran à
+// l'autre. « charge_initiale » et « charge_normale » ne sont pas des statistiques
+// stockées : le jeu les recalcule à partir de la charge (voir formules.js).
+const FAMILLES_STATS = [
+  { titre: 'Statistiques principales', stats: ['Attack', 'Defense', 'MaxHitPoints', 'BaseDamage'] },
+  {
+    titre: 'Statistiques de capacité',
+    stats: ['charge_initiale', 'charge_normale', 'SingleTargetDamageAmp', 'AoeDamageAmp',
+      'DotDamageAmp', 'HealGivenAmp', 'ShieldGivenAmp'],
+  },
+  {
+    titre: 'Statistiques offensives',
+    stats: ['BasicAttackDamageAmp', 'AttackRange', 'AttackSpeed', 'CritChance', 'CritDamage'],
+  },
+  {
+    titre: 'Statistiques défensives',
+    stats: ['MoveSpeed', 'Evasion', 'HealTakenAmp', 'ShieldTakenAmp'],
+  },
 ];
+
+// Les statistiques que l'écran montre toujours, même à zéro — comme le jeu.
+const STATS_AFFICHEES = FAMILLES_STATS.flatMap((f) => f.stats).filter((s) => !s.startsWith('charge_'));
 
 // Les seules statistiques pour lesquelles une valeur de base a du sens à saisir.
 const STATS_DE_BASE = ['Attack', 'Defense', 'MaxHitPoints'];
+
+// Comment écrire chaque statistique. Le jeu ne les montre pas toutes de la même
+// façon : la vitesse d'attaque se compte en coups par minute, la charge en
+// secondes, le reste en nombre ou en pourcentage.
+const FORMAT_STAT = {
+  Attack: 'entier', Defense: 'entier', MaxHitPoints: 'entier', BaseDamage: 'entier',
+  Focus: 'entier', MaxFocus: 'entier', FocusRegen: 'decimal',
+  AttackSpeed: 'coups', AttackRange: 'portee', MoveSpeed: 'vitesse',
+  charge_initiale: 'secondes', charge_normale: 'secondes',
+};
 
 const NOM_TYPE = () => (window.NOMS_FR || {}).types || {};
 
@@ -100,6 +143,18 @@ const nomType = (t) => NOM_TYPE()[t] || t;
 const nomsReels = () => Boolean(libelles().heros);
 
 const nombre = (v) => Number(v).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+
+// Le jeu n'écrit pas toutes les valeurs de la même façon. Deux pièges, vus sur
+// l'infobulle d'un objet en jeu :
+//   - la charge initiale se compte en SECONDES, et s'écrit en négatif : la valeur
+//     stockée est un temps gagné, donc « -0,36 s » pour un 0,36 dans les données ;
+//   - la vitesse d'attaque s'affiche en coups par minute, soit soixante fois la
+//     valeur stockée (« 3 coups/min » pour 0,05).
+function valeurAttribut(stat, valeur, type) {
+  if (stat === 'InitialFocusInSecondsBonus') return `${signe(-valeur, (v) => nombre(v))} s`;
+  if (stat === 'AttackSpeed') return `${signe(valeur, (v) => nombre(FORMULES.coupsParMinute(v)))} coups/min`;
+  return type === 'pourcentage' ? signe(valeur, pourcent) : signe(valeur, nombre);
+}
 const pourcent = (v) => `${(v * 100).toFixed(2).replace(/\.?0+$/, '').replace('.', ',')} %`;
 const signe = (v, f) => (v > 0 ? '+' : v < 0 ? '−' : '') + f(Math.abs(v));
 
@@ -158,6 +213,11 @@ const imgSet = (set) =>
   `<img class="pastilleSet" src="images/sets/${encodeURIComponent(set)}.webp"`
   + ` data-repli="images/sets/${encodeURIComponent(set)}.png" alt="" loading="lazy" onerror="repliIcone(this)">`;
 
+const imgRelique = (id) =>
+  `<img class="iconeRelique" src="images/reliques/${encodeURIComponent(id)}.webp"`
+  + ` data-repli="images/reliques/${encodeURIComponent(id)}.png"`
+  + ` data-initiale="${esc(initiales(id))}" alt="" loading="lazy" onerror="repliIcone(this)">`;
+
 // Icônes officielles des statistiques. Certaines n'existent qu'en version
 // « pourcentage » : on essaie la variante avant d'abandonner.
 const imgStat = (stat) =>
@@ -185,7 +245,7 @@ function attributsObjetHtml(o) {
       return `<span class="attr verrouille" title="Se débloque au niveau ${a.debloqueAuNiveau ?? '?'}">`
         + `${esc(nom)} <b>verrouillé</b></span>`;
     }
-    const valeur = a.type === 'pourcentage' ? signe(a.valeur, pourcent) : signe(a.valeur, nombre);
+    const valeur = valeurAttribut(a.stat, a.valeur, a.type);
     return `<span class="attr ${principal ? 'principalAttr' : ''}">${imgStat(a.stat)}${esc(nom)} <b>${valeur}</b></span>`;
   };
   return `<span class="attributsObjet">${ligne(o.principal, true)}`
@@ -198,7 +258,7 @@ function texteAttribut(a) {
   if (a.verrouille || typeof a.valeur !== 'number') {
     return `<span class="verrouille">${esc(nom)} — verrouillé jusqu'au niveau ${a.debloqueAuNiveau ?? '?'}</span>`;
   }
-  return `${esc(nom)} ${a.type === 'pourcentage' ? signe(a.valeur, pourcent) : signe(a.valeur, nombre)}`;
+  return `${esc(nom)} ${valeurAttribut(a.stat, a.valeur, a.type)}`;
 }
 
 /* ------------------------------------------------------------------- l'état */
@@ -339,24 +399,62 @@ function enregistrerBase(heroId, stat, valeur) {
 // = les trois premiers paliers.
 const paliersEveil = (h) => ((window.EVEIL_JEU || {})[h?.id] || []).slice(0, h?.eveil || 0);
 
-// Les statistiques de base du héros À SON NIVEAU. Le catalogue du jeu ne donne
-// que le niveau 1 ; formules.js s'occupe de la montée et de l'éveil.
-function basesCalculees(heroId) {
+// Ce que la caserne de son arme apporte au héros. Il y en a une par arme : un
+// héros d'infanterie profite de la caserne d'infanterie, pas des autres.
+function apportCaserne(h) {
+  const type = (ficheDuHeros(h) || {}).type;
+  const caserne = donnees?.compte?.casernes?.[type];
+  return (window.CASERNES_JEU || {})[caserne?.batiment] || {};
+}
+
+// Ce que sa relique lui apporte, au palier où elle est montée.
+function apportRelique(h) {
+  const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
+  if (!portee) return {};
+  const fiche = (window.RELIQUES_JEU || {})[portee.relique];
+  const palier = fiche?.paliers?.filter((p) => p.niveau <= portee.niveau).pop();
+  return palier?.apports || {};
+}
+
+// Le niveau auquel on regarde le héros. C'est son vrai niveau par défaut, mais
+// on peut se projeter plus haut pour voir ce que vaudrait la même configuration.
+let niveauProjete = null;
+const niveauAffiche = (h) => niveauProjete ?? h?.niveau ?? 1;
+
+// Tout ce dont formules.js a besoin pour situer un héros, hors équipement.
+function contexteHeros(heroId) {
   const h = herosParId.get(heroId);
   const details = ficheDuHeros(h) || fiche(heroId);
-  if (!details?.base) return {};
-  const eveil = paliersEveil(h);
+  return {
+    hero: h,
+    details,
+    base: details?.base || {},
+    niveau: niveauAffiche(h),
+    eveil: paliersEveil(h),
+    caserne: apportCaserne(h),
+    relique: apportRelique(h),
+    saisies: basesDe(heroId),
+  };
+}
+
+// La feuille de statistiques complète, pour une configuration d'équipement donnée.
+// Une valeur saisie à la main par le joueur remplace la base calculée.
+function feuille(contexte, apports) {
   const sortie = {};
-  for (const stat of STATS_DE_BASE) {
-    const valeur = FORMULES.statAuNiveau(details.base[stat], stat, h?.niveau ?? 1, eveil);
-    if (typeof valeur === 'number') sortie[stat] = valeur;
+  const stats = new Set([
+    ...STATS_AFFICHEES,
+    ...Object.keys(contexte.base),
+    ...Object.keys(apports),
+    ...Object.keys(contexte.caserne),
+    ...Object.keys(contexte.relique),
+    ...contexte.eveil.map((p) => p.stat),
+  ]);
+  for (const stat of stats) {
+    const base = contexte.saisies[stat] ?? contexte.base[stat];
+    sortie[stat] = FORMULES.detail(stat, { ...contexte, base }, apports[stat]);
   }
   return sortie;
 }
-
-// Ce qu'on utilise vraiment pour les totaux : le calcul, sauf là où le joueur a
-// saisi une valeur relevée en jeu — elle fait alors foi.
-const basesEffectives = (heroId) => ({ ...basesCalculees(heroId), ...basesDe(heroId) });
 
 /* ------------------------------------------------------------------- rendus */
 
@@ -459,21 +557,34 @@ function rendreHeros() {
 // Les deux colonnes du comparateur partagent le même rendu : à gauche la
 // configuration réelle du compte, figée ; à droite celle qu'on modifie.
 function emplacementsHtml(slots, modifiable) {
-  return ORDRE_SLOTS.map((slot) => {
-    const o = objets.get(slots[slot]);
-    const corps = o
-      ? `${tuileObjet(o)}
-         <span class="corpsObjet">
-           <span class="titre">${esc(nomObjet(o))}</span>
-           ${attributsObjetHtml(o)}
-         </span>
-         ${modifiable ? `<button class="retirer" data-retirer="${slot}" title="Retirer cet objet" aria-label="Retirer">×</button>` : '<span></span>'}`
-      : `<span class="tuile vide"></span><span class="vide">${modifiable ? 'Vide — cliquer pour choisir' : 'Vide'}</span><span></span>`;
-    // Un <div> et non un <bouton> : il contient déjà le bouton « Retirer ».
-    return `<div class="emplacement ${o ? `r${o.rarete}` : ''} ${modifiable ? '' : 'fige'}"
-        ${modifiable ? `data-slot="${slot}" role="button" tabindex="0"` : ''}>
-      <span class="type">${NOM_SLOT[slot]}</span>${corps}
-    </div>`;
+  // Le jeu sépare l'armement (main, vêtement) de la parure (chapeau, cou, anneau)
+  // et les pose de part et d'autre du héros. On garde ces deux groupes.
+  const groupes = [
+    { nom: 'Armement', slots: ['Hand', 'Garment'] },
+    { nom: 'Parure', slots: ['Hat', 'Neck', 'Ring'] },
+  ];
+
+  return groupes.map(({ nom, slots: liste }) => {
+    const cases = liste.map((slot) => {
+      const o = objets.get(slots[slot]);
+      const corps = o
+        ? `${tuileObjet(o)}
+           <span class="corpsObjet">
+             <span class="titre">${esc(nomObjet(o))}</span>
+             ${attributsObjetHtml(o)}
+           </span>
+           ${modifiable ? `<button class="retirer" data-retirer="${slot}" title="Retirer cet objet" aria-label="Retirer">×</button>` : '<span></span>'}`
+        // Emplacement libre : le jeu y montre la silhouette de la pièce attendue
+        // et un « + ». On reprend le même repère, dessiné en SVG.
+        : `<span class="tuile libre">${SILHOUETTE[slot]}${modifiable ? '<span class="plus">+</span>' : ''}</span>
+           <span class="vide">${modifiable ? 'Vide — cliquer pour choisir' : 'Vide'}</span><span></span>`;
+      // Un <div> et non un <bouton> : il contient déjà le bouton « Retirer ».
+      return `<div class="emplacement ${o ? `r${o.rarete}` : 'estLibre'} ${modifiable ? '' : 'fige'}"
+          ${modifiable ? `data-slot="${slot}" role="button" tabindex="0"` : ''}>
+        <span class="type">${NOM_SLOT[slot]}</span>${corps}
+      </div>`;
+    }).join('');
+    return `<div class="groupeEmplacements" data-groupe="${nom}">${cases}</div>`;
   }).join('');
 }
 
@@ -503,7 +614,7 @@ function setsHtml(identifiants) {
 }
 
 const texteBonusSet = (def) => (def?.bonus || [])
-  .map((b) => `${signe(b.valeur, b.type === 'pourcentage' ? pourcent : nombre)} ${libelleStat(b.stat).toLowerCase()}`)
+  .map((b) => `${valeurAttribut(b.stat, b.valeur, b.type)} ${libelleStat(b.stat).toLowerCase()}`)
   .join(' · ') || def?.effet || '';
 
 // Une case du tableau : apport plat et/ou pourcentage, dans l'esprit du jeu.
@@ -513,69 +624,111 @@ const celluleApport = (e) => [
 ].filter(Boolean).join(' ') || '<span class="discret">—</span>';
 
 function rendreStats() {
-  const simule = agreger(objetsEquipes(selection));
-  const actuel = agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean));
-  const bases = basesEffectives(selection);
-  const saisies = basesDe(selection);
-  const calculees = basesCalculees(selection);
+  const contexte = contexteHeros(selection);
+  const simule = feuille(contexte, agreger(objetsEquipes(selection)));
+  const actuel = feuille(contexte, agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean)));
 
-  // Le champ ne montre que ce que le joueur a saisi ; la valeur calculée s'affiche
-  // en filigrane, pour qu'on voie ce qu'on remplacerait en tapant dedans.
-  for (const champ of document.querySelectorAll('[data-base]')) {
-    const stat = champ.dataset.base;
-    champ.value = saisies[stat] ?? '';
-    champ.placeholder = typeof calculees[stat] === 'number' ? Math.round(calculees[stat]) : '—';
-  }
+  rendreProjection(contexte);
+  rendreSaisieBase(contexte);
 
-  // On suit l'ordre du jeu, puis on ajoute à la suite les statistiques qu'il ne
-  // montre pas sur cet écran mais que l'équipement peut apporter.
-  const presentes = new Set([...Object.keys(simule), ...Object.keys(actuel)]);
-  const stats = [
-    ...ORDRE_STATS.filter((s) => presentes.has(s)),
-    ...[...presentes].filter((s) => !ORDRE_STATS.includes(s)).sort((a, b) => libelleStat(a).localeCompare(libelleStat(b), 'fr')),
-  ];
+  // Une statistique que le héros n'a pas du tout, et que rien n'alimente, n'a pas
+  // à s'afficher : le jeu ne montre « Dégâts de base » que sur les héros qui en ont.
+  const utile = (stat) => stat.startsWith('charge_')
+    || typeof contexte.base[stat] === 'number'
+    || FORMULES.DEFAUTS[stat] !== undefined
+    || Math.abs(simule[stat]?.total || 0) > 1e-9
+    || Math.abs(actuel[stat]?.total || 0) > 1e-9;
 
-  $('#aucuneStat').hidden = stats.length > 0;
-  $('#tableStats').hidden = stats.length === 0;
-
-  $('#tableStats tbody').innerHTML = stats.map((stat) => {
-    const vide = { plat: 0, pourcentage: 0 };
-    const s = simule[stat] || vide;
-    const a = actuel[stat] || vide;
-
-    const dPlat = s.plat - a.plat;
-    const dPct = s.pourcentage - a.pourcentage;
-    const ecart = [
-      dPlat ? `<span class="${dPlat > 0 ? 'hausse' : 'baisse'}">${signe(dPlat, nombre)}</span>` : null,
-      dPct ? `<span class="${dPct > 0 ? 'hausse' : 'baisse'}">${signe(dPct, pourcent)}</span>` : null,
-    ].filter(Boolean).join(' ') || '<span class="discret">=</span>';
-
-    const majeure = STATS_DE_BASE.includes(stat);
-    const ouverte = statOuverte === stat;
-    return `<tr class="${dPlat || dPct ? 'modifiee' : ''} ${ouverte ? 'ouverte' : ''}" data-stat="${esc(stat)}">
-      <td class="libelle ${majeure ? 'principal' : ''}">
-        <span class="chevron">${ouverte ? '▾' : '▸'}</span>${imgStat(stat)}${esc(libelleStat(stat))}
-      </td>
-      <td>${celluleApport(a)}</td>
-      <td class="${majeure ? 'principal' : ''}">${celluleApport(s)}</td>
-      <td>${ecart}</td>
-    </tr>${ouverte ? detailHtml(stat) : ''}`;
+  $('#tableStats tbody').innerHTML = FAMILLES_STATS.map((famille) => {
+    const lignes = famille.stats.filter(utile).map((stat) => ligneStat(stat, simule, actuel)).join('');
+    return lignes ? `<tr class="famille"><th colspan="4">${esc(famille.titre)}</th></tr>${lignes}` : '';
   }).join('');
 
-  rendreTotaux(simule, actuel, bases);
-  rendreSources();
+  $('#aucuneStat').hidden = true;
+  $('#tableStats').hidden = false;
+  rendreReliqueEtSources(contexte, simule);
 }
 
-// Ce que chaque objet apporte à une statistique donnée : c'est la réponse
-// concrète à « d'où viennent ces chiffres ».
-function detailHtml(stat) {
+// La valeur d'une statistique, écrite comme le jeu l'écrit.
+function valeurStat(stat, feuilleStats) {
+  if (stat === 'charge_initiale') {
+    const avance = feuilleStats.InitialFocusInSecondsBonus?.total || 0;
+    return { texte: `${nombre(FORMULES.chargeInitiale(feuilleStats, avance))} s`, brut: FORMULES.chargeInitiale(feuilleStats, avance), inverse: true };
+  }
+  if (stat === 'charge_normale') {
+    const v = FORMULES.chargeNormale(feuilleStats);
+    return { texte: `${nombre(v)} s`, brut: v, inverse: true };
+  }
+  const v = feuilleStats[stat]?.total ?? 0;
+  switch (FORMAT_STAT[stat]) {
+    case 'entier': return { texte: nombre(Math.round(v)), brut: v };
+    case 'decimal': return { texte: nombre(v), brut: v };
+    case 'coups': return { texte: `${nombre(Math.round(FORMULES.coupsParMinute(v)))} coups/min`, brut: v };
+    // Le jeu écrit « Mêlée » plutôt qu'une distance quand le héros frappe au contact.
+    case 'portee': return { texte: v <= 1.5 ? 'Mêlée' : nombre(v), brut: v };
+    case 'vitesse': return { texte: `${nombre(v)} ${v >= 2.5 ? '(rapide)' : v >= 2 ? '(moyenne)' : '(lente)'}`, brut: v };
+    default: return { texte: pourcent(v), brut: v };
+  }
+}
+
+function ligneStat(stat, simule, actuel) {
+  const s = valeurStat(stat, simule);
+  const a = valeurStat(stat, actuel);
+  const delta = s.brut - a.brut;
+  // Sur la charge, gagner du temps c'est descendre : la couleur suit le bénéfice.
+  const bon = s.inverse ? delta < 0 : delta > 0;
+  const ecart = Math.abs(delta) < 1e-9
+    ? '<span class="discret">=</span>'
+    : `<span class="${bon ? 'hausse' : 'baisse'}">${signe(delta, (x) => (FORMAT_STAT[stat] || 'pct') === 'pct' || !FORMAT_STAT[stat] ? pourcent(x) : nombre(x))}</span>`;
+
+  const majeure = STATS_DE_BASE.includes(stat);
+  const ouverte = statOuverte === stat;
+  return `<tr class="${Math.abs(delta) > 1e-9 ? 'modifiee' : ''} ${ouverte ? 'ouverte' : ''}" data-stat="${esc(stat)}">
+    <td class="libelle ${majeure ? 'principal' : ''}">
+      <span class="chevron">${ouverte ? '▾' : '▸'}</span>${imgStat(stat)}${esc(libelleStat(stat))}
+    </td>
+    <td>${a.texte}</td>
+    <td class="${majeure ? 'principal' : ''}">${s.texte}</td>
+    <td>${ecart}</td>
+  </tr>${ouverte ? detailHtml(stat, simule, actuel) : ''}`;
+}
+
+// Le détail d'une statistique : d'où vient chaque point, source par source.
+// C'est la réponse concrète à « pourquoi ce chiffre ? ».
+function detailHtml(stat, simule, actuel) {
+  if (stat.startsWith('charge_')) {
+    return `<tr class="detail"><td colspan="4"><div class="detailStat">
+      <p class="transition discret">Le jeu recalcule cette durée à partir de la charge :
+      (charge maximale − charge initiale) ÷ charge par seconde, moins l'avance donnée par l'équipement.</p>
+    </div></td></tr>`;
+  }
+
+  const d = simule[stat] || {};
+  const parts = [
+    ['Base du héros au niveau 1', d.base, 'plat'],
+    ['Montée en niveau', d.niveau, 'plat'],
+    ['Éveil', d.eveil, 'plat'],
+    ['Caserne', d.caserne, 'plat'],
+    ['Relique', d.relique, 'plat'],
+    ['Équipement et ensembles', d.equipementPlat, 'plat'],
+    ['Équipement et ensembles', d.equipementPourcentage, 'pourcentage'],
+  ].filter(([, v]) => typeof v === 'number' && Math.abs(v) > 1e-9);
+
+  const format = (v, nature) => (nature === 'pourcentage' ? signe(v, pourcent)
+    : signe(v, FORMAT_STAT[stat] === 'coups' ? (x) => `${nombre(FORMULES.coupsParMinute(x))} coups/min` : nombre));
+
+  const sources = parts.length
+    ? parts.map(([nom, v, nature]) => `<li><span>${esc(nom)}</span><span>${format(v, nature)}</span></li>`).join('')
+    : '<li class="discret">Rien n\'alimente cette statistique.</li>';
+
+  // Ce que chaque pièce d'équipement apporte, dans les deux configurations.
   const colonne = (config) => {
     const lignes = Object.values(config || {}).map((id) => objets.get(id)).filter(Boolean).map((o) => {
       let plat = 0, pourcentage = 0;
-      for (const a of [o.principal, ...(o.secondaires || [])]) {
-        if (!a || a.stat !== stat || !FORMULES.attributCompte(a)) continue;
-        if (a.type === 'pourcentage') pourcentage += a.valeur;
-        else plat += a.valeur;
+      for (const at of [o.principal, ...(o.secondaires || [])]) {
+        if (!at || at.stat !== stat || !FORMULES.attributCompte(at)) continue;
+        if (at.type === 'pourcentage') pourcentage += at.valeur;
+        else plat += at.valeur;
       }
       if (!plat && !pourcentage) return '';
       return `<li><span>${imgObjet(o)}${esc(nomObjet(o))}</span><span>${celluleApport({ plat, pourcentage })}</span></li>`;
@@ -583,94 +736,82 @@ function detailHtml(stat) {
     return lignes || '<li class="discret">Aucun objet n\'apporte cette statistique.</li>';
   };
 
-  // Rappel de la transition en toutes lettres : « on passe de X à Y ».
-  const vide = { plat: 0, pourcentage: 0 };
-  const a = agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean))[stat] || vide;
-  const s = agreger(objetsEquipes(selection))[stat] || vide;
-  const change = a.plat !== s.plat || a.pourcentage !== s.pourcentage;
+  const change = Math.abs((simule[stat]?.total || 0) - (actuel[stat]?.total || 0)) > 1e-9;
   const resume = change
-    ? `<p class="transition">${esc(libelleStat(stat))} : <span class="depuis">${celluleApport(a)}</span>
-       <span class="fleche">→</span> <span class="vers">${celluleApport(s)}</span></p>`
+    ? `<p class="transition">${esc(libelleStat(stat))} : <span class="depuis">${valeurStat(stat, actuel).texte}</span>
+       <span class="fleche">→</span> <span class="vers">${valeurStat(stat, simule).texte}</span></p>`
     : `<p class="transition discret">${esc(libelleStat(stat))} : inchangé par rapport à ton équipement actuel.</p>`;
 
   return `<tr class="detail"><td colspan="4">
     <div class="detailStat">
       ${resume}
+      <div><h4>Toutes les sources</h4><ul>${sources}</ul></div>
       <div><h4>Équipement actuel</h4><ul>${colonne(equipeInitial[selection])}</ul></div>
       <div><h4>Équipement simulé</h4><ul>${colonne(equipe[selection])}</ul></div>
     </div>
   </td></tr>`;
 }
 
-// Le jeu additionne plusieurs sources. On dit franchement lesquelles on sait
-// chiffrer et lesquelles restent hors de portée, plutôt que de faire comme si
-// l'équipement était le seul apport.
-function rendreSources() {
-  const h = herosParId.get(selection);
-  const objetsPortes = objetsEquipes(selection).length;
-  const noeuds = h?.pantheon?.length || 0;
-  const reliques = (donnees.compte.reliques || []).filter((r) => r.porteParHero === selection);
+// Le sélecteur de niveau : voir la même configuration à un autre niveau.
+function rendreProjection(contexte) {
+  const reel = contexte.hero?.niveau ?? 1;
+  const paliers = [];
+  for (let n = 10; n <= FORMULES.NIVEAU_MAX; n += 10) paliers.push(n);
+  if (!paliers.includes(reel)) paliers.push(reel);
+  paliers.sort((a, b) => a - b);
 
-  const ligne = (nom, quantite, etat, chiffre) => `<div class="source ${chiffre ? 'chiffree' : ''}">
-    <span class="nomSource">${esc(nom)}</span>
-    <span class="quantite">${esc(quantite)}</span>
-    <span class="etatSource">${esc(etat)}</span>
-  </div>`;
-
-  const complets = setsComplets(objetsEquipes(selection));
-
-  // Un bonus d'ensemble ou d'éveil, écrit comme le jeu l'écrit.
-  const texteBonus = (b) => `${signe(b.valeur, b.type === 'pourcentage' ? pourcent : nombre)} ${libelleStat(b.stat).toLowerCase()}`;
-
-  const eveil = paliersEveil(h);
-  const eveilLisible = eveil.filter((p) => !p.stat.startsWith('stat_'));
-
-  $('#sources').innerHTML = [
-    ligne(
-      'Héros',
-      `niveau ${h?.niveau ?? '?'}`,
-      ficheDuHeros(h)?.base ? 'statistiques de base montées au niveau' : 'héros inconnu du catalogue',
-      Boolean(ficheDuHeros(h)?.base),
-    ),
-    ligne('Équipement', `${objetsPortes} objet${objetsPortes > 1 ? 's' : ''}`, 'détaillé ci-contre', true),
-    ligne(
-      'Bonus de set',
-      complets.length ? complets.map((c) => nomSet(c.set)).join(', ') : 'aucun set complet',
-      complets.length ? complets.flatMap((c) => c.bonus).map(texteBonus).join(' · ') : '—',
-      complets.length > 0,
-    ),
-    ligne(
-      'Éveil',
-      h?.eveil ? `niveau ${ROMAIN[h.eveil] || h.eveil}` : '—',
-      // Quelques paliers portent sur des statistiques que le catalogue désigne par
-      // un numéro qu'on n'a pas encore su nommer : on ne les compte pas.
-      eveil.length ? [eveilLisible.map(texteBonus).join(' · '), eveil.length > eveilLisible.length ? `+ ${eveil.length - eveilLisible.length} palier(s) non identifié(s)` : ''].filter(Boolean).join(' · ') : '—',
-      eveilLisible.length > 0,
-    ),
-    ligne('Panthéon', noeuds ? `${noeuds} nœuds` : 'aucun', noeuds ? 'valeurs inconnues' : '—', false),
-    ligne('Reliques', reliques.length ? reliques.map((r) => `${joliNom(r.relique)} niv. ${r.niveau}`).join(', ') : 'aucune', reliques.length ? 'valeurs inconnues' : '—', false),
-    ligne('Caserne', '—', "absent de l'export", false),
-  ].join('');
+  $('#projection').innerHTML = `
+    <label for="niveauProjete">Voir au niveau</label>
+    <select id="niveauProjete">
+      ${paliers.map((n) => `<option value="${n}" ${n === niveauAffiche(contexte.hero) ? 'selected' : ''}>
+        ${n}${n === reel ? ' — son niveau' : ''}</option>`).join('')}
+    </select>
+    ${niveauProjete && niveauProjete !== reel
+      ? `<button id="revenirNiveau" class="lienDiscret">revenir au niveau ${reel}</button>`
+      : ''}`;
 }
 
-// Quand on a saisi les statistiques de base d'un héros, on peut afficher les totaux
-// absolus. Sans elles, on ne montre rien plutôt qu'un chiffre trompeur.
-function rendreTotaux(simule, actuel, bases) {
-  const lignes = STATS_DE_BASE.filter((stat) => typeof bases[stat] === 'number').map((stat) => {
-    const s = simule[stat] || { plat: 0, pourcentage: 0 };
-    const a = actuel[stat] || { plat: 0, pourcentage: 0 };
-    const totalSimule = FORMULES.appliquer(bases[stat], s.plat, s.pourcentage);
-    const totalActuel = FORMULES.appliquer(bases[stat], a.plat, a.pourcentage);
-    const delta = totalSimule - totalActuel;
-    return `<div class="totalStat">
-      <span class="nom">${imgStat(stat)}${esc(libelleStat(stat))}</span>
-      <span class="valeur">${nombre(totalSimule)}</span>
-      ${delta ? `<span class="${delta > 0 ? 'hausse' : 'baisse'}">${signe(delta, nombre)}</span>` : '<span class="discret">=</span>'}
-    </div>`;
-  }).join('');
+// Les statistiques de base, saisissables à la main quand le calcul ne colle pas.
+function rendreSaisieBase(contexte) {
+  for (const champ of document.querySelectorAll('[data-base]')) {
+    const stat = champ.dataset.base;
+    champ.value = contexte.saisies[stat] ?? '';
+    champ.placeholder = typeof contexte.base[stat] === 'number' ? Math.round(contexte.base[stat]) : '—';
+  }
+}
 
-  $('#totaux').innerHTML = lignes;
-  $('#totaux').hidden = !lignes;
+// Ce que le héros doit à autre chose qu'à son équipement, et ce qu'on ne sait
+// toujours pas chiffrer. La relique a sa place réservée ici.
+function rendreReliqueEtSources(contexte, simule) {
+  const h = contexte.hero;
+  const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
+  const ficheRelique = portee && (window.RELIQUES_JEU || {})[portee.relique];
+  const apports = contexte.relique;
+  const listeApports = Object.entries(apports)
+    .filter(([stat]) => !stat.startsWith('stat_'))
+    .map(([stat, v]) => `${signe(v, nombre)} ${libelleStat(stat).toLowerCase()}`).join(' · ');
+
+  $('#relique').innerHTML = portee ? `
+    <div class="carteRelique">
+      ${imgRelique(portee.relique)}
+      <div class="texteRelique">
+        <span class="nomRelique">${esc(ficheRelique?.nom || joliNom(portee.relique))}</span>
+        <span class="discret">niveau ${portee.niveau}${portee.etoiles ? ` · ${etoilesHtml(portee.etoiles)}` : ''}</span>
+        <span class="apportRelique">${listeApports || '<span class="discret">effet non chiffré</span>'}</span>
+      </div>
+    </div>` : '<p class="discret">Aucune relique sur ce héros.</p>';
+
+  const noeuds = h?.pantheon?.length || 0;
+  const caserne = donnees?.compte?.casernes?.[contexte.details?.type];
+  const apportsCaserne = Object.entries(contexte.caserne)
+    .map(([stat, v]) => `${signe(v, nombre)} ${libelleStat(stat).toLowerCase()}`).join(' · ');
+
+  $('#manques').innerHTML = [
+    caserne
+      ? `<span class="chiffree">Caserne ${esc(nomType(contexte.details?.type) || '')} palier ${caserne.palier ?? '?'} : ${apportsCaserne}</span>`
+      : '<span>Caserne : absente de l\'export</span>',
+    noeuds ? `<span>Panthéon : ${noeuds} nœuds, valeurs inconnues du catalogue</span>` : '',
+  ].filter(Boolean).join('');
 }
 
 /* -------------------------------------------------- fenêtre de choix d'objet */
@@ -743,7 +884,26 @@ $('#listeHeros').addEventListener('click', (e) => {
   const li = e.target.closest('[data-hero]');
   if (!li) return;
   selection = li.dataset.hero;
+  // Changer de héros remet la projection sur son vrai niveau : garder celle du
+  // héros précédent n'aurait aucun sens.
+  niveauProjete = null;
   rendreListeHeros();
+  rendreHeros();
+});
+
+// Se projeter à un autre niveau : le héros et son équipement ne bougent pas,
+// seule la montée en niveau est recalculée.
+$('#projection').addEventListener('change', (e) => {
+  if (e.target.id !== 'niveauProjete') return;
+  const h = herosParId.get(selection);
+  const choisi = Number(e.target.value);
+  niveauProjete = choisi === h?.niveau ? null : choisi;
+  rendreHeros();
+});
+
+$('#projection').addEventListener('click', (e) => {
+  if (e.target.id !== 'revenirNiveau') return;
+  niveauProjete = null;
   rendreHeros();
 });
 

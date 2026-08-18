@@ -39,10 +39,12 @@ async function telecharger(url) {
 // rubrique (bâtiments, unités, héros, technologies…). On ne s'intéresse qu'à
 // quatre d'entre elles, repérées en observant les données.
 const RUBRIQUE = {
+  BATIMENTS: 2,    // tous les bâtiments de la ville, casernes comprises
   UNITES: 3,       // statistiques de base de chaque unité, héros compris
   HEROS: 4,        // fiche de héros : couleur, classe, éveil, capacité
   PROGRESSION: 8,  // vitesse de montée des statistiques par niveau
   EVEIL: 13,       // bonus accordés par chaque palier d'éveil
+  RELIQUES: 21,    // paliers de chaque relique et ce qu'ils apportent
   HEROS_BIS: 24,   // même contenu que HEROS, pour les derniers héros ajoutés
   UNITES_BIS: 25,  // idem pour UNITES
 };
@@ -64,6 +66,9 @@ function rubriques(octets) {
 // catalogue à leurs statistiques publiées : un numéro qui vaut 130 là où le wiki
 // annonce « Attack: 130 » sur 136 héros ne laisse guère de doute.
 const STAT = {
+  // Le numéro 9 n'apparaît dans aucune fiche du wiki, mais il vaut 1,25 sur les
+  // héros de mêlée et 6 sur les archers : c'est la portée d'attaque.
+  9: 'AttackRange',
   4: 'AssetRadius', 5: 'Attack', 10: 'AttackSpeed', 11: 'BaseDamage',
   20: 'Defense', 27: 'Focus', 28: 'FocusRegen', 32: 'HitTime',
   34: 'MaxFocus', 35: 'MaxHitPoints', 36: 'MoveSpeed', 39: 'ProjectileSpeed',
@@ -168,23 +173,26 @@ function lireBonusDEnsemble(phrase, libellesStats) {
     const libelle = normaliser(m[1]).replace(/ (infliges?|infligee?s?|recus?|recue?s?|dealt|taken)$/, '');
     const valeur = Number(m[2].replace(/\s/g, '').replace(',', '.'));
     const unite = (m[3] || '').toLowerCase();
-    // Le jeu appelle « Charge initiale » deux choses différentes, que seule
-    // l'unité sépare : un pourcentage de la jauge de départ (ce que donnent les
-    // objets), et un nombre de secondes gagnées sur le premier déclenchement (ce
-    // que donnent certains ensembles). Les additionner n'aurait aucun sens : on
-    // leur garde deux noms distincts. Le signe est celui qu'affiche le jeu —
-    // « -1 s », c'est une seconde d'attente en moins.
+    // « Charge initiale » nomme deux statistiques dans le jeu : la jauge de départ
+    // (Focus) et les secondes gagnées sur le premier déclenchement. L'unité tranche.
     const stat = unite === 's' && libelle === 'charge initiale'
-      ? 'InitialFocusSeconds'
+      ? 'InitialFocusInSecondsBonus'
       : libellesStats[libelle] || SYNONYMES[libelle];
     if (!stat) return { texte, bonus: [] };
 
     bonus.push({
       stat,
-      // Un pourcentage se range en fraction, comme le reste du site.
-      // « coups/minute » est la façon dont le jeu affiche une vitesse d'attaque,
-      // qui se compte en attaques par seconde dans les données.
-      valeur: unite === '%' ? valeur / 100 : unite === 'coups/minute' ? valeur / 60 : valeur,
+      // On range chaque valeur comme les données du jeu la rangent, pas comme
+      // la phrase l'écrit :
+      //   - un pourcentage devient une fraction ;
+      //   - « coups/minute » est un affichage, la donnée est en attaques/seconde ;
+      //   - « Charge initiale -1 s » est un affichage lui aussi : la donnée est un
+      //     temps GAGNÉ, donc positif. L'infobulle d'un objet en jeu le confirme,
+      //     qui écrit « -0,36 s » pour un 0,36 stocké.
+      valeur: unite === '%' ? valeur / 100
+        : unite === 'coups/minute' ? valeur / 60
+        : unite === 's' ? -valeur
+        : valeur,
       type: unite === '%' ? 'pourcentage' : 'plat',
     });
   }
@@ -276,6 +284,55 @@ async function principal() {
     else if (heros[h.f1]) sansEveil++;
   }
 
+  /* --- casernes ------------------------------------------------------------ */
+
+  // Chaque caserne accorde un forfait aux héros de son arme (« hero_building_boost »).
+  // C'est la dernière source chiffrée qui manquait : le compte dit quelle caserne
+  // le joueur possède, le catalogue dit ce qu'elle rapporte.
+  const casernes = {};
+  for (const batiment of lire(RUBRIQUE.BATIMENTS)) {
+    for (const partie of tableau(batiment.f4)) {
+      const boost = partie?.f105;
+      if (typeof boost?.f1 !== 'string' || !/_Barracks_/.test(boost.f1)) continue;
+      const apports = {};
+      for (const s of tableau(boost.f2)) {
+        const nom = STAT[s?.f1 ?? 0];
+        if (nom) apports[nom] = s.f2 ?? 0;
+      }
+      casernes[boost.f1.replace('hero_building_boost.', '')] = apports;
+    }
+  }
+
+  /* --- reliques ------------------------------------------------------------ */
+
+  // Une relique se monte en paliers ; chaque palier remplace le précédent (les
+  // valeurs sont cumulées dans la définition, pas à additionner entre elles).
+  const reliques = {};
+  for (const bloc of lire(RUBRIQUE.RELIQUES)) {
+    const id = sansPrefixe(bloc.f1, 'relic.');
+    if (!id) continue;
+    // PIÈGE : le champ f4 n'est pas le niveau de la relique — il plafonne à 11 et
+    // se répète. Le vrai niveau est le suffixe du nom de la capacité du palier
+    // (« ability.FalconryGlove_12 »), et à défaut le rang dans la liste.
+    const paliers = tableau(bloc.f2).map((p, rang) => {
+      const apports = {};
+      for (const b of tableau(p.f6)) {
+        const detail = b?.f2;
+        if (!detail || typeof detail !== 'object') continue;
+        const nom = STAT[detail.f4 ?? 0] || `stat_${detail.f4}`;
+        apports[nom] = (apports[nom] || 0) + (detail.f5 ?? 0);
+      }
+      const suffixe = /_(\d+)$/.exec(String(p.f1 || ''));
+      return { niveau: suffixe ? Number(suffixe[1]) : rang + 1, apports };
+    }).sort((a, b) => a.niveau - b.niveau);
+
+    reliques[id] = {
+      nom: fr[`Base.Relics.${id}_Name`] || id,
+      description: sansBalises(fr[`Base.Relics.${id}_Desc`]),
+      paliers,
+    };
+  }
+
   /* --- ensembles d'équipement ---------------------------------------------- */
 
   // Le nom français de chaque statistique, pour relire les phrases d'effet.
@@ -355,6 +412,22 @@ async function principal() {
   );
 
   fs.writeFileSync(
+    path.join(RACINE, 'casernes-jeu.js'),
+    entete('CASERNES', version, [
+      "Ce que chaque caserne apporte aux héros de son arme. L'export du compte dit",
+      'laquelle le joueur possède ; ce fichier dit ce qu\'elle vaut.',
+    ]) + `window.CASERNES_JEU = ${objetParLigne(casernes)};\n`,
+  );
+
+  fs.writeFileSync(
+    path.join(RACINE, 'reliques-jeu.js'),
+    entete('RELIQUES', version, [
+      'Les paliers de chaque relique. Les valeurs sont celles du palier atteint,',
+      'elles ne se cumulent pas entre paliers.',
+    ]) + `window.RELIQUES_JEU = ${objetParLigne(reliques)};\n`,
+  );
+
+  fs.writeFileSync(
     path.join(RACINE, 'noms-fr.js'),
     entete('NOMS FRANÇAIS', version, [
       'Les noms tels que le jeu les affiche, tirés de son fichier de traduction.',
@@ -364,6 +437,8 @@ async function principal() {
   console.log(`heros-jeu.js  : ${nbHeros} héros`);
   console.log(`sets-jeu.js   : ${Object.keys(setsJeu).length} ensembles, ${chiffres} effets chiffrés`);
   console.log(`eveil-jeu.js  : ${Object.keys(eveil).length} héros (${Object.keys(tables).length} tables, ${sansEveil} héros sans éveil)`);
+  console.log(`casernes-jeu.js : ${Object.keys(casernes).length} paliers de caserne`);
+  console.log(`reliques-jeu.js : ${Object.keys(reliques).length} reliques`);
   console.log(`noms-fr.js    : ${Object.keys(noms.heros).length} héros, ${Object.keys(nomsSets).length} ensembles, ${Object.keys(nomsObjets).length} objets`);
 }
 

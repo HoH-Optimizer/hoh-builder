@@ -34,28 +34,53 @@ navigateur où l'extension n'est pas installée.
 ## Ce que fait le simulateur
 
 - Les **144 héros du jeu**, avec filtres (possédés / tous / équipés) et recherche
-- Les **5 emplacements** de chaque héros, pré-remplis avec l'équipement réel du compte
+- Les **5 emplacements** de chaque héros, pré-remplis avec l'équipement réel du compte,
+  rangés comme le jeu les range : l'armement d'un côté, la parure de l'autre
 - Choix d'objet parmi tout l'inventaire, trié par rareté, avec les attributs détaillés
   et le nom du héros qui le porte déjà
 - **Échange automatique** : équiper un objet porté par un autre héros le lui retire
 - Les **attributs verrouillés** sont grisés et non comptés, comme dans le jeu
+- **La feuille de statistiques complète**, rangée en quatre familles comme l'écran
+  « Stats » du jeu, avec les valeurs absolues et non plus seulement l'apport de
+  l'équipement. Chaque ligne se déplie sur le détail de ses sources.
 - Colonne **écart** : ce que chaque modification gagne ou perd par rapport à l'équipement réel
-- **Totaux absolus** : les statistiques de base du héros sont montées à son niveau réel
-  et son niveau d'éveil, puis l'équipement s'y ajoute
-- **Bonus d'ensemble** chiffrés dès qu'un set est complet
+- **Se projeter à un autre niveau** : voir ce que la même configuration donnerait
+  au niveau 180 sur un héros qui est au 160
 - Tout est en français : héros, objets, ensembles et statistiques portent le nom
   que le jeu leur donne
+
+## D'où vient chaque chiffre
+
+Le jeu empile six sources pour arriver au nombre qu'il affiche. Le site les reprend
+toutes, sauf une :
+
+| Source | État |
+|---|---|
+| Statistique de base du héros | du catalogue du jeu |
+| Montée en niveau et ascensions | formule reconstituée, voir plus bas |
+| Paliers d'éveil | du catalogue du jeu |
+| Caserne de son arme | du catalogue, le palier venant du compte |
+| Relique portée | du catalogue du jeu |
+| Équipement et bonus d'ensemble | du compte et du catalogue |
+| **Panthéon** | **manquant** : les nœuds débloqués sont dans l'export, leurs valeurs n'existent ni là, ni dans le catalogue |
+
+Sur un héros de référence vérifié écran contre écran avec le jeu, les chances de
+crit, les dégâts crit, l'esquive, les soins reçus, la charge initiale et la charge
+normale tombent **exactement** juste ; l'attaque, la défense et les points de vie
+restent à 1 à 4 % près, l'écart correspondant au panthéon.
 
 ## Limites connues
 
 | Manque | Conséquence |
 |---|---|
-| Panthéon | Les nœuds débloqués sont listés, leurs valeurs restent inconnues : elles ne sont ni dans l'export, ni dans le catalogue téléchargé. |
-| Reliques | Idem : la relique portée et son niveau sont connus, pas son effet chiffré. |
-| Caserne | Elle ajoute un montant fixe à tous les héros (+40 attaque, +40 défense, +400 points de vie au premier palier, davantage ensuite). Son niveau n'apparaît nulle part dans l'export : ce bonus n'est donc pas compté. |
-| Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité du chiffre affiché en jeu, qui arrondit à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
+| Panthéon | Ses nœuds sont listés dans l'export, sans leurs valeurs. C'est ce qui reste entre le chiffre du site et celui du jeu. |
+| Dégâts de base | Le jeu affiche une valeur que le catalogue ne donne pas pour tous les héros. La ligne est masquée quand on ne la connaît pas, plutôt qu'affichée à zéro. |
+| Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
 | 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
 | Icônes de 7 sets | Images cassées côté wiki : le site affiche l'initiale du set. |
+
+Si un chiffre ne colle pas au jeu, le bloc **Corriger les statistiques de base**
+permet de saisir la valeur relevée en jeu : elle l'emporte sur le calcul.
 
 ## Pour les curieux : comment ça marche
 
@@ -75,8 +100,8 @@ client télécharge à part et que l'export ne capture pas.
 
 Le site communautaire [Forge of Games](https://forgeofgames.com) rediffuse ce catalogue
 tel quel. [`tools/catalogue.js`](tools/catalogue.js) le récupère, le décode avec notre
-propre décodeur, et en tire quatre fichiers livrés avec le site : `heros-jeu.js`,
-`sets-jeu.js`, `eveil-jeu.js` et `noms-fr.js`.
+propre décodeur, et en tire six fichiers livrés avec le site : `heros-jeu.js`,
+`sets-jeu.js`, `eveil-jeu.js`, `casernes-jeu.js`, `reliques-jeu.js` et `noms-fr.js`.
 
 ### La montée en niveau
 
@@ -121,10 +146,11 @@ Récupère les illustrations manquantes. Ne retélécharge jamais ce qui est dé
 node tools/catalogue.js
 ```
 
-Régénère les quatre fichiers de catalogue depuis le jeu : `heros-jeu.js` (144 héros —
+Régénère les six fichiers de catalogue depuis le jeu : `heros-jeu.js` (144 héros —
 nom français, rareté, type, couleur, classe, statistiques de base), `sets-jeu.js`
-(48 ensembles et leurs effets), `eveil-jeu.js` (paliers d'éveil) et `noms-fr.js`
-(noms des héros, des ensembles et des objets). À relancer à chaque mise à jour du jeu.
+(48 ensembles et leurs effets), `eveil-jeu.js` (paliers d'éveil), `casernes-jeu.js`
+(183 paliers de caserne), `reliques-jeu.js` (39 reliques) et `noms-fr.js` (noms des
+héros, des ensembles et des objets). À relancer à chaque mise à jour du jeu.
 
 **Après toute modification de l'extension ou du décodeur**, régénérer l'archive proposée
 au téléchargement sur la page d'accueil :
@@ -150,6 +176,7 @@ Les dessins, les noms et les données du jeu appartiennent à InnoGames.
 | `images/sets/` | **37 icônes de set sur 37** |
 | `images/equipement/` | 44 icônes sur les 62 combinaisons set + emplacement |
 | `images/stats/` | 26 icônes de statistiques (attaque, défense, points de vie…) |
+| `images/reliques/` | **32 illustrations de relique** |
 | `images/classes/`, `images/types/`, `images/couleurs/` | icônes de classe, d'unité et de couleur |
 
 Sept sets (Enchantress, Voyager, Dharma, Jackal, RoyalEgyptian, Ronin, HornedKing) ont

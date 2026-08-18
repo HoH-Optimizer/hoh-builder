@@ -56,6 +56,24 @@ for (const couleur of ['red', 'blue', 'green', 'yellow', 'purple']) {
   aTelecharger.push({ url: `${BASE}/heroes/intro/colorIcons/icon-colour-${couleur}.webp`, fichier: path.join(RACINE, 'couleurs', `${couleur}.webp`), facultatif: true });
 }
 
+// Les reliques du catalogue du jeu, dont le wiki reprend les identifiants exacts.
+// On les prend toutes, pas seulement celles du compte : le site les montre aussi
+// pour les héros des autres.
+{
+  const contexte = {};
+  const chemin = path.resolve(__dirname, '..', 'reliques-jeu.js');
+  if (fs.existsSync(chemin)) {
+    new Function('window', fs.readFileSync(chemin, 'utf8'))(contexte);
+    for (const relique of Object.keys(contexte.RELIQUES_JEU || {})) {
+      aTelecharger.push({
+        url: `${BASE}/relics/full/full_relic_${relique}.webp`,
+        fichier: path.join(RACINE, 'reliques', `${relique}.webp`),
+        facultatif: true,
+      });
+    }
+  }
+}
+
 aTelecharger.push({ url: `${BASE}/heroes/intro/icon_star.webp`, fichier: path.join(RACINE, 'divers', 'etoile.webp'), facultatif: true });
 aTelecharger.push({ url: `${BASE}/heroes/battle_power.webp`, fichier: path.join(RACINE, 'divers', 'puissance.webp'), facultatif: true });
 
