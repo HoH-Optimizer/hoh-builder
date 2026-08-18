@@ -232,19 +232,36 @@ main {
   align-items: start;
   padding: 16px 20px 40px;
 }
-#colonneHeros { grid-row: 1 / span 2; }
+/* La colonne des héros ne descend plus sous l'écran : elle se cale en haut et
+   y reste pendant qu'on fait défiler les statistiques, la liste défilant à
+   l'intérieur. On garde ainsi le choix du héros toujours sous la main. */
+#colonneHeros {
+  grid-row: 1 / span 2;
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 32px);
+}
 #colonneEquipement { grid-column: 2; grid-row: 1; }
 #colonneStats { grid-column: 2; grid-row: 2; }
 @media (max-width: 1000px) {
   main { grid-template-columns: 1fr; }
   #colonneHeros, #colonneEquipement, #colonneStats { grid-column: 1; grid-row: auto; }
+  /* Sur une colonne unique, la liste est au-dessus du reste : l'y coller
+     mangerait tout l'écran. Elle redevient une section ordinaire. */
+  #colonneHeros { position: static; max-height: none; }
+  #listeHeros { flex: none; max-height: 60vh; }
 }
 
 /* ---------- Comparateur : actuel à gauche, simulé à droite ---------- */
 
 .comparateur {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 250px) minmax(0, 1fr);
+  /* Le héros tient la colonne du milieu, et largement : c'est lui qu'on regarde.
+     Ce qu'il prend, il le prend aux deux colonnes d'équipement, qui n'avaient pas
+     besoin de toute cette largeur. */
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 360px) minmax(0, 1fr);
   gap: 18px;
   align-items: start;
 }
@@ -273,7 +290,7 @@ main {
 .personnage { display: grid; justify-items: center; align-self: center; gap: 8px; }
 .pied {
   width: 100%;
-  height: 300px;
+  height: 430px;
   object-fit: contain;
   object-position: center bottom;
   filter: drop-shadow(var(--ombre-pied));
@@ -398,8 +415,17 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  max-height: 72vh;
+  /* La liste occupe tout ce qui reste sous la barre de tri, et défile seule.
+     min-height: 0 est indispensable : sans lui, un enfant de flex refuse de
+     devenir plus petit que son contenu et la colonne repartirait vers le bas. */
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  /* Sans ces deux lignes, la colonne ayant désormais une hauteur fixe, les
+     rangées se laissaient comprimer jusqu''à douze pixels et les portraits
+     disparaissaient. Les rangées gardent leur taille et la liste défile. */
+  align-content: start;
+  grid-auto-rows: max-content;
 }
 .aucunHeros { grid-column: 1 / -1; color: var(--discret); font-size: 13px; }
 
@@ -870,9 +896,12 @@ td.principal { font-weight: 600; }
   text-shadow: 0 1px 2px rgba(0, 0, 0, .9);
 }
 
-.attributsObjet { display: grid; gap: 1px; min-width: 0; }
+/* Le bloc ne s'étire plus sur toute la ligne : il se règle sur son attribut le
+   plus long. Sans cela, « margin-left: auto » envoyait chaque chiffre à l'autre
+   bout de la ligne, à deux cents pixels de ce qu'il désigne. */
+.attributsObjet { display: grid; gap: 1px; min-width: 0; width: max-content; max-width: 100%; }
 .attr { display: flex; align-items: baseline; gap: 5px; font-size: 12px; color: var(--discret); }
-.attr b { color: var(--texte); font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: auto; }
+.attr b { color: var(--texte); font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: auto; padding-left: 16px; }
 .attr.principalAttr { font-size: 12.5px; }
 .attr.principalAttr b { color: var(--accent); }
 .attr .iconeStat { width: 14px; height: 14px; margin: 0; vertical-align: 0; }
@@ -1042,16 +1071,16 @@ td.principal { font-weight: 600; }
    la dernière déclarée l'emporte. Le remonter le rendrait sans effet. */
 @media (min-width: 1680px) {
   /* Héros | équipement | statistiques : plus rien à faire défiler pour comparer. */
-  main { grid-template-columns: 300px minmax(0, 1fr) minmax(340px, 430px); }
+  /* La colonne des statistiques ne descend pas sous 440 px : le tableau ne se
+     laisse pas comprimer davantage et débordait de la page. */
+  main { grid-template-columns: 300px minmax(0, 1fr) minmax(440px, 490px); }
   #colonneHeros { grid-column: 1; grid-row: 1; }
   #colonneEquipement { grid-column: 2; grid-row: 1; }
   #colonneStats { grid-column: 3; grid-row: 1; }
   /* La colonne est trop étroite pour poser la relique à côté du tableau. */
-  .grilleStats { grid-template-columns: minmax(0, 1fr); }
+  .grilleStats { grid-template-columns: minmax(0, 1fr); overflow-x: auto; }
   /* La silhouette du héros se serre pour laisser aux deux colonnes d'équipement
      la largeur dont elles ont besoin pour ne pas couper les noms d'objet. */
-  .comparateur { grid-template-columns: minmax(0, 1fr) 118px minmax(0, 1fr); gap: 12px; }
-  .pied { height: 210px; }
-  /* Les trois panneaux étant côte à côte, la liste peut filer jusqu'en bas. */
-  #listeHeros { max-height: none; }
+  .comparateur { grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr); gap: 12px; }
+  .pied { height: 300px; }
 }
