@@ -90,6 +90,9 @@ const ficheDuHeros = (h) => (h && fiche(h.montee)) || fiche(h?.id);
 const nomHeros = (id) =>
   libelles().heros?.[id] || (window.NOMS_FR || {}).heros?.[id] || fiche(id)?.nom || joliNom(id);
 const nomSet = (id) => libelles().sets?.[id] || (window.NOMS_FR || {}).sets?.[id] || joliNom(id);
+
+// sets-jeu.js vient du catalogue officiel : nombre de pièces et bonus d'ensemble.
+const defSet = (id) => (window.SETS_JEU || {})[id];
 const nomType = (t) => NOM_TYPE()[t] || t;
 const nomsReels = () => Boolean(libelles().heros);
 
@@ -159,6 +162,32 @@ const imgStat = (stat) =>
   + ` alt="" loading="lazy" onerror="repliIcone(this)">`;
 const detailObjet = (o) => `Rareté ${o.rarete} · Niveau ${o.niveau ?? 0}`;
 
+// Tuile d'objet reprise du jeu : l'illustration sur un fond qui dit la rareté,
+// le niveau en pastille, les étoiles au pied. Plus besoin de l'écrire en toutes lettres.
+const tuileObjet = (o) => `<span class="tuile r${o.rarete}">
+  ${imgObjet(o)}
+  <span class="niveauTuile">${o.niveau ?? 0}</span>
+  <span class="etoilesTuile">${'★'.repeat(o.rarete || 0)}</span>
+</span>`;
+
+// Ce qui compte vraiment sur un objet : tous ses attributs, pas seulement le principal.
+function attributsObjetHtml(o) {
+  const ligne = (a, principal) => {
+    if (!a || !a.attribut) return '';
+    // Un attribut verrouillé n'indique pas encore la statistique visée : on la
+    // déduit de son nom, « BaseDamageBonus » désignant les dégâts de base.
+    const nom = libelleStat(a.stat || a.attribut.replace(/Bonus$/, ''));
+    if (a.verrouille || typeof a.valeur !== 'number') {
+      return `<span class="attr verrouille" title="Se débloque au niveau ${a.debloqueAuNiveau ?? '?'}">`
+        + `${esc(nom)} <b>verrouillé</b></span>`;
+    }
+    const valeur = a.type === 'pourcentage' ? signe(a.valeur, pourcent) : signe(a.valeur, nombre);
+    return `<span class="attr ${principal ? 'principalAttr' : ''}">${imgStat(a.stat)}${esc(nom)} <b>${valeur}</b></span>`;
+  };
+  return `<span class="attributsObjet">${ligne(o.principal, true)}`
+    + `${(o.secondaires || []).map((a) => ligne(a, false)).join('')}</span>`;
+}
+
 function texteAttribut(a) {
   if (!a || !a.attribut) return '';
   const nom = libelleStat(a.stat || a.attribut);
@@ -188,14 +217,14 @@ function indexer() {
   objets = new Map(donnees.compte.equipements.map((e) => [e.id, e]));
   herosParId = new Map(donnees.compte.heros.map((h) => [h.id, h]));
 
-  // Un set est soit un armement (main + vêtement), soit une parure (chapeau + cou +
-  // anneau) : jamais les deux. Sa taille se déduit donc des emplacements qu'il occupe,
-  // plutôt que de la supposer identique pour tous.
+  // Un armement se porte en 2 pièces (main, vêtement), une parure en 3 (chapeau,
+  // cou, anneau). Le catalogue du jeu le dit ; à défaut, on le déduit des
+  // emplacements que le set occupe dans l'inventaire.
   const emplacementsParSet = {};
   for (const o of donnees.compte.equipements) (emplacementsParSet[o.set] ||= new Set()).add(o.emplacement);
   taillesDeSet = new Map(Object.entries(emplacementsParSet).map(([set, emplacements]) => [
     set,
-    [...emplacements].every((e) => e === 'Hand' || e === 'Garment') ? 2 : 3,
+    defSet(set)?.pieces ?? ([...emplacements].every((e) => e === 'Hand' || e === 'Garment') ? 2 : 3),
   ]));
 
   equipeInitial = {};
@@ -266,7 +295,22 @@ function agreger(liste) {
       else e.plat += a.valeur;
     }
   }
+  // Un ensemble complet ajoute son bonus. Il compte autant que les objets eux-mêmes :
+  // le set Voyageur apporte à lui seul +15 % de vitesse d'attaque.
+  for (const { bonus } of setsComplets(liste)) {
+    for (const b of bonus) (total[b.stat] ||= { plat: 0, pourcentage: 0 }).pourcentage += b.valeur;
+  }
   return total;
+}
+
+// Les ensembles réunis au complet dans une liste d'objets portés.
+function setsComplets(liste) {
+  const compte = {};
+  for (const o of liste) compte[o.set] = (compte[o.set] || 0) + 1;
+  return Object.entries(compte)
+    .map(([set, n]) => ({ set, n, def: defSet(set) }))
+    .filter(({ n, def }) => def && def.bonus.length && n >= def.pieces)
+    .map(({ set, def }) => ({ set, bonus: def.bonus }));
 }
 
 const cleBase = (heroId) => `hoh:base:${heroId}`;
@@ -383,11 +427,13 @@ function emplacementsHtml(slots, modifiable) {
   return ORDRE_SLOTS.map((slot) => {
     const o = objets.get(slots[slot]);
     const corps = o
-      ? `${imgObjet(o)}
-         <span><span class="titre">${esc(nomObjet(o))}</span><br>
-           <span class="detail">${esc(detailObjet(o))} · ${texteAttribut(o.principal)}</span></span>
+      ? `${tuileObjet(o)}
+         <span class="corpsObjet">
+           <span class="titre">${esc(nomObjet(o))}</span>
+           ${attributsObjetHtml(o)}
+         </span>
          ${modifiable ? `<button class="retirer" data-retirer="${slot}" title="Retirer cet objet" aria-label="Retirer">×</button>` : '<span></span>'}`
-      : `<span class="icone sansIcone"></span><span class="vide">${modifiable ? 'Vide — cliquer pour choisir' : 'Vide'}</span><span></span>`;
+      : `<span class="tuile vide"></span><span class="vide">${modifiable ? 'Vide — cliquer pour choisir' : 'Vide'}</span><span></span>`;
     // Un <div> et non un <bouton> : il contient déjà le bouton « Retirer ».
     return `<div class="emplacement ${o ? `r${o.rarete}` : ''} ${modifiable ? '' : 'fige'}"
         ${modifiable ? `data-slot="${slot}" role="button" tabindex="0"` : ''}>
@@ -408,17 +454,22 @@ function setsHtml(identifiants) {
     if (o) compte[o.set] = (compte[o.set] || 0) + 1;
   }
   return Object.entries(compte).sort((a, b) => b[1] - a[1]).map(([set, n]) => {
+    const def = defSet(set);
     const taille = taillesDeSet.get(set) ?? 3;
     const complet = n >= taille;
-    const paliers = FORMULES.BONUS_DE_SET[set] || [];
-    const bonus = paliers.filter((p) => n >= p.pieces).map((p) => p.texte).join(' · ');
-    const infobulle = bonus
-      || (complet ? 'Set complet. Son effet exact reste à documenter.' : `Il manque ${taille - n} pièce(s) pour compléter ce set.`);
+    const bonus = texteBonusSet(def);
+    const infobulle = complet
+      ? `Set complet — ${bonus || 'bonus inconnu'}`
+      : `Il manque ${taille - n} pièce(s). Complet, ce set donnerait ${bonus || 'un bonus inconnu'}.`;
     return `<span class="badgeSet ${complet ? 'complet' : ''}" title="${esc(infobulle)}">
-      ${imgSet(set)}${esc(nomSet(set))} ${n}/${taille}${bonus ? ` — ${esc(bonus)}` : ''}
+      ${imgSet(set)}${esc(nomSet(set))} ${n}/${taille}${complet && bonus ? `<span class="bonusSet">${esc(bonus)}</span>` : ''}
     </span>`;
   }).join('');
 }
+
+const texteBonusSet = (def) => (def?.bonus || [])
+  .map((b) => `${signe(b.valeur, pourcent)} ${libelleStat(b.stat).toLowerCase()}`)
+  .join(' · ');
 
 // Une case du tableau : apport plat et/ou pourcentage, dans l'esprit du jeu.
 const celluleApport = (e) => [
@@ -523,8 +574,16 @@ function rendreSources() {
     <span class="etatSource">${esc(etat)}</span>
   </div>`;
 
+  const complets = setsComplets(objetsEquipes(selection));
+
   $('#sources').innerHTML = [
     ligne('Équipement', `${objetsPortes} objet${objetsPortes > 1 ? 's' : ''}`, 'détaillé ci-contre', true),
+    ligne(
+      'Bonus de set',
+      complets.length ? complets.map((c) => nomSet(c.set)).join(', ') : 'aucun set complet',
+      complets.length ? complets.flatMap((c) => c.bonus).map((b) => `${signe(b.valeur, pourcent)} ${libelleStat(b.stat).toLowerCase()}`).join(' · ') : '—',
+      complets.length > 0,
+    ),
     ligne('Panthéon', noeuds ? `${noeuds} nœuds` : 'aucun', noeuds ? 'valeurs inconnues' : '—', false),
     ligne('Reliques', reliques.length ? reliques.map((r) => `${joliNom(r.relique)} niv. ${r.niveau}`).join(', ') : 'aucune', reliques.length ? 'valeurs inconnues' : '—', false),
     ligne('Caserne', '—', "absent de l'export", false),
@@ -578,13 +637,13 @@ function rendreSelecteur() {
   const lignes = candidats.map((o) => {
     const p = porteur.get(o.id);
     const marque = p === selection ? 'équipé ici' : p ? `porté par ${nomHeros(p)}` : 'en réserve';
-    const attributs = [o.principal, ...(o.secondaires || [])].map(texteAttribut).filter(Boolean).join(' · ');
     return `<li class="r${o.rarete} ${p && p !== selection ? 'porte' : ''}" data-objet="${o.id}">
-      ${imgObjet(o)}
-      <span class="titre">${esc(nomObjet(o))}</span>
+      ${tuileObjet(o)}
+      <span class="corpsObjet">
+        <span class="titre">${esc(nomObjet(o))}</span>
+        ${attributsObjetHtml(o)}
+      </span>
       <span class="marque">${esc(marque)}</span>
-      <span class="detail discret">${esc(detailObjet(o))}</span>
-      <span class="attributs">${attributs}</span>
     </li>`;
   }).join('');
 

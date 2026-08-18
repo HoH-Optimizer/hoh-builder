@@ -81,6 +81,33 @@ async function recupererLesNoms() {
   return noms;
 }
 
+// Les bonus d'ensemble sont publiés par le wiki au format officiel du jeu,
+// dans le script de sa page Équipement.
+async function recupererLesSets() {
+  const html = await recuperer(`${BASE}/equipment`);
+  const scripts = [...new Set([...html.matchAll(/src="(\/_next\/static\/[^"]+)"/g)].map((m) => m[1]))];
+  for (const chemin of scripts) {
+    const contenu = await recuperer(BASE + chemin);
+    if (!contenu.includes('EquipmentSetDefinitionDTO')) continue;
+
+    const sets = {};
+    const motif = /EquipmentSetDefinitionDTO",definitionId:"equipment_set\.([A-Za-z0-9]+)",equipmentSlotGroupDefinitionId:"equipment_slot_group\.([A-Za-z]+)",setBonusBoosts:\[([\s\S]*?)\],tier:(\d+)/g;
+    for (const [, identifiant, groupe, boosts, tier] of contenu.matchAll(motif)) {
+      const bonus = [...boosts.matchAll(/unitStatDefinitionId:"unit_stat\.([A-Za-z]+)",value:(-?[\d.]+)/g)]
+        .map(([, stat, valeur]) => ({ stat, valeur: Number(valeur) }));
+      sets[identifiant] = {
+        groupe,
+        // Un armement se porte en 2 pièces (main, vêtement), une parure en 3.
+        pieces: groupe === 'Armament' ? 2 : 3,
+        tier: Number(tier),
+        bonus,
+      };
+    }
+    if (Object.keys(sets).length > 20) return sets;
+  }
+  return {};
+}
+
 function extraireLesHeros(catalogue, noms) {
   const heros = {};
   const definition = /"@type":"type\.googleapis\.com\/HeroUnitDefinitionDTO",id:"unit\.Unit_([A-Za-z0-9_]+)"([\s\S]{0,1200})/g;
@@ -136,8 +163,12 @@ function extraireLesHeros(catalogue, noms) {
   const retenus = {};
   for (const id of [...aGarder].sort()) if (tous[id]) retenus[id] = tous[id];
 
-  const sortie = path.resolve(__dirname, '..', 'heros-jeu.js');
-  fs.writeFileSync(sortie, `window.HEROS_JEU = ${JSON.stringify(retenus)};\n`);
+  fs.writeFileSync(path.resolve(__dirname, '..', 'heros-jeu.js'), `window.HEROS_JEU = ${JSON.stringify(retenus)};\n`);
+
+  const sets = await recupererLesSets();
+  fs.writeFileSync(path.resolve(__dirname, '..', 'sets-jeu.js'), `window.SETS_JEU = ${JSON.stringify(sets)};\n`);
+  const avecBonus = Object.values(sets).filter((s) => s.bonus.length).length;
+  console.log(`\nÉcrit sets-jeu.js — ${Object.keys(sets).length} ensembles, dont ${avecBonus} avec un bonus connu`);
 
   const parEtoiles = {};
   Object.values(retenus).forEach((h) => { parEtoiles[h.etoiles] = (parEtoiles[h.etoiles] || 0) + 1; });
