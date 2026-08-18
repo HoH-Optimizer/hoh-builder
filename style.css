@@ -1162,65 +1162,82 @@ td.principal { font-weight: 600; }
 /* ---------- L'application tient dans l'écran ---------- */
 
 /* Ce bloc ferme la feuille à dessein : il redéfinit des règles écrites plus haut
-   (.grilleStats, #listeHeros, .comparateur, .pied) et, à spécificité égale, seule
-   la dernière déclarée l'emporte. Le remonter le rendrait sans effet.
+   et, à spécificité égale, seule la dernière déclarée l'emporte. Le remonter le
+   rendrait sans effet.
 
-   Passé cette largeur, et pourvu que l'écran soit assez haut, la page cesse de
-   défiler : les panneaux remplissent la hauteur disponible et ce qui déborde
-   défile à l'intérieur du sien — la liste des héros d'abord. En dessous, la page
-   redevient une page ordinaire : sur un écran étroit ou bas, tout entasser
-   reviendrait à ne plus rien pouvoir lire.
+   Passé ce format, la page ne défile plus : les trois panneaux se rangent côte à
+   côte et remplissent la hauteur. Seule la liste des héros défile — l'équipement
+   et les statistiques doivent tenir en entier sous les yeux, c'est tout l'objet
+   du resserrement plus bas. En dessous de ce format, la page redevient une page
+   ordinaire qui défile : à moins de largeur, les colonnes d'équipement coupent
+   les noms d'objet, et à moins de hauteur rien ne tiendrait sans rogner.
 
    Les colonnes portent toutes un « main:not(.vide) > #… » : les règles de la
    mise en page qui défile placent ces mêmes panneaux et portent un identifiant.
-   Sans un sélecteur d'égale force, elles l'emporteraient et la rangée
-   s'écroulerait. */
-@media (min-width: 1280px) and (min-height: 620px) {
+   Sans un sélecteur d'égale force, elles l'emporteraient. */
+@media (min-width: 1800px) and (min-height: 880px) {
   html, body { height: 100%; }
   body { display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
 
-  /* Les héros à gauche sur toute la hauteur ; à droite l'équipement au-dessus des
-     statistiques, chacun dans sa moitié. */
   main {
-    grid-template-columns: 280px minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: 280px minmax(0, 1fr) minmax(400px, 470px);
+    grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
     min-height: 0;
     padding-bottom: 16px;
   }
-  main:not(.vide) > #colonneHeros { grid-column: 1; grid-row: 1 / span 2; min-height: 0; }
-  main:not(.vide) > #colonneEquipement { grid-column: 2; grid-row: 1; min-height: 0; }
-  main:not(.vide) > #colonneStats { grid-column: 2; grid-row: 2; min-height: 0; }
+  main:not(.vide) > #colonneHeros,
+  main:not(.vide) > #colonneEquipement,
+  main:not(.vide) > #colonneStats { grid-row: 1; min-height: 0; }
+  main:not(.vide) > #colonneHeros { grid-column: 1; }
+  main:not(.vide) > #colonneEquipement { grid-column: 2; }
+  main:not(.vide) > #colonneStats { grid-column: 3; }
 
-  /* Chaque panneau garde son en-tête en place et fait défiler son contenu. */
   #colonneEquipement, #colonneStats { display: flex; flex-direction: column; }
+  /* Le défilement reste déclaré comme filet de sécurité : si un héros portait un
+     jour plus de pièces que prévu, mieux vaut pouvoir descendre que perdre une
+     ligne. Le resserrement ci-dessous fait qu'en pratique il ne sert pas. */
   .comparateur, .grilleStats { min-height: 0; overflow-y: auto; }
-  /* La silhouette suit la hauteur qu'on lui laisse au lieu d'imposer la sienne :
-     sur cette disposition, le panneau d'équipement n'a que la moitié de l'écran,
-     et une silhouette de 430 px n'y tenait pas — on n'en voyait qu'une tranche. */
-  .pied { height: auto; max-height: min(430px, 24vh); min-height: 120px; }
-  /* Le comparateur défile désormais, et la silhouette y était centrée sur toute
-     la hauteur des colonnes : elle se retrouvait hors du champ. Elle se cale en
-     haut de la zone visible et y reste pendant qu'on parcourt l'équipement. */
-  .personnage { align-self: start; position: sticky; top: 0; }
-}
 
-/* Plus large encore, les trois panneaux tiennent côte à côte. Le seuil est haut
-   à dessein : en dessous, les deux colonnes d'équipement deviennent si étroites
-   que les noms d'objet se coupent. */
-@media (min-width: 1800px) and (min-height: 620px) {
-  main {
-    grid-template-columns: 280px minmax(0, 1fr) minmax(400px, 470px);
-    grid-template-rows: minmax(0, 1fr);
-  }
-  main:not(.vide) > #colonneHeros { grid-row: 1; }
-  main:not(.vide) > #colonneStats { grid-column: 3; grid-row: 1; }
   /* La colonne est trop étroite pour poser la relique à côté du tableau. */
   .grilleStats { grid-template-columns: minmax(0, 1fr); overflow-x: auto; }
-  /* Le héros ne garde plus une largeur fixe : il prend une part du panneau, et
-     grandit donc avec lui. Sur un très grand écran, une valeur figée le laissait
-     minuscule entre deux colonnes d'équipement devenues immenses. */
+  /* Le héros prend une part du panneau, et grandit donc avec lui. Une largeur
+     figée le laissait minuscule entre deux colonnes devenues immenses. */
   .comparateur { grid-template-columns: minmax(0, 1fr) minmax(130px, .5fr) minmax(0, 1fr); gap: 12px; }
-  /* Le panneau occupe ici toute la hauteur : la silhouette peut respirer. */
-  .pied { max-height: min(430px, 46vh); }
+  .pied { height: auto; max-height: min(430px, 42vh); min-height: 150px; }
+
+  /* ----- Le resserrement -----
+     Tout doit tenir sans défiler. On gagne la centaine de pixels qui manquait
+     là où elle ne coûte rien à la lecture : l'air autour des lignes, jamais la
+     taille des chiffres ni celle des illustrations. */
+  .panneau { padding: 14px 16px; }
+  .enteteHeros { margin-bottom: 8px; gap: 11px; }
+  .portrait { width: 58px; height: 58px; }
+  .enteteHeros h2 { margin-bottom: 2px; }
+  .cote h3 { margin-bottom: 6px; }
+  .emplacements { gap: 5px; }
+  .emplacement { min-height: 66px; padding: 4px 9px; gap: 8px; }
+  .emplacement .titre { font-size: 12.5px; }
+  .attr { font-size: 11.5px; line-height: 1.35; }
+  .tuile { width: 52px; height: 52px; }
+  .tuile .icone { width: 50px; height: 50px; }
+  .emplacement { grid-template-columns: 52px minmax(0, 1fr) auto; }
+  .groupeEmplacements { gap: 5px; }
+  .groupeEmplacements + .groupeEmplacements { margin-top: 7px; padding-top: 7px; }
+  .listeSets { margin-top: 8px; gap: 5px; }
+  .badgeSet { padding: 3px 10px 3px 5px; font-size: 11px; }
+  .pastilleSet { width: 22px; height: 22px; margin-right: 6px; vertical-align: -7px; }
+  .bonusSet { font-size: 10px; }
+
+  .enteteStats { margin-bottom: 2px; }
+  table { font-size: 13px; }
+  th { padding: 2px 9px; }
+  td { padding: 1px 9px; }
+  tr.famille th { padding: 5px 0 2px; }
+  .blocRelique { padding: 9px 11px; }
+  .blocRelique h3 { margin-bottom: 5px; }
+  .iconeRelique { width: 42px; height: 42px; }
+  .reglagesRelique { margin-top: 6px; }
+  .noteRelique { margin-top: 6px; font-size: 10.5px; line-height: 1.45; }
+  .coteStats { gap: 6px; }
 }
