@@ -622,7 +622,10 @@ const RANGEES_VISIBLES = 10;
 function bornerListe() {
   const liste = $('#listeHeros');
   const premiere = liste.querySelector('.carteHeros');
-  if (!premiere) { liste.style.maxHeight = ''; return; }
+  // Quand l'application tient dans l'écran, la page ne défile plus et c'est le
+  // panneau qui donne sa hauteur à la liste : la borner y laisserait un trou.
+  const dansLEcran = getComputedStyle(document.body).overflow === 'hidden';
+  if (!premiere || dansLEcran) { liste.style.maxHeight = ''; return; }
   const espace = parseFloat(getComputedStyle(liste).rowGap) || 0;
   const rangee = premiere.offsetHeight + espace;
   liste.style.maxHeight = `${rangee * RANGEES_VISIBLES - espace}px`;
@@ -658,7 +661,7 @@ function carteHeros(h) {
           <img src="images/classes/${esc(classe)}.webp" alt="" onerror="repliIcone(this)">
         </span>` : ''}
       </span>
-      ${h.eveil ? `<span class="badgeEveil" title="Éveil ${ROMAIN[h.eveil] || h.eveil}">${ROMAIN[h.eveil] || h.eveil}</span>` : ''}
+      ${h.eveil ? ecussonEveilHtml(h.eveil, 'ecussonCarte') : ''}
       ${etoiles ? `<span class="etoilesCarte">${'★'.repeat(etoiles)}</span>` : ''}
     </span>
     <span class="niveauCarte">${h.possede
@@ -672,8 +675,17 @@ function carteHeros(h) {
 // pictogramme de l'unité. On reprend les deux — l'écusson est celui des cartes,
 // dessiné en CSS ; le pictogramme vient des icônes du jeu, et retombe sur le nom
 // écrit quand l'icône manque, ce qui est le cas de quatre types sur cinq.
-const badgeEveilHtml = (eveil) =>
-  `<span class="badgeEveil badgeEveilLigne" title="Éveil ${ROMAIN[eveil] || eveil}">${ROMAIN[eveil] || eveil}</span>`;
+// L'écusson vient de la planche du jeu, découpée par tools/eveil.js. Au-delà du
+// cinquième rang — que le catalogue ne connaît pas — on retombe sur le chiffre
+// écrit, faute d'image à montrer.
+const RANGS_EVEIL_DESSINES = 5;
+const ecussonEveilHtml = (eveil, classe = '') => {
+  const romain = ROMAIN[eveil] || eveil;
+  return eveil <= RANGS_EVEIL_DESSINES
+    ? `<img class="ecussonEveil ${classe}" src="images/eveil/${eveil}.png" alt="Éveil ${romain}"
+        title="Éveil ${romain}" onerror="this.remove()">`
+    : `<span class="eveilEcrit ${classe}" title="Éveil ${romain}">${romain}</span>`;
+};
 
 const typeHtml = (type) => {
   const nom = nomType(type);
@@ -706,7 +718,7 @@ function rendreHeros() {
     const morceaux = [`Niveau ${h.niveau ?? '?'}<span class="surMax">/${h.niveauMax ?? '?'}</span>`];
     const rarete = ficheDuHeros(h)?.etoiles;
     if (rarete) morceaux.push(etoilesHtml(rarete));
-    if (h.eveil) morceaux.push(badgeEveilHtml(h.eveil));
+    if (h.eveil) morceaux.push(ecussonEveilHtml(h.eveil, 'ecussonLigne'));
     if (h.competence) morceaux.push(`Compétence ${h.competence}`);
     if (details?.type) morceaux.push(typeHtml(details.type));
     $('#infoHeros').innerHTML = morceaux.join('<span class="separateur">·</span>');

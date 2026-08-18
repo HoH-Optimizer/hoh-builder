@@ -88,15 +88,26 @@ const lire = (chemin) => {
   }
 
   if (!entete) throw new Error(`${chemin} : en-tête IHDR introuvable`);
-  if (entete.bits !== 8) throw new Error(`${chemin} : seuls les PNG 8 bits sont gérés`);
+  if (entete.bits !== 8 && entete.bits !== 16) throw new Error(`${chemin} : seuls les PNG 8 et 16 bits sont gérés`);
   if (entete.entrelacement) throw new Error(`${chemin} : les PNG entrelacés ne sont pas gérés`);
 
   const canauxParType = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
   const canaux = canauxParType[entete.couleur];
   if (!canaux) throw new Error(`${chemin} : type de couleur ${entete.couleur} non géré`);
+  if (entete.bits === 16 && entete.couleur === 3) throw new Error(`${chemin} : une palette n'existe pas en 16 bits`);
 
   const { largeur, hauteur } = entete;
-  const brut = defiltrer(zlib.inflateSync(Buffer.concat(morceaux)), largeur, hauteur, canaux);
+  // Le défiltrage travaille sur des octets : en 16 bits, un pixel en occupe deux
+  // fois plus, et c'est ce nombre-là qu'il faut lui donner pour qu'il retrouve
+  // le pixel de gauche. Le reste de la lecture ne garde ensuite que l'octet de
+  // poids fort de chaque échantillon — le site n'affiche pas plus de 256 nuances.
+  const octetsParPixel = canaux * (entete.bits === 16 ? 2 : 1);
+  let brut = defiltrer(zlib.inflateSync(Buffer.concat(morceaux)), largeur, hauteur, octetsParPixel);
+  if (entete.bits === 16) {
+    const reduit = Buffer.alloc(largeur * hauteur * canaux);
+    for (let i = 0; i < reduit.length; i++) reduit[i] = brut[i * 2];
+    brut = reduit;
+  }
   const pixels = Buffer.alloc(largeur * hauteur * 4);
 
   for (let i = 0, j = 0; i < largeur * hauteur; i++, j += 4) {

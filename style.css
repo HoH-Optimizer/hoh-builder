@@ -247,29 +247,23 @@ main {
   align-items: start;
   padding: 16px 20px 40px;
 }
-/* La colonne des héros ne descend plus sous l'écran : elle se cale en haut et
-   y reste pendant qu'on fait défiler les statistiques, la liste défilant à
-   l'intérieur. On garde ainsi le choix du héros toujours sous la main. */
-/* « main:not(.vide) > » n''est pas décoratif : sans lui, le display: flex de
-   cette règle — portée par un identifiant, donc prioritaire — l''emportait sur
-   celle qui masque les panneaux tant qu''aucune donnée n''est chargée, et un
-   panneau Héros vide s''affichait au-dessus de l''écran d''accueil. */
+/* « main:not(.vide) > » n'est pas décoratif : sans lui, le display: flex de
+   cette règle — portée par un identifiant, donc prioritaire — l'emportait sur
+   celle qui masque les panneaux tant qu'aucune donnée n'est chargée, et un
+   panneau Héros vide s'affichait au-dessus de l'écran d'accueil. */
 main:not(.vide) > #colonneHeros {
   grid-row: 1 / span 2;
-  position: sticky;
-  top: 16px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 32px);
+  min-height: 0;
 }
 #colonneEquipement { grid-column: 2; grid-row: 1; }
 #colonneStats { grid-column: 2; grid-row: 2; }
 @media (max-width: 1000px) {
   main { grid-template-columns: 1fr; }
   #colonneHeros, #colonneEquipement, #colonneStats { grid-column: 1; grid-row: auto; }
-  /* Sur une colonne unique, la liste est au-dessus du reste : l'y coller
-     mangerait tout l'écran. Elle redevient une section ordinaire. */
-  #colonneHeros { position: static; max-height: none; }
+  /* Sur une colonne unique, la liste est au-dessus du reste : lui laisser toute
+     la hauteur mangerait l'écran. Elle redevient une section ordinaire. */
   #listeHeros { flex: none; max-height: 60vh; }
 }
 
@@ -420,19 +414,6 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .etoiles .creuses { color: var(--bordure); }
 #infoHeros .surMax { color: var(--discret); }
 
-/* L'écusson d'éveil des cartes, repris dans la ligne du héros. Il y est posé
-   dans le fil du texte au lieu d'être accroché à un coin d'image : il lui faut
-   donc sa propre position, et de quoi s'aligner sur les mots qui l'entourent. */
-/* Deux classes et non une : la règle des cartes, déclarée plus bas, l''emportait
-   sinon et l''écusson allait se coller au coin haut-gauche de la page. */
-.badgeEveil.badgeEveilLigne {
-  position: static;
-  display: inline-grid;
-  width: 22px;
-  height: 25px;
-  font-size: 10px;
-  vertical-align: -7px;
-}
 .typeHeros { display: inline-flex; align-items: center; gap: 5px; vertical-align: -6px; }
 .iconeType { width: 22px; height: 22px; object-fit: contain; }
 /* Le nom écrit ne se montre que faute d'icône : repliType() pose la classe. */
@@ -461,7 +442,7 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
   min-height: 0;
   overflow-y: auto;
   /* Sans ces deux lignes, la colonne ayant désormais une hauteur fixe, les
-     rangées se laissaient comprimer jusqu''à douze pixels et les portraits
+     rangées se laissaient comprimer jusqu'à douze pixels et les portraits
      disparaissaient. Les rangées gardent leur taille et la liste défile. */
   align-content: start;
   grid-auto-rows: max-content;
@@ -553,34 +534,24 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .fond-yellow { background: #e0a02a; }
 .fond-purple { background: #7b4bc4; }
 
-/* Écusson d'éveil : hexagone de bronze à chiffre romain, accroché sous le fanion
-   comme sur la vignette du jeu. */
-.badgeEveil {
+/* Écusson d'éveil : l'image du jeu, découpée par tools/eveil.js. Elle a remplacé
+   un hexagone dessiné en CSS, qui n'en donnait qu'une approximation. */
+.ecussonEveil, .eveilEcrit { flex: none; }
+.ecussonCarte {
   position: absolute;
-  top: 40px;
-  left: 1px;
-  display: grid;
-  place-items: center;
-  width: 25px;
+  top: 38px;
+  left: 2px;
+  width: 24px;
   height: 28px;
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -.02em;
-  color: #f7ecd2;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, .55);
-  background: linear-gradient(180deg, #a8802f 0%, #6d4a18 55%, #8a6524 100%);
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .5));
 }
-/* Le liseré clair du jeu, obtenu en superposant un hexagone légèrement plus grand. */
-.badgeEveil::before {
-  content: '';
-  position: absolute;
-  inset: -1.5px;
-  z-index: -1;
-  background: linear-gradient(180deg, #f0d79b, #8a6524);
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+/* Dans la ligne du héros, l'écusson se pose dans le fil du texte. */
+.ecussonLigne {
+  width: 21px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: -7px;
 }
 
 .etoilesCarte {
@@ -1188,25 +1159,68 @@ td.principal { font-weight: 600; }
 /* La flèche du bandeau de niveau : ce héros n'est pas encore au bout. */
 .niveauCarte .marge { margin-left: 3px; font-size: 8px; color: var(--accent); vertical-align: 1px; }
 
-/* ---------- Disposition en trois colonnes, sur écran large ---------- */
+/* ---------- L'application tient dans l'écran ---------- */
 
 /* Ce bloc ferme la feuille à dessein : il redéfinit des règles écrites plus haut
    (.grilleStats, #listeHeros, .comparateur, .pied) et, à spécificité égale, seule
-   la dernière déclarée l'emporte. Le remonter le rendrait sans effet. */
-@media (min-width: 1680px) {
-  /* Héros | équipement | statistiques : plus rien à faire défiler pour comparer. */
-  /* La colonne des statistiques ne descend pas sous 440 px : le tableau ne se
-     laisse pas comprimer davantage et débordait de la page. */
-  main { grid-template-columns: 300px minmax(0, 1fr) minmax(440px, 490px); }
-  #colonneHeros { grid-column: 1; grid-row: 1; }
-  #colonneEquipement { grid-column: 2; grid-row: 1; }
-  #colonneStats { grid-column: 3; grid-row: 1; }
+   la dernière déclarée l'emporte. Le remonter le rendrait sans effet.
+
+   Passé cette largeur, et pourvu que l'écran soit assez haut, la page cesse de
+   défiler : les panneaux remplissent la hauteur disponible et ce qui déborde
+   défile à l'intérieur du sien — la liste des héros d'abord. En dessous, la page
+   redevient une page ordinaire : sur un écran étroit ou bas, tout entasser
+   reviendrait à ne plus rien pouvoir lire.
+
+   Les colonnes portent toutes un « main:not(.vide) > #… » : les règles de la
+   mise en page qui défile placent ces mêmes panneaux et portent un identifiant.
+   Sans un sélecteur d'égale force, elles l'emporteraient et la rangée
+   s'écroulerait. */
+@media (min-width: 1280px) and (min-height: 620px) {
+  html, body { height: 100%; }
+  body { display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
+
+  /* Les héros à gauche sur toute la hauteur ; à droite l'équipement au-dessus des
+     statistiques, chacun dans sa moitié. */
+  main {
+    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+    min-height: 0;
+    padding-bottom: 16px;
+  }
+  main:not(.vide) > #colonneHeros { grid-column: 1; grid-row: 1 / span 2; min-height: 0; }
+  main:not(.vide) > #colonneEquipement { grid-column: 2; grid-row: 1; min-height: 0; }
+  main:not(.vide) > #colonneStats { grid-column: 2; grid-row: 2; min-height: 0; }
+
+  /* Chaque panneau garde son en-tête en place et fait défiler son contenu. */
+  #colonneEquipement, #colonneStats { display: flex; flex-direction: column; }
+  .comparateur, .grilleStats { min-height: 0; overflow-y: auto; }
+  /* La silhouette suit la hauteur qu'on lui laisse au lieu d'imposer la sienne :
+     sur cette disposition, le panneau d'équipement n'a que la moitié de l'écran,
+     et une silhouette de 430 px n'y tenait pas — on n'en voyait qu'une tranche. */
+  .pied { height: auto; max-height: min(430px, 24vh); min-height: 120px; }
+  /* Le comparateur défile désormais, et la silhouette y était centrée sur toute
+     la hauteur des colonnes : elle se retrouvait hors du champ. Elle se cale en
+     haut de la zone visible et y reste pendant qu'on parcourt l'équipement. */
+  .personnage { align-self: start; position: sticky; top: 0; }
+}
+
+/* Plus large encore, les trois panneaux tiennent côte à côte. Le seuil est haut
+   à dessein : en dessous, les deux colonnes d'équipement deviennent si étroites
+   que les noms d'objet se coupent. */
+@media (min-width: 1800px) and (min-height: 620px) {
+  main {
+    grid-template-columns: 280px minmax(0, 1fr) minmax(400px, 470px);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  main:not(.vide) > #colonneHeros { grid-row: 1; }
+  main:not(.vide) > #colonneStats { grid-column: 3; grid-row: 1; }
   /* La colonne est trop étroite pour poser la relique à côté du tableau. */
   .grilleStats { grid-template-columns: minmax(0, 1fr); overflow-x: auto; }
-  /* La silhouette du héros se serre pour laisser aux deux colonnes d'équipement
-     la largeur dont elles ont besoin pour ne pas couper les noms d'objet. */
   /* Le héros ne garde plus une largeur fixe : il prend une part du panneau, et
      grandit donc avec lui. Sur un très grand écran, une valeur figée le laissait
      minuscule entre deux colonnes d'équipement devenues immenses. */
-  .comparateur { grid-template-columns: minmax(0, 1fr) minmax(150px, .55fr) minmax(0, 1fr); gap: 12px; }
+  .comparateur { grid-template-columns: minmax(0, 1fr) minmax(130px, .5fr) minmax(0, 1fr); gap: 12px; }
+  /* Le panneau occupe ici toute la hauteur : la silhouette peut respirer. */
+  .pied { max-height: min(430px, 46vh); }
 }
