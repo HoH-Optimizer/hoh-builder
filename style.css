@@ -208,6 +208,8 @@ header p { margin: 0; color: var(--discret); font-size: 13px; }
   box-shadow: 0 2px 16px var(--lueur-accent);
 }
 .bouton.principal:hover { filter: brightness(1.07); }
+/* Le bouton de téléchargement est un lien : sans cela, il resterait souligné. */
+a.bouton { text-decoration: none; }
 
 /* Le bouton des deux thèmes annonce celui vers lequel on va, pas celui où l'on
    est : sous le thème sombre il montre un soleil, sous le thème clair une lune. */
@@ -325,7 +327,7 @@ main.vide #accueil { display: block; max-width: 620px; margin-top: 24px; padding
   color: var(--texte);
   background: var(--panneau-clair);
   border: 1px solid var(--bordure);
-  border-radius: 7px;
+  border-radius: 5px;
 }
 
 /* ---------- Colonne héros ---------- */
@@ -402,7 +404,9 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .aucunHeros { grid-column: 1 / -1; color: var(--discret); font-size: 13px; }
 
 .carteHeros {
-  border-radius: 14px;
+  /* Pas davantage : au-delà, le coin arrondi entame le fanion, qui pend du bord
+     haut à quelques pixels de la gauche. */
+  border-radius: 9px;
   overflow: hidden;
   border: 1px solid var(--bordure);
   cursor: pointer;
@@ -428,7 +432,8 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .fanion {
   position: absolute;
   top: 0;
-  left: 4px;
+  /* Décalé pour tomber au-delà de l'arrondi de la carte, qui le rognerait. */
+  left: 7px;
   display: grid;
   width: 19px;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .55));
@@ -851,7 +856,7 @@ td.principal { font-weight: 600; }
   font-weight: 700;
   color: #fff;
   background: rgba(0, 0, 0, .55);
-  border-radius: 7px;
+  border-radius: 4px;
 }
 .etoilesTuile {
   position: absolute;
