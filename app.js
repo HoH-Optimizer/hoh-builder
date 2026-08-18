@@ -609,7 +609,28 @@ function rendreListeHeros() {
   $('#listeHeros').innerHTML = liste.map(carteHeros).join('')
     || '<li class="aucunHeros">Aucun héros ne correspond.</li>';
   $('#compteHeros').textContent = liste.length ? `${liste.length} héros` : '';
+  bornerListe();
 }
+
+// Dix rangées de cartes au plus : au-delà, la colonne des héros descendait plus
+// bas que les panneaux voisins. Le reste défile.
+//
+// La mesure se fait ici plutôt qu'en CSS parce qu'une feuille de style ne sait
+// pas compter des rangées : la hauteur d'une carte dépend de la largeur de la
+// colonne, qui dépend elle-même de celle de l'écran.
+const RANGEES_VISIBLES = 10;
+function bornerListe() {
+  const liste = $('#listeHeros');
+  const premiere = liste.querySelector('.carteHeros');
+  if (!premiere) { liste.style.maxHeight = ''; return; }
+  const espace = parseFloat(getComputedStyle(liste).rowGap) || 0;
+  const rangee = premiere.offsetHeight + espace;
+  liste.style.maxHeight = `${rangee * RANGEES_VISIBLES - espace}px`;
+}
+
+// La largeur de la colonne change avec celle de la fenêtre, donc la hauteur des
+// cartes aussi : la borne se recalcule.
+window.addEventListener('resize', bornerListe);
 
 // Vignette reprise de l'écran des héros du jeu : le portrait, et par-dessus, en
 // haut à gauche, un fanion qui empile la couleur d'affinité et la classe ; sous
@@ -646,6 +667,32 @@ function carteHeros(h) {
   </li>`;
 }
 
+// L'éveil et le type d'unité s'écrivaient en toutes lettres dans la ligne du
+// héros. Le jeu, lui, les montre : l'écusson de bronze à chiffre romain, et le
+// pictogramme de l'unité. On reprend les deux — l'écusson est celui des cartes,
+// dessiné en CSS ; le pictogramme vient des icônes du jeu, et retombe sur le nom
+// écrit quand l'icône manque, ce qui est le cas de quatre types sur cinq.
+const badgeEveilHtml = (eveil) =>
+  `<span class="badgeEveil badgeEveilLigne" title="Éveil ${ROMAIN[eveil] || eveil}">${ROMAIN[eveil] || eveil}</span>`;
+
+const typeHtml = (type) => {
+  const nom = nomType(type);
+  return `<span class="typeHeros" title="${esc(nom)}">
+    <img class="iconeType" src="images/types/${esc(String(type).toLowerCase())}.webp" alt=""
+      data-libelle="${esc(nom)}" onerror="repliType(this)">
+    <span class="nomType">${esc(nom)}</span>
+  </span>`;
+};
+
+// Le nom écrit est là mais masqué : il reprend sa place dès que l'icône manque,
+// ce qui vaut mieux qu'un trou dans la ligne.
+function repliType(img) {
+  const hote = img.closest('.typeHeros');
+  img.remove();
+  if (hote) hote.classList.add('sansIconeType');
+}
+window.repliType = repliType;
+
 function rendreHeros() {
   if (!selection) return;
   const h = herosParId.get(selection);
@@ -659,14 +706,14 @@ function rendreHeros() {
     const morceaux = [`Niveau ${h.niveau ?? '?'}<span class="surMax">/${h.niveauMax ?? '?'}</span>`];
     const rarete = ficheDuHeros(h)?.etoiles;
     if (rarete) morceaux.push(etoilesHtml(rarete));
-    if (h.eveil) morceaux.push(`Éveil ${ROMAIN[h.eveil] || h.eveil}`);
+    if (h.eveil) morceaux.push(badgeEveilHtml(h.eveil));
     if (h.competence) morceaux.push(`Compétence ${h.competence}`);
-    if (details?.type) morceaux.push(esc(nomType(details.type)));
+    if (details?.type) morceaux.push(typeHtml(details.type));
     $('#infoHeros').innerHTML = morceaux.join('<span class="separateur">·</span>');
   } else {
     const morceaux = [];
     if (details?.etoiles) morceaux.push(etoilesHtml(details.etoiles));
-    if (details?.type) morceaux.push(esc(nomType(details.type)));
+    if (details?.type) morceaux.push(typeHtml(details.type));
     morceaux.push("Pas sur ton compte — tu peux quand même simuler un équipement dessus.");
     $('#infoHeros').innerHTML = morceaux.join('<span class="separateur">·</span>');
   }

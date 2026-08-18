@@ -399,7 +399,7 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .vignette { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: var(--panneau-clair); }
 .portrait { width: 74px; height: 74px; border-radius: 18px; object-fit: cover; background: var(--panneau-clair); }
 .icone { width: 40px; height: 40px; }
-.pastilleSet { width: 16px; height: 16px; margin-right: 5px; vertical-align: -3px; }
+.pastilleSet { width: 26px; height: 26px; margin-right: 7px; vertical-align: -8px; }
 .iconeStat { width: 18px; height: 18px; margin-right: 7px; vertical-align: -4px; object-fit: contain; }
 /* Une icône de statistique absente disparaît : le libellé porte déjà l'information. */
 .iconeStat.sansIcone { display: none; }
@@ -419,6 +419,26 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .etoiles { color: var(--or-etoiles); letter-spacing: .06em; white-space: nowrap; }
 .etoiles .creuses { color: var(--bordure); }
 #infoHeros .surMax { color: var(--discret); }
+
+/* L'écusson d'éveil des cartes, repris dans la ligne du héros. Il y est posé
+   dans le fil du texte au lieu d'être accroché à un coin d'image : il lui faut
+   donc sa propre position, et de quoi s'aligner sur les mots qui l'entourent. */
+/* Deux classes et non une : la règle des cartes, déclarée plus bas, l''emportait
+   sinon et l''écusson allait se coller au coin haut-gauche de la page. */
+.badgeEveil.badgeEveilLigne {
+  position: static;
+  display: inline-grid;
+  width: 22px;
+  height: 25px;
+  font-size: 10px;
+  vertical-align: -7px;
+}
+.typeHeros { display: inline-flex; align-items: center; gap: 5px; vertical-align: -6px; }
+.iconeType { width: 22px; height: 22px; object-fit: contain; }
+/* Le nom écrit ne se montre que faute d'icône : repliType() pose la classe. */
+.typeHeros .nomType { display: none; }
+.typeHeros.sansIconeType { vertical-align: baseline; }
+.typeHeros.sansIconeType .nomType { display: inline; }
 #infoHeros .separateur { margin: 0 7px; opacity: .45; }
 
 .enteteHeros { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
@@ -643,7 +663,7 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .retirer:hover { color: var(--negatif); border-color: var(--negatif); }
 
 .badgeSet {
-  padding: 4px 9px;
+  padding: 5px 12px 5px 8px;
   font-size: 12px;
   border: 1px solid var(--bordure);
   border-radius: 999px;
@@ -994,6 +1014,16 @@ td.principal { font-weight: 600; }
    plus long. Sans cela, « margin-left: auto » envoyait chaque chiffre à l'autre
    bout de la ligne, à deux cents pixels de ce qu'il désigne. */
 .attributsObjet { display: grid; gap: 1px; min-width: 0; width: max-content; max-width: 100%; }
+
+/* Dans une ligne d'équipement, en revanche, la place restait vide à droite. Les
+   attributs s'y rangent donc sur deux colonnes — mais seulement quand chacune
+   peut tenir ses 190 px : sur une ligne étroite, auto-fit n'en garde qu'une et
+   l'on retrouve la disposition ci-dessus. */
+.emplacement .attributsObjet {
+  width: auto;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 2px 26px;
+}
 .attr { display: flex; align-items: baseline; gap: 5px; font-size: 12px; color: var(--discret); }
 .attr b { color: var(--texte); font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: auto; padding-left: 16px; }
 .attr.principalAttr { font-size: 12.5px; }
@@ -1175,6 +1205,8 @@ td.principal { font-weight: 600; }
   .grilleStats { grid-template-columns: minmax(0, 1fr); overflow-x: auto; }
   /* La silhouette du héros se serre pour laisser aux deux colonnes d'équipement
      la largeur dont elles ont besoin pour ne pas couper les noms d'objet. */
-  .comparateur { grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr); gap: 12px; }
-  .pied { height: 300px; }
+  /* Le héros ne garde plus une largeur fixe : il prend une part du panneau, et
+     grandit donc avec lui. Sur un très grand écran, une valeur figée le laissait
+     minuscule entre deux colonnes d'équipement devenues immenses. */
+  .comparateur { grid-template-columns: minmax(0, 1fr) minmax(150px, .55fr) minmax(0, 1fr); gap: 12px; }
 }
