@@ -71,6 +71,12 @@ const STAT = {
   // Le numéro 9 n'apparaît dans aucune fiche du wiki, mais il vaut 1,25 sur les
   // héros de mêlée et 6 sur les archers : c'est la portée d'attaque.
   9: 'AttackRange',
+  // Les numéros 18 et 19 n'apparaissent dans la fiche d'AUCUN héros : ils ne
+  // vivent que dans la table des valeurs par défaut (rubrique 19), où ils valent
+  // 0,05 et 1,5 pour toutes les catégories d'unité qui frappent. Ce sont les
+  // 5 % de chances de crit et les 150 % de dégâts critiques que formules.js
+  // avait relevés à la main sur Achille.
+  18: 'CritChance', 19: 'CritDamage',
   4: 'AssetRadius', 5: 'Attack', 10: 'AttackSpeed', 11: 'BaseDamage',
   20: 'Defense', 27: 'Focus', 28: 'FocusRegen', 32: 'HitTime',
   34: 'MaxFocus', 35: 'MaxHitPoints', 36: 'MoveSpeed', 39: 'ProjectileSpeed',

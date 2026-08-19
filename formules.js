@@ -79,9 +79,15 @@ window.FORMULES = {
      sont les mêmes pour tout le monde. Relevées sur l'écran « Stats » d'Achille
      en jeu, en retranchant ce que son équipement apportait.                   */
 
+  // CONFIRMÉ À LA SOURCE depuis. Le catalogue du jeu porte une table de valeurs
+  // par défaut, une ligne par catégorie d'unité (rubrique 19 de coreData), et
+  // elle donne 0,05 et 1,5 partout — exactement les deux chiffres relevés à la
+  // main sur Achille. Aucun héros ne porte ces statistiques dans sa propre fiche :
+  // ce sont bien des défauts, ce qui explique qu'on ne les ait trouvées nulle part
+  // en cherchant héros par héros.
   DEFAUTS: {
-    CritChance: 0.05,   // 5 %
-    CritDamage: 1.50,   // 150 %
+    CritChance: 0.05,   // 5 %  — stat n° 18 du catalogue
+    CritDamage: 1.50,   // 150 % — stat n° 19 du catalogue
     // L'esquive et les soins reçus valent zéro au départ : les 5 % et 10 % qu'on
     // lisait sur Achille venaient de son panthéon, pas de lui.
   },
