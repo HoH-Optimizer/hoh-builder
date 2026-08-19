@@ -22,6 +22,15 @@
    Deux natures de bonus existent :
      - "plat"        : +20 Attaque
      - "pourcentage" : +2,2 % Défense
+
+   CE QUI N'EST PAS ICI, ET POURQUOI
+   Le site ne calcule pas la PUISSANCE, ce nombre que le jeu affiche sous le nom
+   du héros. La formule qui circule dans la communauté a été mise à l'épreuve sur
+   onze héros et ne tient pas : elle donne aux dégâts de base deux fois trop de
+   poids. Le détail de l'enquête, les mesures relevées dans le jeu une par une,
+   ce qui est réfuté et ce qu'il reste à faire sont dans RECHERCHE-PUISSANCE.md.
+   Y aller AVANT de retenter quoi que ce soit sur ce sujet : tout y est, et rien
+   n'a besoin d'être remesuré.
    ========================================================================== */
 
 window.FORMULES = {
