@@ -131,7 +131,13 @@
       attribut,
       stat: sansPrefixe(detail?.f3, 'unit_stat.'),
       valeur: detail?.f4,
-      type: /Bonus$/.test(attribut || '') || attribut === 'CritChance' || attribut === 'CritDamage' ? 'pourcentage' : 'plat',
+      // Le nom finissant par « Bonus » annonce en principe un pourcentage.
+      // EXCEPTION : InitialFocusInSecondsBonus se compte en SECONDES, comme son nom
+      // le dit. Vérifié sur l'infobulle du jeu, qui affiche « -0,36 s » là où la
+      // donnée vaut 0,36. Le traiter comme un pourcentage annulait son effet.
+      type: attribut === 'InitialFocusInSecondsBonus' ? 'plat'
+        : /Bonus$/.test(attribut || '') || attribut === 'CritChance' || attribut === 'CritDamage' ? 'pourcentage'
+        : 'plat',
       debloqueAuNiveau: a.f3,
       verrouille: detail ? undefined : true,
     };
@@ -172,6 +178,13 @@
     return undefined;
   }
 
+  // Le classement des âges vient du catalogue (ages-jeu.js) quand il est chargé.
+  // En ligne de commande il ne l'est pas : on retombe sur l'ordre connu du jeu.
+  const ORDRE_AGES = ['DawnAge', 'StoneAge', 'BronzeAge', 'MinoanEra', 'ClassicGreece',
+    'EarlyRome', 'RomanEmpire', 'ByzantineEra', 'AgeOfTheFranks', 'FeudalAge',
+    'IberianEra', 'KingdomOfSicily', 'HighMiddleAges', 'EarlyGothicEra'];
+  const rangDAge = (nom) => global.AGES_JEU?.[nom]?.rang ?? (ORDRE_AGES.indexOf(nom) + 1);
+
   function extraire(brut) {
     // v2 de l'extension : une seule capture sous la clé "startup".
     // v3 : plusieurs captures, on retrouve l'état du compte par son adresse.
@@ -185,6 +198,30 @@
     const heros = parType('HeroPush').flatMap((p) => tableau(p.f1));
     const equipements = parType('EquipmentPush').flatMap((p) => tableau(p.f1));
 
+    // LES CASERNES. Elles ajoutent un forfait aux statistiques de tous les héros,
+    // et il y en a une par arme : un héros d'infanterie profite de la caserne
+    // d'infanterie, pas des autres. Chaque ville liste ses bâtiments dans f4 ;
+    // le nom du bâtiment (f2) porte l'arme et le palier, f18 l'ordre du palier.
+    // L'ÂGE DU JOUEUR. Il ne figure pas tel quel dans l'export, mais chaque bâtiment
+    // porte le sien : le plus avancé de la capitale donne l'âge atteint. Il sert à
+    // mettre les reliques à l'échelle (voir reliques-jeu.js).
+    let age = null;
+    for (const ville of parType('CityDTO')) {
+      if (!/City_Capital/.test(ville.f2 || '')) continue;
+      for (const batiment of tableau(ville.f4)) {
+        const nom = sansPrefixe(batiment.f17, 'age.');
+        if (nom && (!age || rangDAge(nom) > rangDAge(age))) age = nom;
+      }
+    }
+
+    const casernes = {};
+    for (const ville of parType('CityDTO')) {
+      for (const batiment of tableau(ville.f4)) {
+        const m = /^building\.(Building_\w+?_Barracks_(\w+?)_\d+)$/.exec(batiment.f2 || '');
+        if (m) casernes[m[2]] = { batiment: m[1], palier: batiment.f18 ?? null };
+      }
+    }
+
     // Le jeu compose ses statistiques à partir de plusieurs sources. L'export en
     // contient deux de plus que l'équipement : les nœuds de panthéon débloqués et
     // les reliques portées. Leurs valeurs, elles, appartiennent au catalogue du jeu
@@ -195,11 +232,15 @@
       if (id) noeudsParHero[id] = tableau(entree.f2).map((n) => sansPrefixe(n.f1, 'pantheon_node.'));
     }
 
+    // PIÈGE DU NIVEAU DE RELIQUE : f3 PLAFONNE À 11. Au-delà, le compte range les
+    // niveaux supplémentaires dans f4. Une relique « f3=11, f4=4 » est donc au
+    // niveau 15, pas au niveau 11 — et f4 n'est pas un nombre d'étoiles.
+    // Le catalogue le confirme : son propre champ de palier plafonne au même 11 et
+    // se répète ensuite, alors que le nom de la capacité va bien jusqu'à _15.
     const reliques = parType('RelicPush').flatMap((p) => tableau(p.f1)).map((r) => ({
       id: r.f1,
       relique: sansPrefixe(r.f2, 'relic.'),
-      niveau: r.f3 ?? 0,
-      etoiles: r.f4 ?? 0,
+      niveau: (r.f3 ?? 0) + (r.f4 ?? 0),
       porteParHero: sansPrefixe(r.f5, 'hero.') ?? null,
     }));
 
@@ -232,6 +273,8 @@
       },
       compte: {
         joueur: { id: joueur?.f1, nom: joueur?.f2 },
+        age,
+        casernes,
         // Correspondances vérifiées en comparant l'export à l'écran du jeu :
         //   f2  = niveau actuel
         //   f3  = nombre d'ascensions — le niveau maximum vaut (ascensions + 1) x 10

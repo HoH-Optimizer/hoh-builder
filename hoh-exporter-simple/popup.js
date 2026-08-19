@@ -1,6 +1,8 @@
-// Adresse publique du site. À garder identique aux "matches" du manifeste :
-// c'est là que le pont a le droit de déposer les données.
-const SITE = 'https://tizzy1377.github.io/hoh-builder/';
+// Adresse publique du site. À GARDER IDENTIQUE aux "matches" du manifeste :
+// c'est là, et nulle part ailleurs, que le pont a le droit de déposer les
+// données. Une adresse qui ne correspond plus casse l'extension en silence —
+// le bouton ouvre une page morte et rien n'est transmis.
+const SITE = 'https://hoh-optimizer.github.io/hoh-builder/';
 
 const etat = document.querySelector('#etat');
 const ouvrir = document.querySelector('#ouvrir');

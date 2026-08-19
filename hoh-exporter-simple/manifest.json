@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HOH Builder — Export",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Transmet les données de ton compte Heroes of History à HOH Builder. Lecture seule : ne clique jamais à ta place.",
   "permissions": ["storage", "unlimitedStorage"],
   "action": {"default_popup": "popup.html", "default_title": "HOH Builder — Export"},
@@ -12,7 +12,7 @@
       "run_at": "document_start"
     },
     {
-      "matches": ["https://tizzy1377.github.io/hoh-builder/*", "http://localhost:4173/*"],
+      "matches": ["https://hoh-optimizer.github.io/hoh-builder/*", "http://localhost:4173/*"],
       "js": ["pont.js"],
       "run_at": "document_idle"
     }
