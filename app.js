@@ -523,9 +523,16 @@ function contexteHeros(heroId) {
     // La relique elle-même, pas seulement ce qu'elle apporte : la formule de
     // puissance a besoin de sa RARETÉ et de son NIVEAU, qui n'entrent dans
     // aucune statistique mais multiplient la puissance (voir formules.js).
+    //
+    // La rareté ne vient PAS du compte — il ne la donne pas — mais du catalogue :
+    // c'est une propriété du type de relique, pas de l'exemplaire.
     reliquePortee: (() => {
       const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
-      return portee ? { etoiles: portee.etoiles, niveau: niveauRelique(portee) } : null;
+      if (!portee) return null;
+      return {
+        rarete: (window.RELIQUES_JEU || {})[portee.relique]?.rarete ?? null,
+        niveau: niveauRelique(portee),
+      };
     })(),
     pantheon: effetsPantheon(h).effets,
   };
@@ -889,7 +896,7 @@ function rendrePuissance(contexte, simule, actuel) {
   const signe = ecart > 0 ? 'positif' : ecart < 0 ? 'negatif' : '';
   const infobulle = "Puissance ESTIMÉE, pas celle du jeu : la formule est bien celle du jeu, "
     + "retrouvée dans ses données, mais il lui manque encore une constante d'environ 1 400 "
-    + "dont on ignore l'origine. Le résultat tombe à 2,3 % en moyenne sur les 22 héros mesurés. "
+    + "dont on ignore l'origine. Le résultat tombe à 1,7 % en moyenne sur les héros mesurés. "
     + "L'écart entre deux configurations est plus fiable que le total, parce que l'erreur du "
     + "modèle est propre au héros et disparaît dans la comparaison.";
 

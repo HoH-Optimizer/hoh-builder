@@ -359,6 +359,14 @@ async function principal() {
     reliques[id] = {
       nom: fr[`Base.Relics.${id}_Name`] || id,
       description: sansBalises(fr[`Base.Relics.${id}_Desc`]),
+      // LA RARETÉ, en étoiles. Le catalogue la code par un petit numéro d'ordre
+      // (1 ou 2) et non par le nombre d'étoiles. La correspondance a été établie
+      // en confrontant les 39 reliques au game design complet du jeu, qui les
+      // nomme en clair (« relic_rarity.4 », « relic_rarity.5 ») : trente-neuf
+      // accords, aucune exception.
+      // Elle sert à la formule de puissance, qui accorde un bonus par niveau de
+      // relique — 0,5 % pour une 4★, 1 % pour une 5★.
+      rarete: { 1: 4, 2: 5 }[bloc.f3] ?? null,
       paliers,
     };
   }

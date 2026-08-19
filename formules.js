@@ -25,8 +25,9 @@
 
    LA PUISSANCE EST ICI, MAIS APPROCHÉE. Le nombre que le jeu affiche sous le nom
    du héros n'existe dans AUCUNE donnée : ni dans l'export du compte, ni dans le
-   catalogue. Il a fallu le reconstituer par la mesure, et le résultat tombe à
-   4,5 % en moyenne, 11 % au pire, sur les 22 héros relevés. Voir puissance(),
+   catalogue. La FORMULE, elle, a été retrouvée dans les données du jeu — voir le §15 du
+   journal. Ce qui reste approché est une constante additive d'environ 1 400, et
+   le résultat tombe à 1,7 % en moyenne, 7 % au pire, sur les héros relevés. Voir puissance(),
    plus bas, qui porte le détail de ce qui est mesuré et de ce qui est ajusté.
    Le journal complet de l'enquête est dans RECHERCHE-PUISSANCE.md : y aller
    AVANT de retenter quoi que ce soit sur ce sujet, tout y est, et rien n'a
@@ -333,10 +334,11 @@ window.FORMULES = {
     portee: 0.0168,            // par point de portée au-delà de 1,25
     capacite: 0.024994,        // par niveau de capacité au-delà du premier
     rarete: { 2: 0.90, 3: 1.35, 4: 1.75, 5: 2.03 },
-    // LA RARETÉ D'UNE RELIQUE N'EST PAS DANS L'EXPORT. Le compte donne son
-    // identifiant, son niveau et le héros qui la porte, jamais sa rareté — et le
-    // catalogue ne la donne pas davantage. Ce terme est donc INERTE aujourd'hui :
-    // faute de rareté connue, il vaut 1 pour tout le monde.
+    // LA RARETÉ D'UNE RELIQUE NE VIENT PAS DU COMPTE — il ne la donne pas — mais
+    // du CATALOGUE : c'est une propriété du type de relique. Le catalogue la code
+    // par un numéro d'ordre (1 ou 2) que reliques-jeu.js traduit en étoiles ;
+    // la correspondance a été vérifiée sur les 39 reliques contre le game design
+    // complet du jeu, sans une exception.
     // ATTENTION à un piège voisin : le champ « etoiles » que produisaient les
     // anciennes versions de l'extension n'est PAS une rareté, c'est le surplus de
     // niveau au-delà de 11, que le jeu range à part. Le prendre pour une rareté
@@ -409,7 +411,7 @@ window.FORMULES = {
       * (1 + v('CritChance') * (v('CritDamage') - 1))
       * (0.5 + 0.5 / escouadeAttendue)
       * combat
-      * (1 + (relique ? (P.rareteRelique[relique.etoiles] || 0) * relique.niveau : 0));
+      * (1 + (relique ? (P.rareteRelique[relique.rarete] || 0) * relique.niveau : 0));
 
     if (!(noyau > 0)) return null;
     return P.coefficient * escouade * Math.sqrt(noyau) + P.constante;
