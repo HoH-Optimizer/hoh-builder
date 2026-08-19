@@ -501,6 +501,20 @@ Dans l'arbre de panthéon, **survoler un nœud sans l'activer affiche la puissan
 que le héros gagnerait s'il l'activait**. Or un nœud ne change qu'UNE chose, et
 on sait exactement laquelle et de combien.
 
+**PIÈGE DE LECTURE, ET IL A MORDU.** Le nombre affiché en haut à droite de cet
+écran n'est PAS la puissance du héros : c'est sa puissance **sans le panthéon**.
+Le « +N » vert à côté est ce que le panthéon lui apporte — celui déjà activé, plus
+le nœud survolé s'il ne l'est pas encore.
+
+Sur Marie Curie, l'écran dit « 19 620 +1 518 » : sa vraie puissance est
+**21 138**, et c'est bien ce que porte sa carte (§4). Confondre les deux la faisait
+paraître 8 % au-dessus du modèle, alors qu'elle est à 0,8 %.
+
+Cela ne change rien aux mesures qui suivent : Léonard, Hatchepsout et Wallace
+n'ont AUCUN nœud activé, donc chez eux le nombre affiché est bien la puissance
+entière, et le « +N » au survol est bien le gain du seul nœud survolé. Mais il
+faudra y penser au prochain héros qui, lui, aura des nœuds.
+
 C'est donc la dérivée partielle de la puissance par rapport à chaque
 statistique, sur un seul et même héros, tout le reste rigoureusement identique.
 Là où le protocole du §3 bouge cinq statistiques à la fois, celui-ci n'en bouge
