@@ -882,3 +882,45 @@ nœuds d'un héros de BAS niveau — Ada Blackjack ou Nitocris. Chez eux la cons
 pèse un tiers de la puissance au lieu d'un quinzième, donc la correction
 `P/(P−D)` est trois fois plus forte et se mesure trois fois mieux. Un seul survol
 donnerait D avec une précision hors d'atteinte des gros héros.
+
+---
+
+## 11. La formule est-elle publiée quelque part ? — non, et voici où l'on a cherché
+
+Question légitime, posée le 19/08/2026 : plutôt que de tout remesurer, ne
+pourrait-on pas trouver la formule déjà écrite par quelqu'un ? **Réponse : non.**
+Le tour a été fait, et il est consigné ici pour ne pas être refait.
+
+| Où | Ce qu'on y trouve |
+|---|---|
+| Support officiel InnoGames | Les mécaniques en prose — le niveau augmente attaque, défense et PV ; la capacité renforce l'effet ; l'avantage de couleur vaut 125 / 100 / 75 %. **Aucune formule.** |
+| `heroesofhistory.wiki` | Wiki dédié au jeu. Héros, tier lists, équipement. **Rien sur le calcul de la puissance.** |
+| Recherches communautaires | Les résultats renvoient vers d'AUTRES jeux (Hero Wars, Shop Titans), qui ont leurs propres formules, sans rapport. |
+| Forge of Games | Le site communautaire le plus avancé. Sa fiche de héros donne les statistiques de base — et **n'affiche aucune puissance**. Son application est du Blazor **WebAssembly** : le code est compilé, donc illisible. Le configurateur d'équipement est derrière un mur publicitaire et demande d'importer un compte. |
+
+Reste le document `heroes_of_history_raisonnement_calculs`, d'où part ce dossier.
+C'est la seule formule publiée qu'on connaisse, et elle est **réfutée** : exposant
+faux sur les dégâts de base, terme de focus inerte, terme de portée nul (§2, §8).
+
+### Le point important
+
+**On est désormais devant tout ce qui est publié**, et ce n'est pas de l'orgueil :
+nos chiffres viennent du JEU, une variable à la fois. Toute formule communautaire
+serait la rétro-ingénierie de quelqu'un d'autre — probablement celle-là même —, et
+elle n'aurait pas les mesures qui l'ont corrigée : le survol des nœuds de panthéon
+(§8), les paliers de capacité (§9), la constante (§9 et §10).
+
+Il n'y a donc rien à aller chercher ailleurs. Ce qui reste s'obtient dans le jeu,
+et nulle part autrement.
+
+### Une seule chose reste à vérifier de ce côté
+
+Le configurateur d'équipement de Forge of Games affiche peut-être une puissance —
+un relevé ancien de ce dossier le laisse penser (« capacité 1 → 40 : 4 684 →
+5 380 »). Il est derrière un mur publicitaire, donc non vérifiable ici.
+
+**Si Thomas y a accès, la question à trancher est simple :** leur puissance
+tombe-t-elle EXACTEMENT sur celle du jeu, pour un héros ou deux ? Si oui, leur
+formule est juste et vaut la peine d'être obtenue. Si elle est à quelques pour
+cent comme la nôtre, c'est un modèle approché de plus et il n'y a rien à y
+gagner.
