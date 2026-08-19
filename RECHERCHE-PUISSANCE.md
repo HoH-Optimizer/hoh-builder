@@ -938,3 +938,65 @@ tombe-t-elle EXACTEMENT sur celle du jeu, pour un héros ou deux ? Si oui, leur
 formule est juste et vaut la peine d'être obtenue. Si elle est à quelques pour
 cent comme la nôtre, c'est un modèle approché de plus et il n'y a rien à y
 gagner.
+
+---
+
+## 12. La puissance n'est PAS dans l'export — démonstration
+
+Question posée deux fois, ce qui est sain : puisqu'on exporte tout le compte, la
+puissance n'y serait-elle pas, quelque part ? La réponse est non, et voici
+pourquoi on peut l'affirmer.
+
+Une première recherche avait déjà conclu ainsi, mais elle cherchait **19 620**
+pour Marie Curie — la mauvaise valeur (§8, le piège de lecture). Tout a été
+refait avec les bons chiffres.
+
+### Ce qui a été fouillé
+
+Le fichier d'export contient deux blocs : `startup` (3,57 Mo, l'état du compte)
+et `gameDesign` (quelques octets). Les deux ont été passés au crible **sur leurs
+octets bruts**, sans passer par le décodeur — pour ne rien manquer de ce qu'il
+pourrait ignorer.
+
+Vingt-cinq puissances connues ont été cherchées, sous **six encodages** :
+varint, flottant 32 bits, flottant 64 bits, entier fixe 32 bits, écriture en
+toutes lettres, et multipliée par 10 ou par 100.
+
+### Pourquoi l'absence est concluante
+
+Le fichier fait trois millions et demi d'octets : un petit nombre s'y trouve par
+pur hasard. Mesuré, sur des entiers tirés au sort :
+
+| Plage | Trouvés par hasard |
+|---|---|
+| 1 000 – 5 000 | 59 % |
+| 5 000 – 12 000 | 32 % |
+| 12 000 – 25 000 | 12 % |
+
+Une touche sur un petit nombre ne prouve donc rien. **Une absence sur un grand
+nombre, elle, est significative** — et les neuf puissances à cinq chiffres sont
+TOUTES absentes :
+
+> Marie Curie 21 138 · Wallace 14 843 · Léonard 14 815 · Hatchepsout 17 700 ·
+> Jules César 15 211 · Ulysse 13 488 · Ashoka 11 126 · Boadicée 10 417 ·
+> Robin des Bois 9 672
+
+Neuf absences quand une sur huit devrait apparaître au hasard. Et les rares
+touches sur les petits nombres tombent dans des contextes sans rapport : celle de
+Mérérouka (2 979) est coincée entre des lignes de quêtes et un compteur de graines
+aléatoires.
+
+Enfin, le mot lui-même n'apparaît nulle part comme champ : les trois occurrences
+de « power » sont un texte promotionnel et deux noms de guilde (« Frauenpower »,
+« Orange Power »), et les neuf de « rating » sont le milieu de
+« RegeneratingTraitDataDTO ».
+
+### Ce que cela signifie
+
+**Le jeu calcule la puissance chez lui, à l'affichage, à partir des
+statistiques.** Elle n'est jamais transmise ni stockée. C'est précisément ce qui
+rend tout ce dossier nécessaire : il n'y a pas de raccourci, ni par l'export, ni
+par un fichier de quelqu'un d'autre (§11).
+
+**Ne pas reposer la question.** La seule façon d'obtenir une puissance reste de
+la lire à l'écran.
