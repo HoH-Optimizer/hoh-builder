@@ -12,7 +12,7 @@ Thomas, jamais estimé.
 **Les formules qui SERVENT au site sont dans `formules.js`, pas ici.** Ce qui
 suit est ce qui n'a pas encore abouti.
 
-**Si vous ne lisez que deux sections, lisez le §8 et le §9.** Les nœuds de panthéon affichent
+**Si vous ne lisez que deux sections, lisez le §9 et le §10.** Les nœuds de panthéon affichent
 la puissance qu'ils feraient gagner AVANT qu'on les active : c'est la dérivée
 partielle de la puissance, statistique par statistique, et c'est gratuit. Cette
 seule découverte a réfuté deux conclusions antérieures de ce fichier.
@@ -463,11 +463,13 @@ Concernés au catalogue : `WilliamTell`, `Hatshepsut`, `AdaLovelace`,
 ont leur valeur ; la formule de puissance peut maintenant se tester sur les 98
 héros de Thomas et plus seulement sur 11.
 
-1. **Survoler les nœuds d'un héros dont la vitesse d'attaque n'est PAS 1** (§9) :
-   Musashi (2,0), Robin des Bois (0,71) ou Wallace (0,77). Chez les deux héros
-   déjà survolés la vitesse vaut 1, donc le terme `vitesse^a` y était inerte.
-   C'est le trou le plus béant du modèle actuel.
-   La portée, elle, est réglée : elle ne compte pour rien (§8, confirmé au §9).
+1. **Survoler les nœuds d'un héros de BAS NIVEAU** (§10) : Ada Blackjack (niveau
+   20) ou Nitocris (30). Chez eux la constante D pèse un tiers de la puissance au
+   lieu d'un quinzième : un seul survol la mesurerait mieux que tous les gros
+   héros réunis. C'est aujourd'hui la mesure la plus rentable de toutes.
+
+   Réglé, ne plus demander : la portée ne compte pour rien (§8), et la vitesse
+   d'attaque a été mesurée hors de 1 sur Wallace (§10).
 2. **Relever le panthéon des trois classes qui restent** : défenseurs,
    manipulateurs, soutiens. Même manipulation, et elle rapporte double —
    l'arbre pour le site, les gains de puissance pour la formule.
@@ -776,3 +778,107 @@ côté, Freydís (−7,0 %) et William Wallace (−6,9 %) de l'autre.
 3. **Un héros à haute esquive ou à haut crit**, s'il en existe : les facteurs
    `fCrit` et `fEsq` ne varient presque pas dans l'échantillon actuel, et sont
    donc mal contraints.
+
+---
+
+## 10. William Wallace : le troisième survol, et l'exposant qui se stabilise
+
+Le §9 réclamait une mesure et une seule : le survol des nœuds sur un héros dont
+la **vitesse d'attaque n'est pas 1**. Léonard et Hatchepsout valent tous deux 1,
+et le terme `vitesse^a` y était donc muet.
+
+Relevé le 19/08/2026 au soir sur **William Wallace** — défenseur, infanterie,
+niveau 110, puissance 14 843, **vitesse d'attaque 0,84**, dégâts de base 117.
+Il apporte l'arbre des DÉFENSEURS au passage, quatrième classe sur six.
+
+### Les onze gains
+
+| Nœud | Ce qu'il change | Gain |
+|---|---|---|
+| Précision mortelle | Chances de crit +5 points | +176 |
+| Tranchant létal | Dégâts crit +20 points | +65 |
+| Assaut éclair | Vitesse d'attaque +3 coups/min | **+108** |
+| Pas fantôme | Esquive +5 points | +349 |
+| Puissance brute | Dégâts de base +5 % | +297 |
+| Équipement affûté | +50 % de l'ATQ d'équipement | +104 |
+| Équipement renforcé | +50 % de la DÉF d'équipement | +329 |
+| Fureur de Reliques | +50 % de l'ATQ de relique | +77 |
+| Rempart de Reliques | +50 % de la DÉF de relique | +98 |
+| Ascension de fer | Défense +1 % | +39 |
+| Ascension de vitalité | Points de vie +1 % | +48 |
+
+Les onze autres nœuds ne rapportent rien, exactement comme sur les deux premiers
+héros : la liste des huit grandeurs qui comptent (§8) tient sur trois classes.
+
+### Le résultat, et il est net
+
+En corrigeant chaque exposant apparent de la constante du §9
+(`exposant vrai = exposant mesuré × P / (P − D)`, avec D = 989) :
+
+| Grandeur | Léonard | Hatchepsout | Wallace |
+|---|---|---|---|
+| Attaque ou défense | 0,487 | 0,488 | 0,489 |
+| Dégâts de base | 0,485 | 0,487 | 0,485 |
+| Facteur de crit (par la chance) | 0,485 | 0,489 | 0,486 |
+| Facteur de crit (par les dégâts) | 0,485 | 0,486 | 0,483 |
+| Facteur d'esquive | 0,484 | 0,488 | 0,485 |
+| **Vitesse d'attaque** | **0,130** | **0,106** | **0,135** |
+| Points de vie | 0,529 | 0,365 · | 0,535 |
+
+**Six grandeurs sur sept tombent entre 0,483 et 0,489**, sur trois héros de trois
+classes, deux armes et deux vitesses différentes. Dix-huit mesures dans une
+fourchette de 0,006. Ce n'est plus une tendance, c'est une constante.
+
+Elle n'est pas tout à fait ½, et l'écart est trop régulier pour être du bruit :
+il faudrait D ≈ 1 350 au lieu de 989 pour la ramener exactement à ½. Les trois
+héros s'accordent sur ce D à 8 % près. **La constante est donc réelle et un peu
+sous-estimée par l'ajustement entre héros.**
+
+· Hatchepsout a un éveil de +3 775 PV, ce qui rend son pas de « Ascension de
+vitalité » incertain : selon qu'on le prend avant ou après l'éveil, son exposant
+de PV vaut 0,365 ou 0,503. Les deux autres héros n'ont pas d'éveil et ne
+souffrent pas de cette ambiguïté.
+
+### Ce que Wallace tranche sur la vitesse d'attaque
+
+C'était l'objet de la mesure. À vitesse 0,84, l'exposant vaut **0,135** ; à
+vitesse 1,00, il vaut 0,130 (Léonard) et 0,106 (Hatchepsout).
+
+**Il ne dépend donc pas de la vitesse de base.** Un facteur de combat ADDITIF,
+comme celui du document d'origine, aurait fait varier cet exposant avec la
+vitesse — d'environ 16 % entre Wallace et Léonard, et dans l'autre sens. Ce n'est
+pas ce qu'on observe.
+
+À nuancer honnêtement : l'écart entre Léonard et Hatchepsout (0,130 contre
+0,106) est de la même taille que l'effet cherché, alors qu'ils ont la MÊME
+vitesse. Il y a donc une dispersion d'origine inconnue de cet ordre. Le résultat
+penche pour une puissance simple `vitesse^0,12` et contre le facteur additif,
+mais ne le démontre pas.
+
+### Ce qui reste, et il faut être franc
+
+Le modèle complet plafonne toujours :
+
+| Modèle | Dispersion | Pire héros |
+|---|---|---|
+| Document d'origine | 1,62 | — |
+| + vitesse | 1,26 | — |
+| + constante + capacité (§9) | 1,21 | 13 % |
+| + exposant de PV libre | 1,21 | 12 % |
+
+**13 % d'erreur sur le pire héros, et ça ne bouge plus.** Les mal expliqués sont
+toujours les mêmes : Spartacus (+12 %), Hatchepsout (+12 %) et Miyamoto Musashi
+(+9 %) d'un côté, Robin des Bois, Freydís et Wallace (−7 %) de l'autre. Aucune
+grandeur relevée jusqu'ici — classe, arme, rareté, éveil, portée — ne sépare ces
+deux groupes.
+
+Et il y a une contradiction ouverte : les points de vie mesurés au survol
+demandent un exposant PLUS GRAND que ½ (0,53), là où l'ajustement entre héros en
+réclame un plus PETIT (0,405). Les deux méthodes se contredisent sur cette seule
+grandeur, alors qu'elles s'accordent sur les six autres.
+
+**C'est là qu'il faut chercher.** La piste la plus économique : survoler les
+nœuds d'un héros de BAS niveau — Ada Blackjack ou Nitocris. Chez eux la constante
+pèse un tiers de la puissance au lieu d'un quinzième, donc la correction
+`P/(P−D)` est trois fois plus forte et se mesure trois fois mieux. Un seul survol
+donnerait D avec une précision hors d'atteinte des gros héros.

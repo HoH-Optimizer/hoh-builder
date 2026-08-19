@@ -98,7 +98,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 | Manque | Conséquence |
 |---|---|
 | Aucun conseil sur le panthéon | L'onglet montre ce que chaque nœud rapporte, il ne recommande pas de chemin. Optimiser la puissance affichée donnerait de mauvais conseils : « Ruine généralisée » (+10 % de dégâts de zone) ne rapporte **aucune** puissance alors que c'est sans doute l'un des meilleurs nœuds au combat, tandis que l'esquive, qui en rapporte le plus, ne sert que si l'on encaisse. L'arbitrage reste au joueur. |
-| Panthéon de trois classes sur six | Les arbres des attaquants individuels, des attaquants de zone et des soigneurs sont relevés. Manquent les défenseurs, les manipulateurs et les soutiens. Un nœud inconnu est ignoré et signalé — aucun héros du compte de test n'en a. |
+| Panthéon de quatre classes sur six | Les arbres des attaquants individuels, des attaquants de zone, des soigneurs et des défenseurs sont relevés — 72 % des héros du compte de test. Manquent les manipulateurs et les soutiens. Un nœud inconnu est ignoré et signalé. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
 | 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |

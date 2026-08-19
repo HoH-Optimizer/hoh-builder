@@ -11,9 +11,9 @@
    (« pantheon_node.layer3_node3_SingleStriker ») : il suffit alors de regarder
    ici ce que chacun rapporte.
 
-   CE QUI EST COUVERT. Trois arbres sur six : ATTAQUANTS INDIVIDUELS, ATTAQUANTS
-   DE ZONE et SOIGNEURS. Manquent les défenseurs, les manipulateurs et les
-   soutiens. Un nœud inconnu est simplement ignoré, et signalé à l'écran.
+   CE QUI EST COUVERT. Quatre arbres sur six : ATTAQUANTS INDIVIDUELS, ATTAQUANTS
+   DE ZONE, SOIGNEURS et DÉFENSEURS. Manquent les manipulateurs et les soutiens.
+   Un nœud inconnu est simplement ignoré, et signalé à l'écran.
 
    L'ARBRE EST LE MÊME POUR TOUS LES HÉROS D'UNE CLASSE. Vérifié : les
    vingt-deux nœuds relevés sur Léonard de Vinci et sur Marie Curie concordent
@@ -33,8 +33,8 @@
    un fichier faux qui semblerait juste.
 
    LA SIXIÈME LIGNE change d'une classe à l'autre : les attaquants montent
-   l'attaque (« Ascension de force »), les soigneurs la défense
-   (« Ascension de fer »). Les deux nœuds n'y sont que deux, et suivent l'ordre
+   l'attaque (« Ascension de force »), les soigneurs et les défenseurs la défense
+   (« Ascension de fer »). Elle ne compte que deux nœuds, qui suivent l'ordre
    visuel.
 
    TROIS NATURES D'EFFET :
@@ -172,6 +172,47 @@ window.PANTHEON_JEU = {
 
       // La sixième ligne change d'une classe à l'autre : les soigneurs montent
       // la DÉFENSE là où les attaquants montent l'attaque.
+      "layer6_node1": { "nom": "Ascension de fer", "parNiveau": true, "effets": [{ "stat": "Defense", "valeur": 0.01, "type": "proportionnel" }] },
+      "layer6_node2": { "nom": "Ascension de vitalité", "parNiveau": true, "effets": [{ "stat": "MaxHitPoints", "valeur": 0.01, "type": "proportionnel" }] },
+    },
+  },
+  /* --------------------------------------------------------------------------
+     DÉFENSEURS — relevé sur William Wallace.
+
+     Même réserve que pour les soigneurs : aucun héros du compte n'a débloqué de
+     nœud de défenseur, donc rien ne CONFIRME la numérotation. Les noms et les
+     valeurs, eux, sont lus à l'écran. La numérotation suit la règle vérifiée sur
+     les attaquants (voir l'en-tête).
+     ----------------------------------------------------------------------- */
+  "Defender": {
+    "nom": "Défenseurs",
+    "noeuds": {
+      "layer1_node1": { "nom": "Précision mortelle", "effets": [{ "stat": "CritChance", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node2": { "nom": "Tranchant létal", "effets": [{ "stat": "CritDamage", "valeur": 0.20, "type": "pourcentage" }] },
+      "layer1_node3": { "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node4": { "nom": "Assaut éclair", "effets": [{ "stat": "AttackSpeed", "valeur": 0.05, "type": "plat" }] },
+
+      "layer2_node1": { "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node2": { "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node3": { "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
+      "layer2_node4": { "nom": "Pas fantôme", "effets": [{ "stat": "Evasion", "valeur": 0.05, "type": "pourcentage" }] },
+
+      "layer3_node1": { "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
+      "layer3_node2": { "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
+      "layer3_node3": { "nom": "Commandement de choc", "effets": [{ "type": "combat", "texte": "Utiliser sa capacité étourdit un ennemi au hasard pendant 1 s" }] },
+      "layer3_node4": { "nom": "Volonté de fer", "effets": [{ "type": "combat", "texte": "Utiliser sa capacité augmente la défense du héros de 10 % pendant 5 s" }] },
+
+      "layer4_node1": { "nom": "Équipement affûté", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Attack", "valeur": 0.50 }] },
+      "layer4_node2": { "nom": "Équipement renforcé", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Defense", "valeur": 0.50 }] },
+      "layer4_node3": { "nom": "Fureur de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Attack", "valeur": 0.50 }] },
+      "layer4_node4": { "nom": "Rempart de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Defense", "valeur": 0.50 }] },
+
+      "layer5_node1": { "nom": "Mur inflexible", "effets": [{ "type": "combat", "texte": "Au début du combat, +1 % de défense par ennemi, jusqu'à 15 %, pendant 20 s" }] },
+      "layer5_node2": { "nom": "Buveur de vie", "effets": [{ "type": "combat", "texte": "Réduire les PV d'un ennemi à 0 soigne le héros de 10 % de ses PV max, une fois toutes les 15 s" }] },
+      "layer5_node3": { "nom": "Derniers sacrements", "effets": [{ "type": "combat", "texte": "À sa mort, le héros soigne les alliés dans un rayon de 5 de 20 % de ses PV max" }] },
+      "layer5_node4": { "nom": "Sursauts d'agonie", "effets": [{ "type": "combat", "texte": "À sa mort, le héros inflige 20 % de ses PV max en dégâts aux ennemis dans un rayon de 2,5" }] },
+
+      // Comme les soigneurs, les défenseurs montent la DÉFENSE et non l'attaque.
       "layer6_node1": { "nom": "Ascension de fer", "parNiveau": true, "effets": [{ "stat": "Defense", "valeur": 0.01, "type": "proportionnel" }] },
       "layer6_node2": { "nom": "Ascension de vitalité", "parNiveau": true, "effets": [{ "stat": "MaxHitPoints", "valeur": 0.01, "type": "proportionnel" }] },
     },
