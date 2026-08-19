@@ -1350,3 +1350,46 @@ td.principal { font-weight: 600; }
   .noeud { padding: 7px 9px; }
   .onglet { padding: 4px 11px; font-size: 11px; }
 }
+
+/* ---------- La puissance, sous le héros ----------
+   Le total est approché (voir formules.js) ; l'écart entre deux
+   configurations, lui, est fiable. D'où le pourcentage écrit
+   aussi lisiblement que le nombre, et le mot « estimée » assumé. */
+
+.blocPuissance {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 7px 16px 8px;
+  background: var(--panneau-clair);
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  cursor: help;
+}
+.titrePuissance {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--discret);
+}
+.titrePuissance em { font-style: normal; opacity: .8; }
+.valeurPuissance {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--or-etoiles);
+  font-variant-numeric: tabular-nums;
+}
+.ecartPuissance {
+  font-size: 11px;
+  color: var(--discret);
+  font-variant-numeric: tabular-nums;
+}
+.ecartPuissance.positif { color: var(--positif); }
+.ecartPuissance.negatif { color: var(--negatif); }
+.pourPuissance { font-weight: 700; margin-left: 3px; }
+
+@media (max-width: 700px) {
+  .blocPuissance { padding: 5px 12px 6px; }
+  .valeurPuissance { font-size: 18px; }
+}

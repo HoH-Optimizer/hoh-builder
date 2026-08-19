@@ -23,14 +23,14 @@
      - "plat"        : +20 Attaque
      - "pourcentage" : +2,2 % Défense
 
-   CE QUI N'EST PAS ICI, ET POURQUOI
-   Le site ne calcule pas la PUISSANCE, ce nombre que le jeu affiche sous le nom
-   du héros. La formule qui circule dans la communauté a été mise à l'épreuve sur
-   onze héros et ne tient pas : elle donne aux dégâts de base deux fois trop de
-   poids. Le détail de l'enquête, les mesures relevées dans le jeu une par une,
-   ce qui est réfuté et ce qu'il reste à faire sont dans RECHERCHE-PUISSANCE.md.
-   Y aller AVANT de retenter quoi que ce soit sur ce sujet : tout y est, et rien
-   n'a besoin d'être remesuré.
+   LA PUISSANCE EST ICI, MAIS APPROCHÉE. Le nombre que le jeu affiche sous le nom
+   du héros n'existe dans AUCUNE donnée : ni dans l'export du compte, ni dans le
+   catalogue. Il a fallu le reconstituer par la mesure, et le résultat tombe à
+   4,5 % en moyenne, 11 % au pire, sur les 22 héros relevés. Voir puissance(),
+   plus bas, qui porte le détail de ce qui est mesuré et de ce qui est ajusté.
+   Le journal complet de l'enquête est dans RECHERCHE-PUISSANCE.md : y aller
+   AVANT de retenter quoi que ce soit sur ce sujet, tout y est, et rien n'a
+   besoin d'être remesuré.
    ========================================================================== */
 
 window.FORMULES = {
@@ -284,6 +284,61 @@ window.FORMULES = {
   // par seconde. Vérifié sur Achille : 1 + 0,2 (anneau) + 0,05 (casque)
   // + 0,15 (ensemble) + 0,2 (éveil) = 1,6, soit les 96 coups/min affichés.
   coupsParMinute: (attaquesParSeconde) => attaquesParSeconde * 60,
+
+  /* ------------------------------------------------------ la PUISSANCE
+
+     ⚠ CE CHIFFRE EST APPROCHÉ, ET IL FAUT LE DIRE À L'ÉCRAN.
+
+     Sur les 22 héros dont la puissance a été relevée dans le jeu, il tombe à
+     4,5 % en moyenne et à 10,7 % dans le pire cas. Ce n'est PAS le chiffre du
+     jeu : c'est le meilleur modèle qu'on ait, et il est affiché parce qu'un
+     ordre de grandeur vaut mieux qu'un vide, pas parce qu'il serait juste.
+
+     CE QUI EST FIABLE, EN REVANCHE : l'ÉCART ENTRE DEUX CONFIGURATIONS du même
+     héros. L'erreur du modèle est un facteur propre au héros, qui multiplie les
+     deux états de la même façon et disparaît donc dans leur rapport. Autrement
+     dit : « +3,2 % de puissance » est nettement plus sûr que « 14 815 ».
+
+     CE QUI EST MESURÉ, ET QUI TIENT (voir RECHERCHE-PUISSANCE.md §8 à §10) :
+       - huit grandeurs seulement entrent : attaque, défense, PV, dégâts de base,
+         chances de crit, dégâts crit, vitesse d'attaque, esquive. Ni les dégâts
+         de zone, ni la charge, ni la portée, ni rien d'autre ;
+       - chacune entre en RACINE. Mesuré au nœud de panthéon sur trois héros de
+         trois classes : dix-huit relevés entre 0,483 et 0,489 ;
+       - la capacité entre LINÉAIREMENT (quatre crans mesurés d'affilée) ;
+       - une CONSTANTE s'ajoute. C'est elle qui fait que les exposants mesurés
+         valent 0,485 et non ½ : elle dilue les variations. Deux méthodes
+         indépendantes la retrouvent.
+
+     CE QUI EST AJUSTÉ FAUTE DE MIEUX, et il faut le savoir :
+       - « vitesse » vaut 0,400 ici parce que c'est ce qui minimise l'erreur
+         d'affichage. Le survol des nœuds, lui, MESURE 0,13. Les deux ne
+         s'accordent pas, et on ne sait pas encore pourquoi (§10) ;
+       - « capacite » et « constante » sont ajustés sur les 22 héros.
+
+     À REFAIRE dès qu'une mesure nouvelle arrive : les coefficients sortent de
+     « fit22 », l'ajustement décrit au §9.                                     */
+
+  PUISSANCE: { facteur: 0.002182, constante: 1018, vitesse: 0.400, capacite: 0.0049 },
+
+  // feuille = la feuille de statistiques rendue par detail(), contexte = celui du héros.
+  // Rend null quand une statistique manque : mieux vaut ne rien afficher.
+  puissance(feuille, contexte) {
+    const v = (s) => feuille?.[s]?.total ?? 0;
+    const facteurCrit = 1 + v('CritChance') * (v('CritDamage') - 1);
+    const esquive = v('Evasion');
+    if (esquive >= 1) return null;
+    const facteurEsquive = 1 / (1 - esquive);
+    const noyau = v('Attack') * v('Defense') * v('MaxHitPoints') * v('BaseDamage')
+      * facteurCrit * facteurEsquive;
+    if (!(noyau > 0)) return null;
+    const P = this.PUISSANCE;
+    const competence = contexte?.hero?.competence ?? 1;
+    return P.facteur * Math.sqrt(noyau)
+      * Math.pow(v('AttackSpeed') || 1, P.vitesse)
+      * (1 + P.capacite * (competence - 1))
+      + P.constante;
+  },
 
   // Un attribut verrouillé est connu du jeu mais sa valeur n'a pas encore été
   // tirée : il ne doit donc rien apporter au calcul.

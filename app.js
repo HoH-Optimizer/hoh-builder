@@ -859,6 +859,37 @@ function rendreStats() {
   $('#tableStats').hidden = false;
   rendreRelique(contexte);
   rendrePantheon(contexte, agreger(objetsEquipes(selection)));
+  rendrePuissance(contexte, simule, actuel);
+}
+
+// La puissance sous le héros, avec ce qu'elle vaut et ce qu'elle ne vaut pas.
+//
+// Le gros chiffre est APPROCHÉ — 4,5 % d'erreur en moyenne, 11 % au pire — et
+// l'écran le dit. L'écart entre les deux configurations, lui, est bien plus sûr :
+// l'erreur du modèle est propre au héros et se simplifie dans le rapport. C'est
+// pourquoi le pourcentage est écrit aussi gros que le total, et pas en petit.
+function rendrePuissance(contexte, simule, actuel) {
+  const bloc = $('#resumePuissance');
+  const p = FORMULES.puissance(simule, contexte);
+  const p0 = FORMULES.puissance(actuel, contexte);
+  if (p == null) { bloc.innerHTML = ''; return; }
+
+  const ecart = p0 == null ? 0 : p - p0;
+  const pourcent = p0 ? (ecart / p0) * 100 : 0;
+  const signe = ecart > 0.5 ? 'positif' : ecart < -0.5 ? 'negatif' : '';
+  const infobulle = "Puissance ESTIMÉE, pas celle du jeu : le modèle tombe à 4,5 % en moyenne "
+    + "et à 11 % dans le pire cas sur les 22 héros mesurés. L'écart entre deux configurations "
+    + "est beaucoup plus fiable que le total, parce que l'erreur du modèle est propre au héros "
+    + "et disparaît dans la comparaison.";
+
+  bloc.innerHTML = `<span class="blocPuissance" title="${esc(infobulle)}">
+    <span class="titrePuissance">Puissance <em>estimée</em></span>
+    <span class="valeurPuissance">${nombre(Math.round(p))}</span>
+    ${Math.abs(ecart) > 0.5 ? `<span class="ecartPuissance ${signe}">
+        ${ecart > 0 ? '+' : '−'}${nombre(Math.round(Math.abs(ecart)))}
+        <span class="pourPuissance">${ecart > 0 ? '+' : '−'}${nombre(Math.abs(pourcent).toFixed(1))} %</span>
+      </span>` : '<span class="ecartPuissance">équipement réel</span>'}
+  </span>`;
 }
 
 /* ----------------------------------------------------------------- panthéon

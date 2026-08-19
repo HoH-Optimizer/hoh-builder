@@ -47,6 +47,10 @@ navigateur où l'extension n'est pas installée.
 - **Se projeter à un autre niveau**, au niveau près et pas seulement par dizaines :
   ce que la même configuration donnerait au 151, au 163 ou au 200. Menu pour viser
   juste, curseur pour balayer.
+- La **puissance estimée** sous le héros, avec l'écart que chaque modification lui fait
+  gagner ou perdre. Le total est approché — voir « Limites connues » — mais **l'écart en
+  pourcentage, lui, est fiable** : l'erreur du modèle est propre au héros et se simplifie
+  quand on compare deux configurations du même héros.
 - Un onglet **Panthéon** à côté des statistiques : l'arbre du héros tel que le jeu le
   dessine, avec l'état réel de son compte, et surtout **ce que chaque nœud lui
   rapporterait en points** — « +32 de dégâts de base », « +126 d'attaque » — calculé par
@@ -97,6 +101,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 
 | Manque | Conséquence |
 |---|---|
+| La puissance est **estimée**, pas exacte | Le jeu ne la donne nulle part : ni l'export du compte ni le catalogue ne la contiennent, elle n'existe qu'à l'écran. Le modèle a été reconstitué par la mesure et tombe à **4,5 % en moyenne, 11 % au pire** sur les 22 héros relevés. Le nombre affiché est donc un ordre de grandeur, et l'écran le dit. L'**écart entre deux configurations** d'un même héros, en revanche, est bien plus sûr. Le détail de l'enquête est dans [`RECHERCHE-PUISSANCE.md`](RECHERCHE-PUISSANCE.md). |
 | Aucun conseil sur le panthéon | L'onglet montre ce que chaque nœud rapporte, il ne recommande pas de chemin. Optimiser la puissance affichée donnerait de mauvais conseils : « Ruine généralisée » (+10 % de dégâts de zone) ne rapporte **aucune** puissance alors que c'est sans doute l'un des meilleurs nœuds au combat, tandis que l'esquive, qui en rapporte le plus, ne sert que si l'on encaisse. L'arbitrage reste au joueur. |
 | Panthéon de quatre classes sur six | Les arbres des attaquants individuels, des attaquants de zone, des soigneurs et des défenseurs sont relevés — 72 % des héros du compte de test. Manquent les manipulateurs et les soutiens. Un nœud inconnu est ignoré et signalé. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
@@ -165,6 +170,24 @@ seconde ; les 128 autres ont tous une vitesse d'attaque de 1, et donc 90 de dég
 Vérifié contre le jeu sur Marie Curie, dont le catalogue ne disait rien : avec 90 au
 départ, le site calcule 730 là où le jeu affiche 762, et les 32 d'écart sont exactement
 l'apport de panthéon qui lui manque encore (voir « Limites connues » ci-dessus).
+
+### Ce qui entre dans la puissance, et ce qui n'y entre pas
+
+Le panthéon a servi de banc d'essai : survoler un nœud sans l'activer affiche la puissance
+qu'il ferait gagner, et un nœud ne change qu'une chose à la fois. Onze équations par héros,
+gratuitement. Trois héros de trois classes ont été relevés ainsi.
+
+**Huit grandeurs seulement font bouger la puissance** : attaque, défense, points de vie,
+dégâts de base, chances de coup critique, dégâts critiques, vitesse d'attaque, esquive.
+
+**Ne comptent pour rien** : les dégâts de zone, les dégâts d'attaque de base, les soins et
+boucliers reçus, la vitesse de déplacement, la charge, la portée d'attaque, et tous les
+effets conditionnels de combat. Un nœud qui donne « +10 % de dégâts de zone » rapporte
+exactement **zéro** point de puissance.
+
+Chacune des huit entre **en racine** — dix-huit relevés entre 0,483 et 0,489 — et la
+capacité entre **linéairement**. Une **constante** s'ajoute enfin au tout, et c'est elle
+qui explique pourquoi les exposants mesurés ne tombaient pas sur ½ tout rond.
 
 ### Les bonus d'ensemble : deux assiettes, selon la taille de l'ensemble
 
