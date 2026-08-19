@@ -47,6 +47,11 @@ navigateur où l'extension n'est pas installée.
 - **Se projeter à un autre niveau**, au niveau près et pas seulement par dizaines :
   ce que la même configuration donnerait au 151, au 163 ou au 200. Menu pour viser
   juste, curseur pour balayer.
+- Un onglet **Panthéon** à côté des statistiques : l'arbre du héros tel que le jeu le
+  dessine, avec l'état réel de son compte, et surtout **ce que chaque nœud lui
+  rapporterait en points** — « +32 de dégâts de base », « +126 d'attaque » — calculé par
+  la même chaîne que le tableau de statistiques. Le coût et la règle d'ouverture des
+  paliers y sont aussi. Le site ne conseille aucun chemin : voir plus bas pourquoi.
 - Chaque ligne se déplie sur **l'addition complète**, source par source, avec le
   cumul qui monte : base, niveau, éveil, caserne, relique, équipement
 - Tout est en français : héros, objets, ensembles et statistiques portent le nom
@@ -92,6 +97,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 
 | Manque | Conséquence |
 |---|---|
+| Aucun conseil sur le panthéon | L'onglet montre ce que chaque nœud rapporte, il ne recommande pas de chemin. Optimiser la puissance affichée donnerait de mauvais conseils : « Ruine généralisée » (+10 % de dégâts de zone) ne rapporte **aucune** puissance alors que c'est sans doute l'un des meilleurs nœuds au combat, tandis que l'esquive, qui en rapporte le plus, ne sert que si l'on encaisse. L'arbitrage reste au joueur. |
 | Panthéon de trois classes sur six | Les arbres des attaquants individuels, des attaquants de zone et des soigneurs sont relevés. Manquent les défenseurs, les manipulateurs et les soutiens. Un nœud inconnu est ignoré et signalé — aucun héros du compte de test n'en a. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |

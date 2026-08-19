@@ -13,7 +13,7 @@
        ce qui garantit au visiteur un jeu de fichiers cohérent. D'où la lettre qui
        suit la date : deux envois le même jour doivent porter deux jetons
        différents, sans quoi le correctif ne sert à rien. -->
-  <link rel="stylesheet" href="style.css?v=2026-08-19f">
+  <link rel="stylesheet" href="style.css?v=2026-08-19g">
   <script>
     // Le thème retenu s'applique avant le premier affichage. Sans cela, la page
     // apparaîtrait une fraction de seconde en sombre avant de passer au clair.
@@ -163,10 +163,16 @@
 
   <section id="colonneStats" class="panneau">
     <div class="enteteStats">
-      <h2>Statistiques</h2>
+      <div class="ongletsVue" role="tablist">
+        <button id="ongletStats" class="onglet actif" role="tab" aria-selected="true" aria-controls="vueStats">Statistiques</button>
+        <button id="ongletPantheon" class="onglet" role="tab" aria-selected="false" aria-controls="vuePantheon">Panthéon</button>
+      </div>
       <div id="projection" class="projection"></div>
     </div>
 
+    <div id="vuePantheon" class="vuePantheon" role="tabpanel" aria-labelledby="ongletPantheon" hidden></div>
+
+    <div id="vueStats" role="tabpanel" aria-labelledby="ongletStats">
     <div class="grilleStats">
       <table id="tableStats">
         <thead>
@@ -189,6 +195,7 @@
     </div>
 
     <p id="aucuneStat" class="discret">Aucun équipement sur ce héros.</p>
+    </div>
   </section>
 
 </main>
@@ -227,19 +234,19 @@
 
 <!-- donnees.js est facultatif : il n'existe que sur une copie locale où l'on a lancé
      l'extraction. app.js le charge lui-même et se passe très bien de son absence. -->
-<script src="decodeur.js?v=2026-08-19f"></script>
+<script src="decodeur.js?v=2026-08-19g"></script>
 <!-- Catalogue du jeu : héros, ensembles d'équipement, paliers d'éveil et noms
      français. Ces données appartiennent au jeu et non au compte : elles sont
      livrées avec le site, et régénérées par `node tools/catalogue.js`. -->
-<script src="heros-jeu.js?v=2026-08-19f"></script>
-<script src="sets-jeu.js?v=2026-08-19f"></script>
-<script src="eveil-jeu.js?v=2026-08-19f"></script>
-<script src="casernes-jeu.js?v=2026-08-19f"></script>
-<script src="reliques-jeu.js?v=2026-08-19f"></script>
-<script src="ages-jeu.js?v=2026-08-19f"></script>
-<script src="pantheon-jeu.js?v=2026-08-19f"></script>
-<script src="noms-fr.js?v=2026-08-19f"></script>
-<script src="formules.js?v=2026-08-19f"></script>
-<script src="app.js?v=2026-08-19f"></script>
+<script src="heros-jeu.js?v=2026-08-19g"></script>
+<script src="sets-jeu.js?v=2026-08-19g"></script>
+<script src="eveil-jeu.js?v=2026-08-19g"></script>
+<script src="casernes-jeu.js?v=2026-08-19g"></script>
+<script src="reliques-jeu.js?v=2026-08-19g"></script>
+<script src="ages-jeu.js?v=2026-08-19g"></script>
+<script src="pantheon-jeu.js?v=2026-08-19g"></script>
+<script src="noms-fr.js?v=2026-08-19g"></script>
+<script src="formules.js?v=2026-08-19g"></script>
+<script src="app.js?v=2026-08-19g"></script>
 </body>
 </html>

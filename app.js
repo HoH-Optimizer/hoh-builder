@@ -535,6 +535,10 @@ function feuille(contexte, apports) {
     ...Object.keys(contexte.caserne),
     ...Object.keys(contexte.relique),
     ...contexte.eveil.map((p) => p.stat),
+    // Certains nœuds de panthéon touchent une statistique que rien d'autre
+    // n'alimente (la charge initiale, par exemple) : sans cette ligne, leur
+    // apport n'apparaîtrait nulle part.
+    ...contexte.pantheon.map((e) => e.stat).filter(Boolean),
   ]);
   for (const stat of stats) {
     sortie[stat] = FORMULES.detail(stat, { ...contexte, base: contexte.base[stat] }, apports[stat]);
@@ -854,7 +858,139 @@ function rendreStats() {
   $('#aucuneStat').hidden = true;
   $('#tableStats').hidden = false;
   rendreRelique(contexte);
+  rendrePantheon(contexte, agreger(objetsEquipes(selection)));
 }
+
+/* ----------------------------------------------------------------- panthéon
+
+   L'arbre de panthéon du héros, tel que le jeu le dessine, avec DEUX choses que
+   le jeu ne dit pas d'un coup d'œil : ce que chaque nœud rapporterait à CE
+   héros-là, en points, et ce qu'il coûte.
+
+   CE QUE CET ÉCRAN NE FAIT PAS : conseiller. Aucun « chemin optimal » n'est
+   proposé, et c'est délibéré. Optimiser la puissance affichée donnerait de
+   mauvais conseils — « Ruine généralisée » (+10 % de dégâts de zone) ne rapporte
+   AUCUNE puissance alors que c'est sans doute l'un des meilleurs nœuds au combat
+   pour un attaquant de zone, tandis que l'esquive, qui en rapporte le plus, ne
+   sert que si l'on se fait taper dessus. Le site montre les chiffres justes ;
+   l'arbitrage appartient au joueur.                                          */
+
+// Six paliers : quatre nœuds chacun, sauf le dernier qui en compte deux.
+const PALIERS_PANTHEON = [4, 4, 4, 4, 4, 2];
+
+// PIÈGE, et il est sérieux : le numéro d'un nœud ne suit PAS sa position à
+// l'écran. Le jeu range chaque ligne de quatre « node3 · node1 · node2 · node4 ».
+// La vérification est dans pantheon-jeu.js ; s'en écarter donne un arbre qui
+// semble juste et ne l'est pas.
+const ORDRE_VISUEL = [3, 1, 2, 4];
+
+// Ce que coûte l'activation, par palier. Relevé en jeu sur Léonard de Vinci.
+// Trois monnaies se succèdent, la dernière étant propre à la classe du héros.
+const COUT_PANTHEON = [
+  { valeur: 50, monnaie: 'cristaux' }, { valeur: 60, monnaie: 'cristaux' },
+  { valeur: 20, monnaie: 'pierres' }, { valeur: 25, monnaie: 'pierres' },
+  { valeur: 3, monnaie: 'jetons de classe' }, { valeur: 3, monnaie: 'jetons de classe' },
+];
+
+// « Disponible après avoir activé 2 nœuds dans le palier précédent », dit le jeu.
+const NOEUDS_POUR_OUVRIR = 2;
+
+// Ce qu'un nœud change VRAIMENT sur ce héros. On ne l'estime pas : on refait la
+// feuille de statistiques complète avec et sans lui, et l'on regarde ce qui a
+// bougé. C'est exactement la chaîne du tableau de statistiques, donc les mêmes
+// chiffres — un nœud qui donne « +5 % de dégâts de base » affiche ici les points
+// qu'il vaut sur CE héros, à SON niveau, avec SON équipement.
+function apportDuNoeud(contexte, apports, fiche) {
+  const effets = fiche?.effets || [];
+  const sans = { ...contexte, pantheon: contexte.pantheon.filter((e) => !effets.includes(e)) };
+  const avec = { ...contexte, pantheon: [...sans.pantheon, ...effets] };
+  const a = feuille(avec, apports);
+  const b = feuille(sans, apports);
+  const lignes = [];
+  for (const stat of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const ecart = (a[stat]?.total || 0) - (b[stat]?.total || 0);
+    if (Math.abs(ecart) > 1e-9) lignes.push({ stat, ecart });
+  }
+  // Le plus gros apport en premier, en valeur relative : « +154 d'attaque » et
+  // « +32 de dégâts de base » ne se comparent pas en points bruts.
+  return lignes.sort((x, y) => Math.abs(y.ecart / (b[y.stat]?.total || 1)) - Math.abs(x.ecart / (b[x.stat]?.total || 1)));
+}
+
+function rendrePantheon(contexte, apports) {
+  const vue = $('#vuePantheon');
+  const info = effetsPantheon(contexte.hero);
+  const arbre = (window.PANTHEON_JEU || {})[CLASSE_PANTHEON[contexte.details?.classe]];
+
+  if (!arbre) {
+    vue.innerHTML = `<p class="discret videPantheon">L'arbre de panthéon des
+      <strong>${esc(nomClasse(contexte.details?.classe))}</strong> n'a pas encore été relevé.
+      Il n'existe dans aucune donnée du jeu : il faut le photographier nœud par nœud.
+      Trois classes sur six sont faites.</p>`;
+    return;
+  }
+
+  const actifs = new Set((contexte.hero?.pantheon || []).map((n) => String(n).replace(/_[A-Za-z]+$/, '')));
+
+  const paliers = PALIERS_PANTHEON.map((taille, i) => {
+    const palier = i + 1;
+    const ordre = taille === 4 ? ORDRE_VISUEL : [1, 2];
+    const numerosDuPalier = ordre.map((n) => `layer${palier}_node${n}`);
+    const actifsIci = numerosDuPalier.filter((id) => actifs.has(id)).length;
+    return { palier, numerosDuPalier, actifsIci };
+  });
+
+  const html = paliers.map(({ palier, numerosDuPalier, actifsIci }, i) => {
+    const cout = COUT_PANTHEON[i];
+    const ouvert = palier === 1 || paliers[i - 1].actifsIci >= NOEUDS_POUR_OUVRIR;
+    const manque = ouvert ? 0 : NOEUDS_POUR_OUVRIR - paliers[i - 1].actifsIci;
+
+    const noeuds = numerosDuPalier.map((id) => {
+      const fiche = arbre.noeuds[id];
+      if (!fiche) return '<div class="noeud absent"></div>';
+      const actif = actifs.has(id);
+      const apport = apportDuNoeud(contexte, apports, fiche);
+      const combat = (fiche.effets || []).find((e) => e.type === 'combat');
+
+      // L'icône de la statistique touchée sert d'emblème : le site a déjà celles
+      // du jeu, et le panthéon n'a pas les siennes.
+      const statPrincipale = apport[0]?.stat || (fiche.effets || []).find((e) => e.stat)?.stat;
+      const embleme = statPrincipale ? imgStat(statPrincipale) : '<span class="emblemeCombat">⚔</span>';
+
+      const detail = apport.length
+        ? apport.map(({ stat, ecart }) => `<span class="gainNoeud">
+            <span class="nomGain">${esc(libelleStat(stat))}</span>
+            <b>${valeurAttribut(stat, ecart, FORMAT_STAT[stat] ? 'plat' : 'pourcentage')}</b></span>`).join('')
+        : `<span class="gainNoeud aucun"><em>${esc(combat?.texte || 'Ne change aucune statistique de fiche.')}</em></span>`;
+
+      const etat = actif ? 'Activé' : ouvert ? `${cout.valeur} ${cout.monnaie}` : 'Palier verrouillé';
+      return `<div class="noeud ${actif ? 'actif' : ouvert ? 'ouvert' : 'verrouille'}">
+        <div class="teteNoeud">${embleme}<span class="nomNoeud">${esc(fiche.nom)}</span></div>
+        <div class="gainsNoeud">${detail}</div>
+        <div class="piedNoeud">${esc(etat)}${fiche.parNiveau ? ' · par niveau, jusqu\'à 10' : ''}</div>
+      </div>`;
+    }).join('');
+
+    return `<section class="palierPantheon ${ouvert ? '' : 'palierVerrouille'}">
+      <h4>Palier ${palier}
+        <span class="discret">${actifsIci} activé${actifsIci > 1 ? 's' : ''} sur ${numerosDuPalier.length}
+        ${ouvert ? '' : `· il faut ${manque} nœud${manque > 1 ? 's' : ''} de plus au palier ${palier - 1}`}</span>
+      </h4>
+      <div class="ligneNoeuds n${numerosDuPalier.length}">${noeuds}</div>
+    </section>`;
+  }).join('');
+
+  vue.innerHTML = `<p class="discret introPantheon">
+      Arbre des <strong>${esc(arbre.nom.toLowerCase())}</strong> — ${actifs.size} nœud${actifs.size > 1 ? 's' : ''} activé${actifs.size > 1 ? 's' : ''}.
+      Chaque nœud indique ce qu'il rapporterait <strong>à ce héros</strong>, calculé comme le tableau de statistiques.
+      Un palier s'ouvre dès que ${NOEUDS_POUR_OUVRIR} nœuds du précédent sont activés.
+    </p>${html}${info.inconnus ? `<p class="alerte">${info.inconnus} nœud(s) de ce héros ne sont pas encore répertoriés.</p>` : ''}`;
+}
+
+const NOM_CLASSE = {
+  single_striker: 'attaquants individuels', area_attacker: 'attaquants de zone',
+  defender: 'défenseurs', healer: 'soigneurs', manipulator: 'manipulateurs', supporter: 'soutiens',
+};
+const nomClasse = (c) => NOM_CLASSE[c] || 'cette classe';
 
 // La valeur d'une statistique, écrite comme le jeu l'écrit.
 function valeurStat(stat, feuilleStats) {
@@ -1402,6 +1538,24 @@ $('#viderFiltres').addEventListener('click', () => {
 $('#fermerSelecteur').addEventListener('click', () => { $('#selecteur').hidden = true; });
 $('#selecteur').addEventListener('click', (e) => { if (e.target.id === 'selecteur') $('#selecteur').hidden = true; });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#selecteur').hidden = true; });
+
+// Les deux vues de la colonne de droite : le tableau de statistiques et l'arbre
+// de panthéon. Le choix reste d'un héros à l'autre — on compare rarement une
+// seule fiche.
+function montrerVue(nom) {
+  const pantheon = nom === 'pantheon';
+  $('#vueStats').hidden = pantheon;
+  $('#vuePantheon').hidden = !pantheon;
+  $('#projection').hidden = pantheon;
+  for (const [bouton, actif] of [[$('#ongletStats'), !pantheon], [$('#ongletPantheon'), pantheon]]) {
+    bouton.classList.toggle('actif', actif);
+    bouton.setAttribute('aria-selected', String(actif));
+  }
+  ecrireReglage('hoh:vue', nom);
+}
+$('#ongletStats').addEventListener('click', () => montrerVue('stats'));
+$('#ongletPantheon').addEventListener('click', () => montrerVue('pantheon'));
+montrerVue(lireReglage('hoh:vue', 'stats'));
 
 // Deux thèmes améthyste, l'un sombre et l'autre clair. Le choix reste dans ce
 // navigateur, et c'est le petit script d'index.html qui le repose au chargement
