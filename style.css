@@ -1193,11 +1193,24 @@ td.principal { font-weight: 600; }
   main:not(.vide) > #colonneEquipement { grid-column: 2; }
   main:not(.vide) > #colonneStats { grid-column: 3; }
 
-  #colonneEquipement, #colonneStats { display: flex; flex-direction: column; }
+  /* « main:not(.vide) > » est indispensable ici, pour la raison expliquée plus
+     haut : un display porté par un identifiant l'emporte sur la règle qui masque
+     les panneaux tant qu'aucun export n'est chargé. Sans ce garde-fou, l'écran
+     d'accueil s'affichait flanqué d'un panneau d'équipement et d'un tableau de
+     statistiques vides. Le garde-fou était posé sur #colonneHeros et manquait
+     sur ces deux-là. */
+  main:not(.vide) > #colonneEquipement,
+  main:not(.vide) > #colonneStats { display: flex; flex-direction: column; }
   /* Le défilement reste déclaré comme filet de sécurité : si un héros portait un
      jour plus de pièces que prévu, mieux vaut pouvoir descendre que perdre une
-     ligne. Le resserrement ci-dessous fait qu'en pratique il ne sert pas. */
-  .comparateur, .grilleStats { min-height: 0; overflow-y: auto; }
+     ligne. Le resserrement ci-dessous fait qu'en pratique il ne sert pas.
+     Pour le PANTHÉON, en revanche, il sert vraiment : l'arbre fait six paliers
+     et dépasse toujours la hauteur de la colonne. Comme cette mise en page pose
+     « overflow: hidden » sur la page entière, sans cette ligne les derniers
+     paliers seraient purement invisibles.
+     C'est la vue entière qui défile, pas le tableau : depuis que les deux vues
+     sont enveloppées pour l'onglet, ce sont elles les enfants de la colonne. */
+  .comparateur, #vueStats, .vuePantheon { min-height: 0; overflow-y: auto; }
 
   /* La colonne est trop étroite pour poser la relique à côté du tableau. */
   .grilleStats { grid-template-columns: minmax(0, 1fr); overflow-x: auto; }
@@ -1288,12 +1301,15 @@ td.principal { font-weight: 600; }
 /* Un palier fermé reste lisible : on veut savoir ce qu'il y a derrière la porte. */
 .palierVerrouille { opacity: .55; }
 
-.ligneNoeuds { display: grid; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.ligneNoeuds.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 50%; }
-@media (max-width: 1100px) {
-  .ligneNoeuds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ligneNoeuds.n2 { max-width: none; }
-}
+/* Le nombre de colonnes suit la largeur DE LA COLONNE, pas celle de la fenêtre :
+   sur grand écran, le panneau des statistiques ne fait que 470 px, où quatre
+   nœuds côte à côte deviennent illisibles — alors que la fenêtre, elle, est
+   large. Une requête média se serait trompée dans les deux sens. */
+/* Le « 23 % » plafonne discrètement à quatre colonnes — cinq en demanderaient
+   115 % de la largeur — tandis que le « 150px » en impose deux dès que la place
+   manque. Deux bornes, aucune requête média, et les six lignes gardent le même
+   nombre de colonnes, donc restent alignées. */
+.ligneNoeuds { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(max(150px, 23%), 1fr)); }
 
 .noeud {
   display: grid;
@@ -1331,7 +1347,6 @@ td.principal { font-weight: 600; }
 .noeud.actif .piedNoeud { color: var(--accent); }
 
 @media (max-width: 700px) {
-  .ligneNoeuds { grid-template-columns: 1fr; }
   .noeud { padding: 7px 9px; }
   .onglet { padding: 4px 11px; font-size: 11px; }
 }

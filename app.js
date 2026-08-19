@@ -968,14 +968,17 @@ function rendrePantheon(contexte, apports) {
         <div class="gainsNoeud">${detail}</div>
         <div class="piedNoeud">${esc(etat)}${fiche.parNiveau ? ' · par niveau, jusqu\'à 10' : ''}</div>
       </div>`;
-    }).join('');
+    }).join('')
+      // Le dernier palier n'a que deux nœuds. On complète la ligne de cases vides
+      // pour que les colonnes restent alignées sur celles des paliers du dessus.
+      + '<div class="noeud absent"></div>'.repeat(PALIERS_PANTHEON[0] - numerosDuPalier.length);
 
     return `<section class="palierPantheon ${ouvert ? '' : 'palierVerrouille'}">
       <h4>Palier ${palier}
         <span class="discret">${actifsIci} activé${actifsIci > 1 ? 's' : ''} sur ${numerosDuPalier.length}
         ${ouvert ? '' : `· il faut ${manque} nœud${manque > 1 ? 's' : ''} de plus au palier ${palier - 1}`}</span>
       </h4>
-      <div class="ligneNoeuds n${numerosDuPalier.length}">${noeuds}</div>
+      <div class="ligneNoeuds">${noeuds}</div>
     </section>`;
   }).join('');
 
