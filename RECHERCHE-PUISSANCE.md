@@ -12,7 +12,7 @@ Thomas, jamais estimé.
 **Les formules qui SERVENT au site sont dans `formules.js`, pas ici.** Ce qui
 suit est ce qui n'a pas encore abouti.
 
-**Si vous ne lisez que deux sections, lisez le §9 et le §10.** Les nœuds de panthéon affichent
+**Si vous ne lisez que deux sections, lisez le §9 et le §13.** Les nœuds de panthéon affichent
 la puissance qu'ils feraient gagner AVANT qu'on les active : c'est la dérivée
 partielle de la puissance, statistique par statistique, et c'est gratuit. Cette
 seule découverte a réfuté deux conclusions antérieures de ce fichier.
@@ -463,10 +463,13 @@ Concernés au catalogue : `WilliamTell`, `Hatshepsut`, `AdaLovelace`,
 ont leur valeur ; la formule de puissance peut maintenant se tester sur les 98
 héros de Thomas et plus seulement sur 11.
 
-1. **Survoler les nœuds d'un héros de BAS NIVEAU** (§10) : Ada Blackjack (niveau
-   20) ou Nitocris (30). Chez eux la constante D pèse un tiers de la puissance au
-   lieu d'un quinzième : un seul survol la mesurerait mieux que tous les gros
-   héros réunis. C'est aujourd'hui la mesure la plus rentable de toutes.
+1. **Photographier l'écran d'amélioration AVANT chaque montée de niveau** (§13).
+   C'est gratuit et c'est une mesure complète : les quatre statistiques, leurs
+   gains, la puissance et son gain. Viser les **ascensions sur les héros de bas
+   niveau**, où les statistiques bougent de 8 à 11 % — dix fois plus précis
+   qu'une montée d'un niveau sur un gros héros.
+   La constante D y est déjà mesurée à 1 383 ± 4 ; ce qui reste à cerner est le
+   facteur propre à chaque héros, encore mêlé à la capacité et à la rareté.
 
    Réglé, ne plus demander : la portée ne compte pour rien (§8), et la vitesse
    d'attaque a été mesurée hors de 1 sur Wallace (§10).
@@ -1000,3 +1003,105 @@ par un fichier de quelqu'un d'autre (§11).
 
 **Ne pas reposer la question.** La seule façon d'obtenir une puissance reste de
 la lire à l'écran.
+
+---
+
+## 13. L'écran d'amélioration mesure la constante — et il l'a toujours fait
+
+Découverte du 19/08/2026 au soir, et elle est un peu vexante : **la mesure la
+plus précise de la constante D était dans les captures depuis le matin**, sans
+qu'on la voie.
+
+### Ce que l'écran d'amélioration donne vraiment
+
+Il affiche, ensemble, les quatre statistiques principales, **le gain de chacune**,
+la puissance, **et le gain de puissance** :
+
+```
+Jules César    15 211  +127
+  ATQ 1 495  +5      DÉF 1 775  +6
+  PV 21 884  +110    DÉG   553  +3
+```
+
+C'est une expérience contrôlée complète. Si les quatre statistiques entrent en
+racine et qu'une constante s'ajoute, alors pour une petite variation :
+
+```
+   Δpuissance / (puissance − D)  =  ½ × (ΔATQ/ATQ + ΔDÉF/DÉF + ΔPV/PV + ΔDÉG/DÉG)
+
+   d'où     D  =  puissance  −  2 × Δpuissance / somme des variations
+```
+
+**Chaque montée de niveau donne donc D, à elle seule.** Onze écrans avaient été
+relevés.
+
+### Les onze mesures
+
+L'incertitude vaut environ `1 / somme des variations` : un héros dont les
+statistiques bougent beaucoup se lit précisément, un héros qui monte d'un seul
+niveau ne se lit pas du tout. D'où la pondération.
+
+| Héros | Variation | D mesuré | ± |
+|---|---|---|---|
+| Ada Blackjack | 10,66 % | 1 468 | 9 |
+| Mérérouka | 9,56 % | 1 472 | 10 |
+| Toutânkhamon | 8,56 % | 1 464 | 12 |
+| Nitocris | 8,37 % | 1 296 | 12 |
+| Ada Lovelace | 8,11 % | 1 340 | 12 |
+| Mansa Moussa | 7,45 % | 1 359 | 13 |
+| Miyamoto Musashi | 7,00 % | 1 511 | 14 |
+| Mian Tansen | 6,01 % | 860 | 17 |
+| Léonard de Vinci | 4,88 % | 1 506 | 20 |
+| Ulysse | 1,91 % | 1 043 | 52 |
+| Jules César | 1,72 % | 423 | 58 |
+
+Les deux derniers ne montent que d'un niveau : leur gain de puissance est arrondi
+à l'entier, et l'arrondi seul déplace D de plusieurs centaines. **Ils ne comptent
+pas.** Les huit premiers, eux, s'accordent entre 1 296 et 1 511.
+
+> **D = 1 383**, moyenne pondérée par la précision.
+
+### Pourquoi c'est solide
+
+Le §10 avait déduit D ≈ **1 350** d'un chemin totalement différent : les exposants
+mesurés au survol des nœuds de panthéon valaient 0,485 au lieu de ½, et il fallait
+cette constante-là pour expliquer l'écart.
+
+Deux méthodes indépendantes, deux dispositifs de mesure sans rapport, **1 350 et
+1 383**. La constante n'est plus une hypothèse d'ajustement : elle est mesurée.
+
+Au passage, cela tranche contre le **1 018** que donnait l'ajustement sur les 22
+puissances. L'ajustement se trompait, et on sait maintenant de combien.
+
+### Ce que cela ne résout pas, et qu'il faut dire
+
+Imposer D = 1 383 au modèle **n'améliore pas** l'accord entre héros — il l'empire
+même un peu (11,8 % contre 9,7 % au pire). Et forcer en plus l'exposant de vitesse
+à sa valeur mesurée (0,13 au lieu de 0,43) donne 14,8 %.
+
+Ce n'est pas une contradiction, c'est un diagnostic : **les mesures locales sont
+justes, et il manque au modèle un facteur propre à chaque héros.** Les dérivées
+sont bonnes, la constante d'intégration ne l'est pas.
+
+En retirant D = 1 383, le facteur qui reste s'étale de ×1,57 et suit :
+
+| | corrélation |
+|---|---|
+| capacité | +0,62 |
+| rareté | +0,61 |
+| niveau | +0,58 |
+
+Ces trois-là restent enchevêtrées, et la classe du héros n'explique rien
+(±6 % d'une classe à l'autre, sur des effectifs de 2 à 8).
+
+### La bonne façon de mesurer, désormais
+
+**Chaque montée de niveau ou ascension est une mesure**, à condition de
+photographier l'écran AVANT de valider. Et toutes ne se valent pas :
+
+- une **ascension sur un héros de bas niveau** fait bouger les statistiques de
+  8 à 11 % : c'est de loin la plus précise (Ada Blackjack, ± 9) ;
+- une montée d'**un seul niveau sur un gros héros** ne vaut rien : ± 58.
+
+Autrement dit, si Thomas fait monter des héros, **qu'il vise les petits, et par
+ascension**.
