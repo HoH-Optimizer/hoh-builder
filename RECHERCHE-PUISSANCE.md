@@ -12,7 +12,7 @@ Thomas, jamais estimé.
 **Les formules qui SERVENT au site sont dans `formules.js`, pas ici.** Ce qui
 suit est ce qui n'a pas encore abouti.
 
-**Si vous ne lisez qu'une section, lisez le §8.** Les nœuds de panthéon affichent
+**Si vous ne lisez que deux sections, lisez le §8 et le §9.** Les nœuds de panthéon affichent
 la puissance qu'ils feraient gagner AVANT qu'on les active : c'est la dérivée
 partielle de la puissance, statistique par statistique, et c'est gratuit. Cette
 seule découverte a réfuté deux conclusions antérieures de ce fichier.
@@ -463,11 +463,11 @@ Concernés au catalogue : `WilliamTell`, `Hatshepsut`, `AdaLovelace`,
 ont leur valeur ; la formule de puissance peut maintenant se tester sur les 98
 héros de Thomas et plus seulement sur 11.
 
-1. **Survoler les nœuds de panthéon de deux ou trois héros de plus** (§8). C'est
-   devenu de loin le meilleur rapport effort/résultat : gratuit, une seule
-   statistique bouge à la fois, et chaque héros rapporte onze équations. Les
-   choisir pour **opposer la portée** — un héros de mêlée, et Mian Tansen (2,5)
-   ou Ulysse (3,5) — puisque c'est le dernier terme jamais mis à l'épreuve.
+1. **Survoler les nœuds d'un héros dont la vitesse d'attaque n'est PAS 1** (§9) :
+   Musashi (2,0), Robin des Bois (0,71) ou Wallace (0,77). Chez les deux héros
+   déjà survolés la vitesse vaut 1, donc le terme `vitesse^a` y était inerte.
+   C'est le trou le plus béant du modèle actuel.
+   La portée, elle, est réglée : elle ne compte pour rien (§8, confirmé au §9).
 2. **Relever le panthéon des trois classes qui restent** : défenseurs,
    manipulateurs, soutiens. Même manipulation, et elle rapporte double —
    l'arbre pour le site, les gains de puissance pour la formule.
@@ -572,7 +572,9 @@ En rapportant chaque gain de puissance à la variation relative qu'il provoque
 | Facteur de crit | 0,523 · 0,513 | — |
 | Facteur d'esquive | 0,451 | 0,460 |
 
-Tout se tient entre 0,45 et 0,52, c'est-à-dire **autour de ½**.
+Tout se tient entre 0,45 et 0,52, c'est-à-dire **autour de ½** — et le §9 dira
+pourquoi ce n'est pas ½ tout rond : une constante s'ajoute à la puissance et
+dilue les exposants. Les vrais valent bien ½.
 
 Deux précisions de lecture :
 
@@ -601,7 +603,9 @@ trompeur ; il faut faire bouger une chose à la fois sur un seul héros.
 ### La vitesse d'attaque : un poids faible, et une piste
 
 La vitesse d'attaque donne un exposant apparent de **0,12** (Léonard) et
-**0,10** (Hatchepsout) — bien plus faible que les autres. Ce n'est pas anodin :
+**0,10** (Hatchepsout) — bien plus faible que les autres. **Le §9 a levé la
+contradiction qui suit** : une fois la constante ajoutée au modèle, l'ajustement
+entre héros ne réclame plus 0,42 mais 0,20, et rejoint donc ces mesures-ci. Ce n'est pas anodin :
 le document communautaire ne la met pas au même rang que les autres, il la range
 dans un facteur de combat **ADDITIF** :
 
@@ -625,3 +629,150 @@ Le mieux serait deux ou trois héros de plus, choisis pour **opposer la portée*
 qui n'a pas encore été mis à l'épreuve. Un héros de mêlée (portée 1,25) et un
 héros de portée intermédiaire (Mian Tansen 2,5, Ulysse 3,5) suffiraient à
 trancher.
+
+---
+
+## 9. La capacité, et la constante cachée
+
+Deux découvertes du soir du 19/08/2026, dont l'une réconcilie tout ce qui
+précède.
+
+### L'expérience de Thomas : monter la capacité d'un cran à la fois
+
+La capacité n'entre dans AUCUNE statistique (§4). Monter d'un niveau de capacité
+ne change donc rien d'autre que la puissance : c'est une expérience aussi propre
+que le survol des nœuds, et elle porte sur la seule grandeur que le panthéon ne
+sait pas toucher.
+
+| Héros | Capacité | Gains successifs |
+|---|---|---|
+| Mérérouka | 1 → 5 | +10 · +11 · +10 · +10 |
+| Ada Lovelace | 1 → 5 | +11 · +12 · +11 · +11 |
+| Nitocris | 24 → 25 | +10 |
+| Ulysse | 29 → 30 | +36 |
+
+**Le pas ne s'emballe pas.** Quatre crans d'affilée sur deux héros, et le gain
+reste le même à l'arrondi près. La capacité entre donc **linéairement** :
+
+```
+puissance = A + B x capacité
+```
+
+où B est propre au héros. Fin de la question posée depuis le début : la capacité
+compte bel et bien, et on sait maintenant sous quelle forme.
+
+### Six héros choisis pour démêler ce qui était noué
+
+Le §8 butait sur une contradiction : le survol des nœuds donnait un exposant de
+0,12 à la vitesse d'attaque, l'ajustement entre héros en réclamait 0,42. Et le
+terme de capacité, ajouté à l'ajustement, l'aggravait au lieu de l'améliorer.
+
+La cause était mesurable. Sur les seize héros dont la puissance était connue :
+
+| | corrélation |
+|---|---|
+| niveau ↔ capacité | +0,94 |
+| niveau ↔ rareté | +0,96 |
+| capacité ↔ rareté | +0,97 |
+
+**Ces trois grandeurs étaient la même chose.** Aucun ajustement ne pouvait les
+séparer, et en ajouter d'autres héros semblables n'y aurait rien changé.
+
+Six héros du compte ont donc été relevés exprès pour casser ce nœud — choisis
+par paires de même niveau et de capacités opposées :
+
+| Héros | ★ | Niveau | Capacité | Puissance | ATQ | DÉF | PV | Dég. base |
+|---|---|---|---|---|---|---|---|---|
+| Ada Blackjack | 4 | 20 | 25 | 3 306 | 724 | 745 | 7 673 | 164 |
+| Mérérouka | 2 | 20 | 5 | 2 979 | 687 | 880 | 7 577 | 164 |
+| Nitocris | 4 | 30 | 25 | 4 069 | 852 | 848 | 8 432 | 211 |
+| Ada Lovelace | 3 | 30 | 5 | 3 635 | 968 | 800 | 7 976 | 206 |
+| Toutânkhamon | 5 | 40 | 18 | 5 086 | 868 | 1 058 | 10 753 | 250 |
+| Mansa Moussa | 3 | 40 | 1 | 4 313 | 880 | 858 | 10 998 | 247 |
+
+(Les quatre statistiques tombent toutes à deux points près sur le calcul du
+site : la chaîne est saine sur ces héros aussi, du niveau 20 au niveau 40.)
+
+Corrélations sur les 22 héros : niveau ↔ capacité tombe de 0,94 à **0,67**,
+niveau ↔ rareté de 0,96 à **0,78**. Le nœud est desserré.
+
+### La constante cachée
+
+Et alors le résidu s'est mis à parler. Trié, il suit le **niveau**, à l'envers :
+
+| | terme exigé |
+|---|---|
+| Ada Blackjack, niveau 20 | +34 % |
+| Nitocris, niveau 30 | +20 % |
+| Mérérouka, niveau 20 | +15 % |
+| … | … |
+| Jules César, niveau 111 | −10 % |
+| William Wallace, niveau 110 | −11 % |
+| Ulysse, niveau 100 | −17 % |
+
+Les petits héros exigent trop, les gros pas assez. C'est la signature d'une
+**constante ajoutée** : quand on la néglige, elle pèse lourd sur une petite
+puissance et disparaît dans une grande.
+
+```
+puissance = C x racine(ATQ x DÉF x PV x DÉG x fCrit x fEsq) x vitesse^a
+            x (1 + k x (capacité − 1))   +   D
+```
+
+Ajustée sur les 22 héros : **C = 0,00234 · D = 989 · a = 0,20 · k = 0,0024**.
+Le terme de portée s'ajuste à **exactement zéro**, ce qui confirme le §8.
+
+### Pourquoi cette constante est vraie, et pas un artifice d'ajustement
+
+C'est le point important, et il tient à une vérification croisée.
+
+Si chaque statistique entre en exposant ½ ET qu'une constante s'ajoute, alors
+faire varier une seule statistique de 1 % ne change pas la puissance de 0,5 %
+mais de **(P − D) / 2P** — moins, et d'autant moins que le héros est petit.
+
+Or c'est exactement ce que le §8 avait mesuré, sans le comprendre : les
+exposants apparents valaient 0,45 à 0,49 au lieu de ½.
+
+| | prédit par la constante | mesuré au panthéon |
+|---|---|---|
+| Léonard de Vinci | 0,4666 | 0,4670 |
+| Hatchepsout | 0,4721 | 0,4650 |
+
+**0,1 % et −1,5 % d'écart.** La constante vient de l'ajustement sur 22
+puissances ; les exposants viennent du survol des nœuds, mesuré séparément et
+avant. Les deux tombent ensemble.
+
+Trois choses s'expliquent d'un coup :
+
+1. **Les exposants sont bien ½**, comme le disait le document d'origine. Ils
+   paraissaient plus bas parce que la constante les diluait.
+2. **La vitesse d'attaque** passe de 0,42 (ancien ajustement) à **0,20**, et
+   rejoint le 0,10-0,12 mesuré au panthéon. La contradiction du §8 est levée.
+3. **Le résidu qui suivait le niveau** disparaît : ce n'était pas le niveau, mais
+   la taille du héros face à une constante.
+
+### Où l'on en est, et ce qui manque
+
+| Modèle | Dispersion |
+|---|---|
+| Document d'origine, exposant ½ partout | 1,62 |
+| + terme de vitesse | 1,26 |
+| **+ constante + capacité (ci-dessus)** | **1,21** |
+
+Le pire héros reste à **13 %**. Ce n'est pas utilisable dans le site, et ça ne le
+sera pas tant qu'on n'aura pas trouvé ce qui reste. Les plus mal expliqués sont
+Spartacus (+12,9 %), Hatchepsout (+12,6 %) et Miyamoto Musashi (+10,7 %) d'un
+côté, Freydís (−7,0 %) et William Wallace (−6,9 %) de l'autre.
+
+**Ce qu'il faut mesurer ensuite**, et rien d'autre :
+
+1. **Le survol des nœuds sur un héros de vitesse ≠ 1** — Musashi (2,0), Robin des
+   Bois (0,71) ou Wallace (0,77). Chez Léonard et Hatchepsout la vitesse vaut 1,
+   donc le terme `vitesse^a` y est inerte : il n'a jamais été mesuré directement
+   ailleurs qu'au travers du nœud « Assaut éclair ».
+2. **Deux ou trois crans de capacité de plus**, sur un héros de forte puissance.
+   Le pas y est grand (36 chez Ulysse), donc lu sans arrondi gênant, et il
+   contraint `k` bien mieux que les petits héros.
+3. **Un héros à haute esquive ou à haut crit**, s'il en existe : les facteurs
+   `fCrit` et `fEsq` ne varient presque pas dans l'échantillon actuel, et sont
+   donc mal contraints.
