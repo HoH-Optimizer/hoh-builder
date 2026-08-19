@@ -12,7 +12,9 @@ Thomas, jamais estimé.
 **Les formules qui SERVENT au site sont dans `formules.js`, pas ici.** Ce qui
 suit est ce qui n'a pas encore abouti.
 
-**Si vous ne lisez que deux sections, lisez le §9 et le §13.** Les nœuds de panthéon affichent
+**Si vous ne lisez que deux sections, lisez le §13 et le §14.** Le §14 change
+tout : la formule n'est pas à reconstituer, elle est ÉCRITE dans les données du
+jeu, et l'on sait maintenant dans quel fichier. Les nœuds de panthéon affichent
 la puissance qu'ils feraient gagner AVANT qu'on les active : c'est la dérivée
 partielle de la puissance, statistique par statistique, et c'est gratuit. Cette
 seule découverte a réfuté deux conclusions antérieures de ce fichier.
@@ -1136,3 +1138,91 @@ photographier l'écran AVANT de valider. Et toutes ne se valent pas :
 
 Autrement dit, si Thomas fait monter des héros, **qu'il vise les petits, et par
 ascension**.
+
+---
+
+## 14. Le moteur du jeu dit où est la formule — et ce n'est pas dans son code
+
+Fouille du moteur Unity, le 19/08/2026, à la demande de Thomas. Résultat
+inattendu et décisif : **la formule n'est pas programmée, elle est décrite dans
+les données du jeu.**
+
+### Ce qui a été fouillé
+
+Le jeu télécharge `Build/….data`, 42 Mo, une archive au format `UnityWebData1.0`.
+Elle contient vingt fichiers, dont **`Il2CppData/Metadata/global-metadata.dat`,
+33,7 Mo** : les métadonnées IL2CPP, c'est-à-dire tous les noms de classes, de
+méthodes et de champs C# du jeu, en clair.
+
+Il n'a PAS été nécessaire de descendre dans le `.wasm` de 130 Mo : les noms ont
+suffi.
+
+### Ce que les noms révèlent
+
+Le moteur porte un **interpréteur de formules**. Les nœuds de l'arbre :
+
+```
+FormulaConstant   FormulaAddition   FormulaMultiplication
+FormulaDivision   FormulaPower      FormulaRound       FormulaByRarity
+```
+
+Et les feuilles, c'est-à-dire ce qu'une formule peut lire :
+
+```
+UnitStatFormulaTerm            la valeur d'une statistique
+UnitStatUnboostedFormulaTerm   la même, sans les bonus
+UnitLevelFormulaTerm           le niveau
+UnitRarityFormulaTerm          la rareté
+HeroAbilityLevelFormulaTerm    LE NIVEAU DE CAPACITÉ
+PantheonCombatPowerFormulaTerm LA CONTRIBUTION DU PANTHÉON
+RelicLevelFormulaTerm          le niveau de relique
+RelicRarityFormulaTerm         la rareté de relique
+```
+
+Et les points d'entrée :
+
+```
+HeroUnitPowerFormulaDefinitionId       ← la formule de puissance d'un héros
+SupportUnitPowerFormulaDefinitionId
+ExpectedUnitPowerFormulaDefinitionId
+FormulaDefinitionCatalog               ← le catalogue qui les contient
+CombatPowerCoefficient                 ← un coefficient, dans les données
+CalculatePower · CalculatePantheonInclusivePower · GetHeroPower
+```
+
+**Tout ce que ce dossier a reconstitué à la main est là, nommé.** La capacité
+entre bien (§9). Le panthéon est bien un terme séparé, ce qui explique pourquoi
+l'écran de panthéon l'affiche à part (§8). Et `FormulaByRarity` confirme que la
+rareté joue, ce que les résidus laissaient soupçonner sans pouvoir le prouver.
+
+Il y a même un `CombatPowerCoefficientOld` : le jeu a changé de formule en
+cours de route, et garde l'ancienne. De quoi expliquer qu'une formule
+communautaire ait pu être juste puis devenir fausse.
+
+### Où est la formule, exactement
+
+Pas dans le catalogue de Forge of Games : le mot « formula » n'y apparaît **zéro
+fois**. Leur `coreData` de 4,4 Mo est un extrait, pas le catalogue complet.
+
+Le vrai catalogue est **`GameDesignResponse.data`**, que le jeu garde dans la
+mémoire locale du navigateur (IndexedDB). Le journal de la capture diagnostic le
+chiffre à 373 521 670 octets — mais c'est la taille de l'enveloppe JSON. Le
+fichier de traduction, lui, pesait 11,5 Mo d'enveloppe pour 954 Ko de données
+réelles, soit douze fois moins. **Le game design fait donc environ 29 Mo.**
+
+L'extension l'a vu passer et l'a écarté : son plafond de collecte est à 60 Mo
+(`PLAFOND_STOCKAGE` dans `page-hook.js`), et l'enveloppe le dépassait.
+
+`/game/gamedesign` ne renvoie, lui, que 131 octets : une référence
+(`0SmFuMwufsEe_ade945957a5519f6bb04ec45dc556676`). Le gros du catalogue est
+téléchargé une seule fois puis gardé en cache — il n'a donc pas été retéléchargé
+pendant la capture.
+
+### Ce qu'il reste à faire
+
+**Extraire ce seul fichier de la mémoire locale du jeu**, puis y chercher le
+`FormulaDefinitionCatalog`. Nos outils savent déjà lire ce format : c'est du
+protobuf sans schéma, comme tout le reste.
+
+Si la formule y est — et tout indique qu'elle y est —, ce dossier passe d'un
+modèle à 3,6 % d'erreur à **la formule exacte du jeu**.
