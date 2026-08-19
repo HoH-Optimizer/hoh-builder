@@ -247,6 +247,20 @@ async function principal() {
       if (nom) base[nom] = stat.f2 ?? 0;
     }
 
+    // LES DÉGÂTS DE BASE ABSENTS. Seuls 16 héros sur 144 portent la statistique 11
+    // dans le catalogue. Ce n'est pas un oubli : sur ces 16, le produit
+    // « dégâts × vitesse d'attaque » vaut 90, exactement, sans une exception —
+    // et la vitesse stockée est au bit près 90 divisé par les dégâts (2 pour 45,
+    // 1,25 pour 72, 0,769230… pour 117). Autrement dit tout héros inflige
+    // 90 points de dégâts par seconde au niveau 1 ; seul le découpage en coups
+    // change, et le catalogue ne l'écrit que lorsqu'il s'écarte du coup unique.
+    // Les 128 héros sans la statistique ont TOUS une vitesse de 1 : leurs dégâts
+    // de base valent donc 90. Recoupé hors du jeu : Forge of Games affiche bien
+    // 90 pour Hatchepsout, dont la vitesse vaut 1.
+    if (base.BaseDamage == null && base.AttackSpeed) {
+      base.BaseDamage = Math.round((90 / base.AttackSpeed) * 1000) / 1000;
+    }
+
     heros[h.f1] = {
       nom: fr[`Base.Heroes.hero.${h.f1}_Name`] || h.f1,
       etoiles: Number(sansPrefixe(unite.f6, 'unit_rarity.')) || 0,

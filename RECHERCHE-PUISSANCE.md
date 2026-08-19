@@ -46,6 +46,8 @@ ascension sur ce point.
 - **Le panthéon n'est relevé que pour les attaquants individuels.** Marie Curie,
   attaquante de zone, perd ainsi +126 d'attaque, +32 de dégâts de base,
   +10 % de dégâts de zone et +5 % de dégâts d'attaque de base.
+- ~~**Les dégâts de base de 128 héros.**~~ Résolu : ils valent 90, par la règle
+  du §5. Ce n'était pas une donnée manquante mais une règle du jeu.
 - **Le biais de 1 à 4 points sur attaque et défense** est systématique et
   toujours dans le même sens (le site surestime). Il vaut 0,1 à 0,3 %.
 
@@ -150,9 +152,15 @@ il montre une tendance nette à la **portée d'attaque**, pas à la classe :
 | 1,25 (mêlée) | Freydís · Candace · Wallace · Tomoe · Musashi · Spartacus | 0,0127 → 0,0140 |
 
 Les deux groupes se chevauchent, donc la portée seule ne suffit pas non plus.
-La vitesse d'attaque a été testée : aucune relation propre. **C'est là qu'il faut
-chercher ensuite**, avec quatre ou cinq mesures avec/sans équipement de plus,
-choisies pour opposer portée et vitesse.
+La vitesse d'attaque a été testée : aucune relation propre.
+
+**À relire avec le §5 en main.** On sait maintenant qu'au niveau 1 les dégâts de
+base valent 90 divisé par la vitesse d'attaque : ce sont deux écritures de la
+même grandeur. Le "trend en dégâts de base" ci-dessus et le "rien en vitesse
+d'attaque" portaient donc sur la même chose, mesurée une fois au niveau 1 et une
+fois au niveau du héros — et c'est le NIVEAU qui les sépare, puisque les dégâts
+montent de 4 % par niveau et la vitesse pas du tout. Ce qui suit reste donc à
+chercher, mais en sachant que la vitesse n'est pas une piste indépendante.
 
 ---
 
@@ -189,8 +197,9 @@ Rapports des statistiques entre les deux états, tels que le site les calcule :
 | Tomoe | ×1,05615 | ×1,01087 | ×1,11641 | ×1,02800 |
 | Hatchepsout | ×1,02452 | ×1,05775 | ×1,14549 | ×1,12260 |
 
-Pour Hatchepsout, les dégâts sont calculés avec la base **90** relevée chez
-Forge of Games (§5), son catalogue local ne la connaissant pas.
+Pour Hatchepsout, les dégâts sont calculés avec la base **90**. Cette valeur,
+d'abord relevée chez Forge of Games, est depuis établie par la règle du §5 :
+sa vitesse d'attaque vaut 1, donc ses dégâts de base valent 90.
 
 ### Détail de la première mesure : Hatchepsout
 
@@ -220,11 +229,15 @@ points de vie — alors que la formule leur donne le même poids qu'à l'attaque
 Ce qui a été refait sur Tomoe et Wallace, dont les statistiques sont vérifiées
 au point près contre le jeu — d'où les trois rapports du tableau ci-dessus.
 
-**Pour la suite, il faut quatre ou cinq mesures de plus**, choisies pour opposer
-la portée et la vitesse d'attaque : c'est là que se cache le terme restant
-(§2.d). Bons candidats parmi les héros aux dégâts de base connus : Robin des
-Bois et Guillaume Tell (à distance, vitesses très différentes), Miyamoto Musashi
-et William Wallace (mêlée, du simple au double en vitesse).
+**Pour la suite, il faut quatre ou cinq mesures de plus.** Le terme restant
+(§2.d) se cache du côté de la portée, de la vitesse, ou d'autre chose. Bons
+candidats : Robin des Bois et Guillaume Tell (à distance, 126 et 99 de dégâts de
+base), Miyamoto Musashi et William Wallace (mêlée, 45 et 117).
+
+Et **au moins deux héros de vitesse 1** — donc de dégâts de base 90 —, l'un à
+distance et l'autre en mêlée. Eux seuls permettent de faire varier la portée
+sans toucher aux dégâts de base, puisque les deux sont liés au niveau 1 (§5).
+Tous les héros de Thomas sauf onze sont dans ce cas : le choix est large.
 
 ---
 
@@ -275,44 +288,112 @@ Détails utiles :
 
 ---
 
-## 5. La source à exploiter : Forge of Games
+## 5. Les dégâts de base des 128 héros — RÉSOLU
 
-[forgeofgames.com](https://forgeofgames.com/) publie une base de données de
-héros qui **utilise exactement nos identifiants** (`HatshepsutLegendary`,
-`MiyamotoMusashi`…).
+C'était le premier point de la liste ci-dessous, et il est levé. **Les 144 héros
+ont maintenant des dégâts de base**, et les 128 qui manquaient ne sont pas
+estimés : ils se lisent dans une règle du jeu, confirmée deux fois contre le jeu.
 
-### Calibration établie
+### D'où vient la donnée
 
-Leurs fiches affichent la base **augmentée d'une caserne d'Âge de pierre** :
-
-```
-leur valeur = notre base + 40 (ATQ) + 40 (DÉF) + 400 (PV)
-dégâts de base : AUCUN écart, leur valeur EST la nôtre
-```
-
-Vérifié sur Miyamoto Musashi (45 = 45), Achille et Hatchepsout légendaire.
-
-### Le point d'entrée
+[forgeofgames.com](https://forgeofgames.com/) rediffuse le catalogue du jeu tel
+quel, sur l'adresse que `tools/catalogue.js` utilisait déjà :
 
 ```
 GET https://forgeofgames.com/api/hoh/coreData
 → { version, data }   data = protobuf en base64, ~4,4 Mo
 ```
 
-C'est l'appel que leur propre application fait au chargement. Le blob contient
-bien les identifiants de héros (`TomoeGozen`, `HatshepsutLegendary`…) ; les
-noms de champs, eux, sont absents — c'est du protobuf sans schéma, **la même
-famille que l'export du jeu que `decodeur.js` sait déjà lire**.
+Un seul appel a été fait, le blob est gardé dans `data/coreData.json` (ignoré par
+git), et rien de ce qui concerne des joueurs n'a été touché — les règles posées
+pour cette récupération ont été tenues.
 
-**Pierre de Rosette pour le décodage** : les 16 héros dont nous connaissons
-déjà les dégâts de base (Musashi 45, Tomoe 72, Wallace 117, Artémise 81,
-Guillaume Tell 99, Robin des Bois 126, Boadicée 108, Freydís 108,
-Candace 99, Spartacus 72…). Chercher le champ qui porte ces valeurs près de ces
-identifiants donne la correspondance pour les 128 autres.
+### Ce que le catalogue dit vraiment
 
-**Règles que Thomas a posées pour cette récupération** : un seul appel, rien qui
-concerne des joueurs (ni profils, ni combats, ni classements), résultat gardé en
-local, crédit ajouté au README à côté des autres sources communautaires.
+Surprise : **la donnée n'y est pas**. La statistique 11 (`BaseDamage`) n'est
+écrite que pour 16 héros sur 144, exactement les 16 qu'on connaissait déjà. Ce
+n'était donc pas un problème de décodage : Forge of Games n'a pas la donnée non
+plus, il la **déduit** — et voici comment.
+
+### La règle : 90 dégâts par seconde, pour tout le monde
+
+Sur les 16 héros qui portent la statistique, le produit
+`dégâts de base × vitesse d'attaque` vaut **90**, sans une exception :
+
+| Héros | Dégâts | Vitesse | Produit |
+|---|---|---|---|
+| Ada Lovelace légendaire | 36 | 2,5 | 90 |
+| Miyamoto Musashi | 45 | 2 | 90 |
+| Cléopâtre | 54 | 1,667 | 90 |
+| Tomoe Gozen · Spartacus | 72 | 1,25 | 90 |
+| Artémise I de Carie | 81 | 1,111 | 90 |
+| Guillaume Tell · Candace | 99 | 0,909 | 90 |
+| Boadicée · Freydís | 108 | 0,833 | 90 |
+| Wallace · Ashoka | 117 | 0,769 | 90 |
+| Robin des Bois | 126 | 0,714 | 90 |
+
+Et le sens de lecture est net : la vitesse stockée est **exactement 90 divisé par
+les dégâts** (2 pour 45 ; 1,25 pour 72 ; 0,769230… pour 117). Ce sont les dégâts
+que le jeu fixe, un entier rond, et la vitesse qui en découle.
+
+Autrement dit : **au niveau 1, tout héros inflige 90 points de dégâts par
+seconde.** Seul le découpage change — un coup lourd et lent, ou plusieurs coups
+légers et rapides. Le catalogue n'écrit la statistique que lorsque le héros
+s'écarte du coup unique par seconde.
+
+Les **128 héros sans la statistique ont tous une vitesse d'attaque de 1**, sans
+exception. Leurs dégâts de base valent donc 90.
+
+### Les deux vérifications contre le jeu
+
+La règle n'est pas seulement cohérente avec elle-même : elle est vraie.
+
+1. **Hatchepsout.** Sa vitesse vaut 1, la règle donne 90 — et c'est le chiffre
+   que Forge of Games affiche pour elle, relevé indépendamment avant que la règle
+   ne soit trouvée. C'est aussi le 90 déjà utilisé au §3.
+
+2. **Marie Curie, et c'est la preuve décisive.** Ses dégâts de base ne figuraient
+   pas au catalogue ; le jeu affiche **762** sur sa fiche. En repassant tout le
+   site — niveau 134, ascensions, éveil, caserne, relique, équipement — avec 90
+   comme point de départ, on obtient **730**. L'écart est de **32**, soit
+   exactement l'apport de panthéon qu'on lui connaît déjà et qui n'est pas encore
+   codé (§1 : « Marie Curie perd +32 de dégâts de base »). 730 + 32 = 762,
+   au point près.
+
+   Les onze héros dont les dégâts venaient du catalogue tombent tous à zéro
+   d'écart dans le même contrôle : la chaîne de calcul est saine, et le seul
+   chiffre nouveau se comporte comme les onze anciens.
+
+### Ce qui a changé dans le code
+
+`tools/catalogue.js` applique désormais la règle en générant `heros-jeu.js` :
+un héros sans statistique 11 reçoit `90 / vitesse d'attaque`. Les 128 entrées ont
+été remplies. Le garde-fou du site qui écrivait « ? » à la place d'un total faux
+reste en place, mais ne se déclenche plus.
+
+### La conséquence pour la formule de puissance
+
+Elle est importante et il ne faut pas la manquer : **au niveau 1, les dégâts de
+base et la vitesse d'attaque ne sont pas deux variables, mais une seule.**
+
+```
+dégâts de base = 90 / vitesse d'attaque
+```
+
+Le §2.d disait avoir testé la vitesse d'attaque sans y trouver « aucune relation
+propre », tout en établissant que les dégâts de base entrent en racine
+quatrième. Les deux constats portaient sur la même grandeur. Ils ne se
+contredisent pas pour autant — parce que les dégâts de base MONTENT avec le
+niveau (4 % par niveau) alors que la vitesse ne bouge que sous l'effet de
+l'équipement : au-delà du niveau 1, les deux se séparent. Mais toute lecture
+future doit distinguer **les dégâts de base au niveau 1** (qui ne sont que la
+vitesse déguisée) des **dégâts de base courants** (qui portent le niveau).
+
+Le protocole du §3 en hérite : choisir des candidats « pour opposer portée et
+vitesse » revient à les choisir pour opposer portée et dégâts de base au niveau 1.
+Robin des Bois (126 / 0,714) contre Guillaume Tell (99 / 0,909) opposent bien les
+deux ; il faut leur adjoindre deux héros de vitesse 1, donc de dégâts 90, pour
+que la portée varie seule.
 
 ---
 
@@ -337,14 +418,19 @@ Concernés au catalogue : `WilliamTell`, `Hatshepsut`, `AdaLovelace`,
 
 ## 7. Prochaines étapes, par ordre d'utilité
 
-1. **Récupérer les 128 dégâts de base manquants** depuis Forge of Games
-   (§5). Débloque la colonne « ? » du tableau, et la formule de puissance qui ne
-   pouvait être testée que sur 11 des 98 héros de Thomas.
-2. **Quatre ou cinq mesures avec/sans équipement de plus** (§3), choisies pour
-   opposer portée et vitesse, afin d'attaquer le terme restant (§2.d).
-3. **Capturer « Stats de profil » d'Hatchepsout** pour lever la contradiction
+~~Récupérer les 128 dégâts de base manquants~~ — **fait** (§5). Les 144 héros
+ont leur valeur ; la formule de puissance peut maintenant se tester sur les 98
+héros de Thomas et plus seulement sur 11.
+
+1. **Quatre ou cinq mesures avec/sans équipement de plus** (§3), afin d'attaquer
+   le terme restant (§2.d). Attention en les choisissant : la vitesse d'attaque
+   et les dégâts de base au niveau 1 sont la MÊME grandeur (§5), il faut donc
+   des héros de vitesse 1 pour faire varier la portée seule.
+2. **Capturer « Stats de profil » d'Hatchepsout** pour lever la contradiction
    sur les coefficients de progression (§1).
-4. **Relever le panthéon des attaquants de zone**, puis des autres classes.
+3. **Relever le panthéon des attaquants de zone**, puis des autres classes.
+   Marie Curie sert de témoin : son écart de 32 sur les dégâts de base est
+   entièrement expliqué par ce panthéon manquant (§5).
 
 **Le principe qui a tout fait avancer, à ne pas lâcher :** ne rien deviner. Une
 valeur inconnue reste inconnue ; une règle non mesurée n'est pas codée. Les deux

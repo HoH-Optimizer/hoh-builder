@@ -834,10 +834,12 @@ function rendreStats() {
     || Math.abs(simule[stat]?.total || 0) > 1e-9
     || Math.abs(actuel[stat]?.total || 0) > 1e-9;
 
-  // Le catalogue ne donne les dégâts de base que de seize héros sur cent quarante-
-  // quatre, et rien ne permet de les déduire pour les autres : le rapport à
-  // l'attaque va de 0,21 à 1,19 d'un héros au suivant. Là où la valeur manque, on
-  // le dit — l'apport de l'équipement, lui, reste connu et l'écart reste juste.
+  // FILET DE SÉCURITÉ. Les quatre statistiques principales sont désormais connues
+  // pour les 144 héros — les dégâts de base ont été les derniers à manquer, et ils
+  // se déduisent maintenant du catalogue (voir tools/catalogue.js). Ce garde-fou
+  // reste en place pour la suite : si un héros ajouté au jeu arrivait sans l'une
+  // d'elles, la ligne dirait « ? » plutôt qu'un total faux, et montrerait quand
+  // même ce que l'équipement y ajoute.
   const incomplete = (stat) => STATS_PRINCIPALES.includes(stat) && typeof contexte.base[stat] !== 'number';
 
   $('#tableStats tbody').innerHTML = FAMILLES_STATS.map((famille) => {
@@ -888,8 +890,8 @@ function ligneStat(stat, simule, actuel, incomplete = false) {
   // ce qu'on sait, l'apport de l'équipement, et l'on signale le reste comme manquant.
   const colonne = (v) => {
     if (!incomplete) return v.texte;
-    const explication = "Le catalogue du jeu ne donne cette valeur que pour seize héros sur cent quarante-quatre, "
-      + "et rien ne permet de la déduire pour les autres. Ce que l'équipement y ajoute, en revanche, est connu.";
+    const explication = "Le catalogue du jeu ne donne pas la valeur de départ de ce héros pour cette "
+      + "statistique. Ce que l'équipement y ajoute, en revanche, est connu.";
     const connu = Math.abs(v.brut) > 1e-9 ? `&nbsp;+&nbsp;${v.texte}` : '';
     return `<span class="partielle" title="${esc(explication)}">?${connu}</span>`;
   };

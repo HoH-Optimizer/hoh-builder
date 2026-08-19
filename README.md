@@ -94,7 +94,6 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 |---|---|
 | Panthéon des cinq autres classes | L'arbre des attaquants individuels est relevé ; les cinq autres restent à faire. Un nœud inconnu est ignoré et signalé. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
-| Dégâts de base de 128 héros | Le catalogue ne donne cette statistique que pour 16 héros sur 144, et rien ne permet de la déduire pour les autres : son rapport à l'attaque va de 0,21 à 1,19 d'un héros au suivant. La ligne affiche alors « ? » plutôt qu'un nombre faux ; l'écart entre deux configurations, lui, reste exact. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
 | 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
 | Icônes de 7 pièces d'équipement | Le wiki ne les héberge pas et aucune capture ne les montre. Le site affiche à la place l'icône de l'ensemble. Il manque Warden (chapeau, cou, anneau), Berserker et Countess (main, vêtement). |
@@ -144,6 +143,22 @@ Les deux taux « par niveau » se lisent tels quels dans le catalogue (4 % pour 
 de vie, 4,65 % pour l'attaque et la défense). Les taux « par ascension » ont été mesurés :
 6 % pour les points de vie, 18,6 % pour l'attaque et la défense. Le détail et la
 vérification sont dans [`formules.js`](formules.js).
+
+### Les dégâts de base : 90 par seconde, pour tout le monde
+
+Le catalogue n'écrit les dégâts de base que pour 16 héros sur 144. Ce n'est pas un trou
+dans les données, c'est une règle du jeu : sur ces 16, le produit **dégâts de base ×
+vitesse d'attaque vaut 90**, sans une exception, et la vitesse stockée est exactement
+90 divisé par les dégâts.
+
+Au niveau 1, tout héros inflige donc **90 points de dégâts par seconde** — seul le
+découpage change, un coup lourd et lent ou plusieurs coups légers et rapides. Le
+catalogue ne note la statistique que lorsque le héros s'écarte du coup unique par
+seconde ; les 128 autres ont tous une vitesse d'attaque de 1, et donc 90 de dégâts de base.
+
+Vérifié contre le jeu sur Marie Curie, dont le catalogue ne disait rien : avec 90 au
+départ, le site calcule 730 là où le jeu affiche 762, et les 32 d'écart sont exactement
+l'apport de panthéon qui lui manque encore (voir « Limites connues » ci-dessus).
 
 ### Les reliques changent de valeur avec l'ère
 
