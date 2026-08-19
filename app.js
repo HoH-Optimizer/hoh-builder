@@ -1061,9 +1061,17 @@ function ligneStat(stat, simule, actuel, incomplete = false) {
   const delta = s.brut - a.brut;
   // Sur la charge, gagner du temps c'est descendre : la couleur suit le bénéfice.
   const bon = s.inverse ? delta < 0 : delta > 0;
+  // L'ÉCART D'UNE STATISTIQUE ENTIÈRE S'ÉCRIT EN ENTIER. Le jeu n'affiche jamais
+  // de décimale sur l'attaque ou les points de vie : en montrer une dans la
+  // colonne d'écart donnait un « +128,3 » qui ne correspondait à rien de visible.
+  // On arrondit à l'unité SUPÉRIEURE, en valeur absolue : mieux vaut annoncer un
+  // point de trop qu'un point de moins quand on compare deux configurations.
+  const pourAffichage = FORMAT_STAT[stat] === 'entier'
+    ? Math.sign(delta) * Math.ceil(Math.abs(delta))
+    : delta;
   const ecart = Math.abs(delta) < 1e-9
     ? '<span class="discret">=</span>'
-    : `<span class="${bon ? 'hausse' : 'baisse'}">${signe(delta, (x) => (FORMAT_STAT[stat] || 'pct') === 'pct' || !FORMAT_STAT[stat] ? pourcent(x) : nombre(x))}</span>`;
+    : `<span class="${bon ? 'hausse' : 'baisse'}">${signe(pourAffichage, (x) => (FORMAT_STAT[stat] || 'pct') === 'pct' || !FORMAT_STAT[stat] ? pourcent(x) : nombre(x))}</span>`;
 
   const majeure = STATS_DE_BASE.includes(stat);
   const ouverte = statOuverte === stat;
