@@ -178,33 +178,63 @@ window.FORMULES = {
     // Les deux tombent exactement sur le chiffre du jeu, là où l'assiette
     // ordinaire donnait 796 et 1 616.
     //
-    // L'asymétrie est réelle et vérifiée : sur l'ATTAQUE, le même genre de bonus
-    // d'ensemble reste sur l'assiette ordinaire — les 5 % du set Mousquetaire de
-    // Marie Curie donnent 308, le chiffre du jeu, et 334 si l'on y ajoutait la
-    // caserne. Le témoin décisif est Artémise, qui porte 1,64 % de PV venus d'un
-    // OBJET sans aucun ensemble complet : 184 sur l'assiette ordinaire contre 261
-    // sur l'assiette élargie, pour 185 affichés par le jeu.
+    // CE QUI DÉPARTAGE LES DEUX ASSIETTES : LA TAILLE DE L'ENSEMBLE.
+    // On a longtemps cru que seuls les POINTS DE VIE prenaient l'assiette large,
+    // faute d'explication. C'était une coïncidence de l'échantillon. Mian Tansen
+    // l'a tranchée : ses 5 % de PV viennent du set Dharma, un ensemble
+    // d'ARMEMENT (2 pièces), et le jeu les compte sur l'assiette ORDINAIRE.
     //
-    // Faute d'explication, on s'en tient à ce qui est mesuré.
+    //   Mian Tansen : 84 plat + 1,64 % x 6 588 + 5 % x 6 588  = 521
+    //                 total 12 174 — exactement le chiffre du jeu.
+    //   L'assiette large en donnait 760, soit 12 414 : 240 de trop.
+    //
+    // Tomoe et Wallace, eux, tiennent leurs 10 % de PV du set Chacal, un
+    // ensemble de PARURE (3 pièces) — et là, l'assiette large est la bonne.
+    // Marie Curie complète le tableau : ses 5 % d'ATTAQUE viennent du
+    // Mousquetaire, armement, et restent sur l'assiette ordinaire.
+    //
+    //   parure (3 pièces)    -> niveau + caserne + ce que les % ont déjà apporté
+    //   armement (2 pièces)  -> assiette ordinaire, comme un attribut d'objet
+    //
+    // CE QUI RESTE NON MESURÉ : aucun ensemble de PARURE du compte ne donne de
+    // pourcentage d'ATTAQUE. On ne sait donc pas si l'assiette large vaut pour
+    // toute statistique ou seulement pour les points de vie ; on garde donc la
+    // restriction aux PV (SET_SUR_CASERNE), qui est ce qui est mesuré.
+    // Le témoin d'Artémise tient toujours : 1,64 % de PV venus d'un OBJET, sans
+    // aucun ensemble complet, donnent 185 sur l'assiette ordinaire — le chiffre
+    // du jeu — contre 261 sur l'assiette élargie.
     const pourcentage = apport.pourcentage || 0;
-    const pourcentageSet = apport.pourcentageSet || 0;
-    const pourcentageObjet = pourcentage - pourcentageSet;
+    // Seuls les ensembles de PARURE arrivent ici : app.js range le pourcentage
+    // d'un ensemble d'armement avec ceux des objets, puisqu'il se calcule pareil.
+    const pourcentageParure = apport.pourcentageSet || 0;
+    const pourcentageObjet = pourcentage - pourcentageParure;
 
     let partPourcentage;
+    let partParure = 0;
     if (!this.ABSOLUES.has(stat)) {
       partPourcentage = pourcentage;
     } else {
       const partObjet = auNiveau * pourcentageObjet;
-      const assietteSet = this.SET_SUR_CASERNE.has(stat)
+      const assietteParure = this.SET_SUR_CASERNE.has(stat)
         ? auNiveau + partCaserne + partObjet
         : auNiveau;
-      partPourcentage = partObjet + assietteSet * pourcentageSet;
+      partParure = assietteParure * pourcentageParure;
+      partPourcentage = partObjet + partParure;
     }
 
     // Ce que l'équipement apporte en propre, avant que le panthéon ne l'amplifie.
-    // L'amplification ne porte pas sur les bonus d'ensemble, d'où « apport.set ».
+    //
+    // L'AMPLIFICATION NE PORTE PAS SUR LES BONUS D'ENSEMBLE — ni les plats
+    // (apport.set), ni les pourcentages. Mesuré sur Marie Curie, qui a le nœud
+    // « Équipement affûté » (+50 % sur les gains d'ATQ de l'équipement) :
+    //   ses 308 d'attaque d'équipement contiennent 56,6 venus du set Mousquetaire ;
+    //   50 % des 251,4 restants font 125,7 — et la colonne PANTHÉON du jeu
+    //   affiche 126. En amplifiant les 308 entiers on obtenait 154.
+    const partSet = (apport.set || 0)
+      + partParure
+      + auNiveau * (apport.pourcentageSetArmement || 0);
     const partEquipement = (apport.plat || 0) + partPourcentage;
-    const amplifiable = partEquipement - (apport.set || 0);
+    const amplifiable = partEquipement - partSet;
 
     const pantheon = partPantheon
       + proportionnel * apresEveil

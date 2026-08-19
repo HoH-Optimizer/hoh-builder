@@ -405,14 +405,18 @@ function agreger(liste) {
   // +5 % de dégâts uniques ET +9 coups/minute de vitesse d'attaque.
   // On retient à part ce qui vient des ensembles : le panthéon amplifie les gains
   // de l'équipement « hors bonus d'ensemble ».
-  for (const { bonus } of setsComplets(liste)) {
+  for (const { bonus, pieces } of setsComplets(liste)) {
     for (const b of bonus) {
       const e = (total[b.stat] ||= { plat: 0, pourcentage: 0, set: 0 });
-      // Le pourcentage d'un ensemble se retient à part : il ne se calcule pas
-      // sur la même assiette que celui d'un objet. Voir formules.js.
+      // Le pourcentage d'un ensemble de PARURE (3 pièces) se retient à part :
+      // il ne se calcule pas sur la même assiette que celui d'un objet. Celui
+      // d'un ensemble d'ARMEMENT (2 pièces), si — mesuré sur Mian Tansen.
+      // On le range quand même à part sous « pourcentageSetArmement », parce
+      // que le panthéon n'amplifie aucun bonus d'ensemble. Voir formules.js.
       if (b.type === 'pourcentage') {
         e.pourcentage += b.valeur;
-        e.pourcentageSet = (e.pourcentageSet || 0) + b.valeur;
+        const cle = pieces >= 3 ? 'pourcentageSet' : 'pourcentageSetArmement';
+        e[cle] = (e[cle] || 0) + b.valeur;
       } else { e.plat += b.valeur; e.set = (e.set || 0) + b.valeur; }
     }
   }
@@ -426,7 +430,7 @@ function setsComplets(liste) {
   return Object.entries(compte)
     .map(([set, n]) => ({ set, n, def: defSet(set) }))
     .filter(({ n, def }) => def && def.bonus.length && n >= def.pieces)
-    .map(({ set, def }) => ({ set, bonus: def.bonus }));
+    .map(({ set, def }) => ({ set, bonus: def.bonus, pieces: def.pieces }));
 }
 
 // Deux réglages que l'export ne donne pas de façon sûre, et que le joueur peut

@@ -92,7 +92,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 
 | Manque | Conséquence |
 |---|---|
-| Panthéon des cinq autres classes | L'arbre des attaquants individuels est relevé ; les cinq autres restent à faire. Un nœud inconnu est ignoré et signalé. |
+| Panthéon de trois classes sur six | Les arbres des attaquants individuels, des attaquants de zone et des soigneurs sont relevés. Manquent les défenseurs, les manipulateurs et les soutiens. Un nœud inconnu est ignoré et signalé — aucun héros du compte de test n'en a. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
 | Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
 | 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
@@ -159,6 +159,23 @@ seconde ; les 128 autres ont tous une vitesse d'attaque de 1, et donc 90 de dég
 Vérifié contre le jeu sur Marie Curie, dont le catalogue ne disait rien : avec 90 au
 départ, le site calcule 730 là où le jeu affiche 762, et les 32 d'écart sont exactement
 l'apport de panthéon qui lui manque encore (voir « Limites connues » ci-dessus).
+
+### Les bonus d'ensemble : deux assiettes, selon la taille de l'ensemble
+
+Un objet qui donne « +17,65 % d'attaque » majore la statistique que le héros tient de
+son **niveau**, pas tout ce qu'il a accumulé. Un bonus d'**ensemble** suit la même règle
+— sauf s'il vient d'un ensemble de **parure** (3 pièces), qui prend une assiette plus
+large : le niveau, **plus la caserne**, plus ce que les pourcentages ont déjà apporté.
+
+| Ensemble | Pièces | Assiette |
+|---|---|---|
+| Armement (main, vêtement) | 2 | niveau seul, comme un objet |
+| Parure (chapeau, cou, anneau) | 3 | niveau + caserne + apport des pourcentages |
+
+Mesuré sur quatre héros, au point près : Tomoe Gozen et William Wallace tiennent leurs
+10 % de points de vie du Chacal, une parure — assiette large. Mian Tansen tient ses 5 %
+du Dharma, un armement — assiette ordinaire, et l'assiette large lui donnait 240 points
+de vie de trop. Marie Curie confirme du côté de l'attaque avec le Mousquetaire.
 
 ### Les reliques changent de valeur avec l'ère
 
