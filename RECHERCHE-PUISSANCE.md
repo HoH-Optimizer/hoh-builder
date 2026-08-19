@@ -994,6 +994,31 @@ de « power » sont un texte promotionnel et deux noms de guilde (« Frauenpower
 « Orange Power »), et les neuf de « rating » sont le milieu de
 « RegeneratingTraitDataDTO ».
 
+### Confirmé une seconde fois, sur une capture TOTALE du trafic
+
+Le 19/08/2026 au soir, Thomas a activé le mode diagnostic de l'extension et joué :
+**95 Mo capturés, 85 réponses, un journal de 13 077 adresses appelées.** Tout ce
+que le jeu échange, sans exception.
+
+Trois réponses n'avaient jamais été vues :
+
+| Réponse | Taille | Puissances trouvées |
+|---|---|---|
+| `/game/startup` | 4 367 Ko | aucune |
+| `/game/wakeup` — second état complet du compte | 3 539 Ko | aucune |
+| `/game/battle/hero/complete-wave` — résultat de combat | 223 Ko | aucune |
+| `PlayerPrefs` — les préférences LOCALES du jeu | 133 Ko | aucune |
+
+**ATTENTION AU PIÈGE DES ASSETS.** Les paquets d'illustrations de la capture
+semblent, eux, contenir presque toutes les puissances. C'est du bruit : ce sont
+des blobs compressés, donc quasi aléatoires. Mesuré : **56 %** des entiers tirés
+au sort entre 9 000 et 24 000 s'y trouvent par pur hasard. Les vraies réponses du
+jeu, elles, tournent entre 0 et 15 % — et n'en contiennent aucune.
+
+Les structures de classement du `wakeup` (`LeaderboardPush`, `WoAHeroRosterPush`,
+`WoAPlayerStatsDTO`) ont été ouvertes une par une : elles portent des trophées
+d'événement, jamais de puissance.
+
 ### Ce que cela signifie
 
 **Le jeu calcule la puissance chez lui, à l'affichage, à partir des
@@ -1001,8 +1026,14 @@ statistiques.** Elle n'est jamais transmise ni stockée. C'est précisément ce 
 rend tout ce dossier nécessaire : il n'y a pas de raccourci, ni par l'export, ni
 par un fichier de quelqu'un d'autre (§11).
 
-**Ne pas reposer la question.** La seule façon d'obtenir une puissance reste de
-la lire à l'écran.
+Le jeu tourne sous Unity WebGL : la formule vit dans le moteur compilé, un
+`.wasm` de plus de 40 Mo que l'extension exclut délibérément. C'est le dernier
+endroit où elle se trouve, et le seul qui n'ait pas été fouillé.
+
+**Ne pas reposer la question.** Ni l'export, ni le trafic complet, ni le catalogue,
+ni aucune formule publiée (§11). La seule façon d'obtenir une puissance reste de
+la lire à l'écran — et les écrans de montée de niveau la donnent avec les quatre
+statistiques et leurs gains, ce qui en fait une mesure complète (§13).
 
 ---
 
