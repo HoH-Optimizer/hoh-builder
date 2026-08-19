@@ -333,6 +333,14 @@ window.FORMULES = {
     portee: 0.0168,            // par point de portée au-delà de 1,25
     capacite: 0.024994,        // par niveau de capacité au-delà du premier
     rarete: { 2: 0.90, 3: 1.35, 4: 1.75, 5: 2.03 },
+    // LA RARETÉ D'UNE RELIQUE N'EST PAS DANS L'EXPORT. Le compte donne son
+    // identifiant, son niveau et le héros qui la porte, jamais sa rareté — et le
+    // catalogue ne la donne pas davantage. Ce terme est donc INERTE aujourd'hui :
+    // faute de rareté connue, il vaut 1 pour tout le monde.
+    // ATTENTION à un piège voisin : le champ « etoiles » que produisaient les
+    // anciennes versions de l'extension n'est PAS une rareté, c'est le surplus de
+    // niveau au-delà de 11, que le jeu range à part. Le prendre pour une rareté
+    // faussait à la fois le niveau et ce terme-ci.
     rareteRelique: { 4: 0.005, 5: 0.01 },
     // LE SEUL NOMBRE QUI RESTE AJUSTÉ, et il est assumé. La formule du jeu n'a
     // aucune constante additive, mais il en faut une pour que les chiffres

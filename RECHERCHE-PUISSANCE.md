@@ -60,13 +60,22 @@ ascension sur ce point.
   de base. **Manquent : défenseurs, manipulateurs, soutiens.**
 - ~~**Les dégâts de base de 128 héros.**~~ Résolu : ils valent 90, par la règle
   du §5. Ce n'était pas une donnée manquante mais une règle du jeu.
-- **Le biais sur attaque et défense**, et il est moins simple qu'on croyait.
-  Sur les neuf héros contrôlés le 19/08/2026, il vaut le plus souvent +1 à +4
-  points (le site surestime), comme dit depuis le début. Mais **deux héros
-  sortent du lot, et dans l'AUTRE sens** : Jules César est 7 points trop bas en
-  défense, Marie Curie 14 points trop bas en attaque. Ce n'est donc pas un simple
-  arrondi. Les points de vie et les dégâts de base, eux, tombent à un point près
-  sur les neuf héros.
+- ~~**Le biais sur attaque et défense**, et ses deux héros hors norme.~~ Réglé
+  le 19/08/2026 au soir, et la cause n'avait rien à voir avec un arrondi : le
+  NIVEAU DE RELIQUE était mal lu. Le jeu plafonne ce niveau à 11 et range le
+  surplus dans un champ à part ; une ancienne version de l'extension prenait ce
+  surplus pour un nombre d'ÉTOILES. Achille était donc lu au niveau 11 au lieu
+  de 15, Jules César 11 au lieu de 12, Marie Curie 11 au lieu de 13.
+
+  Une fois les cinq reliques concernées corrigées, **Jules César passe de −7 à
+  +1 en défense et Marie Curie de −14 à +3 en attaque** : les deux anomalies
+  disparaissent, et les quarante comparaisons du contrôle tiennent toutes dans
+  4 points. Il ne reste que le biais ordinaire de 1 à 4 points, qui est
+  l'arrondi du jeu.
+
+  **La leçon, et elle a déjà servi deux fois :** un écart qui sort du lot n'est
+  pas du bruit, c'est une donnée d'entrée fausse. Ici comme pour Mian Tansen
+  (§4) et pour Marie Curie (§8), la valeur aberrante désignait le bug.
 
 ---
 
