@@ -408,8 +408,12 @@ function agreger(liste) {
   for (const { bonus } of setsComplets(liste)) {
     for (const b of bonus) {
       const e = (total[b.stat] ||= { plat: 0, pourcentage: 0, set: 0 });
-      if (b.type === 'pourcentage') e.pourcentage += b.valeur;
-      else { e.plat += b.valeur; e.set = (e.set || 0) + b.valeur; }
+      // Le pourcentage d'un ensemble se retient à part : il ne se calcule pas
+      // sur la même assiette que celui d'un objet. Voir formules.js.
+      if (b.type === 'pourcentage') {
+        e.pourcentage += b.valeur;
+        e.pourcentageSet = (e.pourcentageSet || 0) + b.valeur;
+      } else { e.plat += b.valeur; e.set = (e.set || 0) + b.valeur; }
     }
   }
   return total;

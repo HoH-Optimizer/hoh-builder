@@ -98,6 +98,11 @@ window.FORMULES = {
     'Focus', 'FocusRegen', 'MaxFocus', 'InitialFocusInSecondsBonus',
   ]),
 
+  // Les statistiques dont le bonus d'ENSEMBLE se calcule sur la caserne en plus
+  // de la statistique de niveau. Seuls les points de vie sont dans ce cas à la
+  // mesure ; le détail et les relevés sont commentés dans detail(), plus bas.
+  SET_SUR_CASERNE: new Set(['MaxHitPoints']),
+
   /* ------------------------------------------------------- feuille complète */
 
   // Rassemble toutes les sources pour une statistique donnée et rend le détail,
@@ -152,8 +157,40 @@ window.FORMULES = {
     // Vérifié sur l'écran du jeu, pour Achille : 17,65 % de sa base (1 454) font
     // 257, plus 49 à plat = 306, et le jeu compte bien 305 pour l'équipement.
     // La lecture multiplicative en donnait 441.
+    // …SAUF le pourcentage d'un ENSEMBLE sur les points de vie, qui prend une
+    // assiette plus large : la statistique de niveau, PLUS la caserne, PLUS ce
+    // que les pourcentages d'objet viennent d'apporter. Mesuré sur deux héros de
+    // Thomas, au point près :
+    //
+    //   Tomoe Gozen  : 178 plat + 10 % x (6 180 + 4 670)              = 1 263
+    //   W. Wallace   : 134 plat + 1,84 % x 12 516 = 230, puis
+    //                  10 % x (12 516 + 4 670 + 230)                  = 2 106
+    //
+    // Les deux tombent exactement sur le chiffre du jeu, là où l'assiette
+    // ordinaire donnait 796 et 1 616.
+    //
+    // L'asymétrie est réelle et vérifiée : sur l'ATTAQUE, le même genre de bonus
+    // d'ensemble reste sur l'assiette ordinaire — les 5 % du set Mousquetaire de
+    // Marie Curie donnent 308, le chiffre du jeu, et 334 si l'on y ajoutait la
+    // caserne. Le témoin décisif est Artémise, qui porte 1,64 % de PV venus d'un
+    // OBJET sans aucun ensemble complet : 184 sur l'assiette ordinaire contre 261
+    // sur l'assiette élargie, pour 185 affichés par le jeu.
+    //
+    // Faute d'explication, on s'en tient à ce qui est mesuré.
     const pourcentage = apport.pourcentage || 0;
-    const partPourcentage = this.ABSOLUES.has(stat) ? auNiveau * pourcentage : pourcentage;
+    const pourcentageSet = apport.pourcentageSet || 0;
+    const pourcentageObjet = pourcentage - pourcentageSet;
+
+    let partPourcentage;
+    if (!this.ABSOLUES.has(stat)) {
+      partPourcentage = pourcentage;
+    } else {
+      const partObjet = auNiveau * pourcentageObjet;
+      const assietteSet = this.SET_SUR_CASERNE.has(stat)
+        ? auNiveau + partCaserne + partObjet
+        : auNiveau;
+      partPourcentage = partObjet + assietteSet * pourcentageSet;
+    }
 
     // Ce que l'équipement apporte en propre, avant que le panthéon ne l'amplifie.
     // L'amplification ne porte pas sur les bonus d'ensemble, d'où « apport.set ».
