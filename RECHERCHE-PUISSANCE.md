@@ -12,7 +12,11 @@ Thomas, jamais estimé.
 **Les formules qui SERVENT au site sont dans `formules.js`, pas ici.** Ce qui
 suit est ce qui n'a pas encore abouti.
 
-**Si vous ne lisez que deux sections, lisez le §13 et le §14.** Le §14 change
+**LA FORMULE EST TROUVÉE. Elle est au §15**, telle que le jeu l'écrit dans ses
+propres données. Le §14 raconte comment on l'a localisée. Tout ce qui précède
+est le chemin — utile pour comprendre, mais dépassé sur le fond.
+
+**Ancien avertissement, conservé :** Le §14 change
 tout : la formule n'est pas à reconstituer, elle est ÉCRITE dans les données du
 jeu, et l'on sait maintenant dans quel fichier. Les nœuds de panthéon affichent
 la puissance qu'ils feraient gagner AVANT qu'on les active : c'est la dérivée
@@ -1226,3 +1230,107 @@ protobuf sans schéma, comme tout le reste.
 
 Si la formule y est — et tout indique qu'elle y est —, ce dossier passe d'un
 modèle à 3,6 % d'erreur à **la formule exacte du jeu**.
+
+---
+
+## 15. LA FORMULE, telle que le jeu l'écrit
+
+Le §14 disait où chercher. Thomas a extrait le fichier — 25 Mo — et elle y est,
+mot pour mot. Fin de la reconstitution.
+
+```
+puissance = arrondi(
+    0,001218002 × TailleEscouade × RACINE(
+        Attaque
+      × Défense
+      × PointsDeVie
+      × 1 / (1 − Esquive)
+      × DégâtsDeBase
+      × (1 + ChancesDeCrit × (DégâtsCrit − 1))
+      × (0,5 + 0,5 / TailleEscouadeAttendue)
+      × [ VitesseAttaque × (1 + 0,0168 × (Portée − 1,25))
+          + (rareté + (capacité − 1) × 0,024994)
+            × (RégénFocus / RégénFocus sans bonus)
+            × VitesseAttaque sans bonus ]
+      × (1 + raretéRelique × niveauRelique)
+    )
+)
+```
+
+avec :
+
+| | |
+|---|---|
+| rareté | 2★ 0,90 · 3★ 1,35 · 4★ 1,75 · 5★ 2,03 |
+| raretéRelique | 4★ 0,005 · 5★ 0,01, multipliée par le NIVEAU de la relique |
+| TailleEscouade, TailleEscouadeAttendue | 1 pour un héros — les deux facteurs valent donc 1 |
+
+Les nombres du jeu sont en virgule fixe sur 16 bits : `0,0167999267578125` et
+`0,024993896484375` sont les écritures exactes de 0,0168 et 0,025.
+
+### Il faut le dire : le document communautaire avait RAISON
+
+Le §2 de ce dossier le déclarait « réfuté ». **C'était mon erreur, et elle doit
+rester écrite.** Le document donnait :
+
+```
+Puissance = round(0,001218 × √(ATQ × DÉF × PV × facteurEsquive
+                              × dégâtsDeBase × facteurCrit × facteurCombat))
+facteurCombat = vitesseATQ × (1 + 0,0168 × (portée − 1,25))
+                + (rareté + (compétence − 1) × 0,025) × (régénFocus / régénBase)
+rareté : 2★ 0,90 · 3★ 1,35 · 4★ 1,75 · 5★ 2,03
+```
+
+Le coefficient, l'exposant, le terme de portée, le pas de capacité, les quatre
+multiplicateurs de rareté : **tout est juste, au chiffre près.**
+
+Ce qui lui manquait, et qui explique qu'on n'ait pas su le reproduire :
+
+1. le facteur de relique `(1 + raretéRelique × niveauRelique)` ;
+2. les deux facteurs d'escouade — sans effet sur un héros, mais qui brouillaient
+   la lecture ;
+3. la multiplication du terme de capacité par la **vitesse d'attaque sans
+   bonus**.
+
+Les §2 et §8 avaient conclu que le terme de portée « ne compte pour rien » et que
+la charge était « inerte ». Ces deux conclusions venaient de mesures réelles et
+restent des faits observés — mais l'explication était fausse : la portée et la
+charge SONT dans la formule, simplement à l'intérieur d'un facteur additif où
+leur influence est faible. Un ajustement les voyait donc mal.
+
+**La leçon : ne pas déclarer une formule « réfutée » parce qu'on n'arrive pas à
+la reproduire. On peut échouer pour ses propres raisons.**
+
+### Ce que donne la formule sur les 22 puissances relevées
+
+Avec les statistiques que le site calcule, et **rien d'ajusté** :
+
+| | écart moyen | pire |
+|---|---|---|
+| formule seule | 26 % | 46 % |
+| formule + une constante | **2,1 %** | 8,9 % |
+
+La formule seule sous-estime toujours, et le manque vaut environ **1 420 points
+pour tout héros de bas niveau** — Mérérouka 1 378, Candace 1 422, Ada Blackjack
+1 423, Freydís 1 423, Ada Lovelace 1 424, Mansa Moussa 1 422, Guillaume Tell
+1 417, Musashi 1 419, Artémise 1 414. Neuf héros à 1 % près les uns des autres.
+
+**Or c'est très exactement la constante mesurée au §13 sur les écrans de montée
+de niveau : 1 383 ± 4.** Deux dispositifs indépendants, la même valeur.
+
+### Ce qui reste, et c'est maintenant une seule question
+
+L'arbre de la formule ne contient **aucune constante additive**. Il en faut
+pourtant une d'environ 1 400 pour que les chiffres tombent. Trois explications
+possibles, dans l'ordre de vraisemblance :
+
+1. **une statistique que je fournis n'est pas celle que le jeu fournit** — les
+   plus suspectes sont `RégénFocus sans bonus` et `VitesseAttaque sans bonus`,
+   que j'assimile aux valeurs du catalogue ;
+2. **la puissance affichée n'est pas seulement `formula.unit_power_hero`** — le
+   moteur porte aussi un `SupportUnitPowerFormulaDefinitionId` et un
+   `CalculatePantheonInclusivePower` ;
+3. le jeu ajoute une base que la formule ne dit pas.
+
+C'est désormais **une seule inconnue bien cernée**, au lieu d'un brouillard. Et
+elle vaut 1 400, pas 13 %.

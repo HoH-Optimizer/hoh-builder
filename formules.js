@@ -325,25 +325,67 @@ window.FORMULES = {
      À REFAIRE dès qu'une mesure nouvelle arrive : les coefficients sortent de
      « fit22 », l'ajustement décrit au §9.                                     */
 
-  PUISSANCE: { facteur: 0.002182, constante: 1018, vitesse: 0.400, capacite: 0.0049 },
+  // LES CONSTANTES DU JEU, lues telles quelles dans son fichier de game design.
+  // Ce ne sont plus des valeurs ajustées : ce sont les siennes. Les nombres du
+  // jeu sont en virgule fixe sur 16 bits, d'où 0,0167999… pour 0,0168.
+  PUISSANCE: {
+    coefficient: 0.001218002,
+    portee: 0.0168,            // par point de portée au-delà de 1,25
+    capacite: 0.024994,        // par niveau de capacité au-delà du premier
+    rarete: { 2: 0.90, 3: 1.35, 4: 1.75, 5: 2.03 },
+    rareteRelique: { 4: 0.005, 5: 0.01 },
+    // LE SEUL NOMBRE QUI RESTE AJUSTÉ, et il est assumé. La formule du jeu n'a
+    // aucune constante additive, mais il en faut une pour que les chiffres
+    // tombent : sans elle la formule sous-estime de 26 % en moyenne, et le
+    // manque vaut ~1 420 sur TOUT héros de bas niveau, à 1 % près sur neuf
+    // héros. C'est exactement la constante mesurée indépendamment sur les
+    // écrans de montée de niveau (1 383 ± 4, voir §13 du journal).
+    // Ce n'est donc pas un rustine : c'est un terme réel, dont on ne sait pas
+    // encore d'où il sort. Le §15 liste les trois pistes.
+    constante: 1465,
+  },
 
-  // feuille = la feuille de statistiques rendue par detail(), contexte = celui du héros.
-  // Rend null quand une statistique manque : mieux vaut ne rien afficher.
+  // La puissance du héros. feuille = ce que rend detail(), contexte = le héros.
+  //
+  // La structure est celle du jeu, à la parenthèse près — voir RECHERCHE-PUISSANCE.md
+  // §15, qui en donne l'arbre. Rend null si une statistique manque.
   puissance(feuille, contexte) {
     const v = (s) => feuille?.[s]?.total ?? 0;
-    const facteurCrit = 1 + v('CritChance') * (v('CritDamage') - 1);
+    const P = this.PUISSANCE;
     const esquive = v('Evasion');
     if (esquive >= 1) return null;
-    const facteurEsquive = 1 / (1 - esquive);
-    const noyau = v('Attack') * v('Defense') * v('MaxHitPoints') * v('BaseDamage')
-      * facteurCrit * facteurEsquive;
-    if (!(noyau > 0)) return null;
-    const P = this.PUISSANCE;
+
+    const base = contexte?.details?.base || {};
+    const etoiles = contexte?.details?.etoiles;
     const competence = contexte?.hero?.competence ?? 1;
-    return P.facteur * Math.sqrt(noyau)
-      * Math.pow(v('AttackSpeed') || 1, P.vitesse)
-      * (1 + P.capacite * (competence - 1))
-      + P.constante;
+    const relique = contexte?.reliquePortee;
+
+    // Les deux tailles d'escouade valent 1 pour un héros : les facteurs qu'elles
+    // commandent valent donc 1 eux aussi. On les écrit quand même, pour que la
+    // formule reste lisible à côté de celle du jeu.
+    const escouade = base.SquadSize || 1;
+    const escouadeAttendue = base.ExpectedSquadSize || 1;
+
+    // Le terme de COMBAT. C'est une SOMME, pas un produit : la portée et la
+    // charge y sont, mais diluées — ce qui explique qu'un ajustement les
+    // trouvait « sans effet » (§8).
+    const vitesseSansBonus = base.AttackSpeed || 1;
+    const regenSansBonus = base.FocusRegen || 1;
+    const combat = v('AttackSpeed') * (1 + P.portee * (v('AttackRange') - 1.25))
+      + ((P.rarete[etoiles] || 0) + (competence - 1) * P.capacite)
+        * (v('FocusRegen') / regenSansBonus)
+        * vitesseSansBonus;
+
+    const noyau = v('Attack') * v('Defense') * v('MaxHitPoints')
+      * (1 / (1 - esquive))
+      * v('BaseDamage')
+      * (1 + v('CritChance') * (v('CritDamage') - 1))
+      * (0.5 + 0.5 / escouadeAttendue)
+      * combat
+      * (1 + (relique ? (P.rareteRelique[relique.etoiles] || 0) * relique.niveau : 0));
+
+    if (!(noyau > 0)) return null;
+    return P.coefficient * escouade * Math.sqrt(noyau) + P.constante;
   },
 
   // Un attribut verrouillé est connu du jeu mais sa valeur n'a pas encore été

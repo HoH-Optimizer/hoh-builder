@@ -520,6 +520,13 @@ function contexteHeros(heroId) {
     eveil: paliersEveil(h),
     caserne: apportCaserne(h),
     relique: apportRelique(h),
+    // La relique elle-même, pas seulement ce qu'elle apporte : la formule de
+    // puissance a besoin de sa RARETÉ et de son NIVEAU, qui n'entrent dans
+    // aucune statistique mais multiplient la puissance (voir formules.js).
+    reliquePortee: (() => {
+      const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
+      return portee ? { etoiles: portee.etoiles, niveau: niveauRelique(portee) } : null;
+    })(),
     pantheon: effetsPantheon(h).effets,
   };
 }
