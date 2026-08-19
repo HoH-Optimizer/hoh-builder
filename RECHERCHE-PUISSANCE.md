@@ -117,7 +117,42 @@ mesuré   :  puissance ∝ √(ATQ × DÉF × PV) × dégâts^¼
 ```
 
 Cette seule correction fait tomber la dispersion du terme résiduel **de ×2,7 à
-×1,4**. Le reste (×1,38) est là où la classe et la compétence doivent se loger.
+×1,4**. Le reste est là où la classe et la compétence doivent se loger.
+
+### d) Le modèle retenu, et ce qui reste
+
+Trois expériences avec/sans équipement (§3) permettent d'ajuster les exposants
+exactement. Mais **cet ajustement ne généralise pas** : appliqué aux onze héros
+dont on a la puissance absolue, il fait moins bien que la correction simple.
+Surajustement caractéristique — trois équations, trois inconnues, aucun degré de
+liberté.
+
+Dispersion du terme résiduel sur les onze héros, du pire au meilleur :
+
+| Modèle | Dispersion |
+|---|---|
+| Document, exposant ½ partout | ×1,62 |
+| **√(ATQ × DÉF × PV) × dégâts^¼** | **×1,18** |
+| Ajusté sur les trois rapports (0,782 / 0,271 / 0,327) | ×1,37 |
+
+**Le modèle à retenir est donc le plus simple**, et il est déjà bon :
+
+```
+puissance ∝ √(ATQ × DÉF × PV) × dégâtsDeBase^¼ × (terme restant)
+```
+
+Le terme restant vaut de 0,0119 à 0,0140 selon le héros — 18 % d'amplitude — et
+il montre une tendance nette à la **portée d'attaque**, pas à la classe :
+
+| Portée | Héros | Terme |
+|---|---|---|
+| 6 (à distance) | Artémise · Guillaume Tell · Robin des Bois · Ashoka · Boadicée | 0,0119 → 0,0129 |
+| 1,25 (mêlée) | Freydís · Candace · Wallace · Tomoe · Musashi · Spartacus | 0,0127 → 0,0140 |
+
+Les deux groupes se chevauchent, donc la portée seule ne suffit pas non plus.
+La vitesse d'attaque a été testée : aucune relation propre. **C'est là qu'il faut
+chercher ensuite**, avec quatre ou cinq mesures avec/sans équipement de plus,
+choisies pour opposer portée et vitesse.
 
 ---
 
@@ -135,7 +170,29 @@ focus, éveil — est **identique dans les deux états et disparaît dans le
 rapport**. C'est une expérience contrôlée gratuite, sans rien changer dans le
 jeu et sans dépenser la moindre ressource.
 
-### Première mesure : Hatchepsout
+### Les trois mesures obtenues
+
+| Héros | Sans équipement | Bonus | Avec | Rapport |
+|---|---|---|---|---|
+| William Wallace | 12 476 | +2 367 | 14 843 | 1,18972 |
+| Tomoe Gozen | 7 387 | +696 | 8 083 | 1,09422 |
+| Hatchepsout | 15 427 | +2 273 | 17 700 | 1,14734 |
+
+Les totaux de Wallace et Tomoe retombent exactement sur les puissances lues sur
+leur carte : les relevés sont cohérents entre eux.
+
+Rapports des statistiques entre les deux états, tels que le site les calcule :
+
+| | ATQ | DÉF | PV | Dégâts |
+|---|---|---|---|---|
+| Wallace | ×1,03203 | ×1,11015 | ×1,12254 | ×1,11660 |
+| Tomoe | ×1,05615 | ×1,01087 | ×1,11641 | ×1,02800 |
+| Hatchepsout | ×1,02452 | ×1,05775 | ×1,14549 | ×1,12260 |
+
+Pour Hatchepsout, les dégâts sont calculés avec la base **90** relevée chez
+Forge of Games (§5), son catalogue local ne la connaissant pas.
+
+### Détail de la première mesure : Hatchepsout
 
 ```
 puissance sans équipement : 15 427
@@ -160,13 +217,14 @@ puissance**. Sur ce héros, presque toute la puissance gagnée s'explique par le
 points de vie — alors que la formule leur donne le même poids qu'à l'attaque et
 à la défense. Les exposants ne sont donc pas tous ½.
 
-⚠️ Hatchepsout est un mauvais premier cas : **ses dégâts de base sont inconnus
-de notre catalogue** (un terme entier manque au calcul) et ses apports
-d'équipement n'ont jamais été vérifiés contre le jeu.
+Ce qui a été refait sur Tomoe et Wallace, dont les statistiques sont vérifiées
+au point près contre le jeu — d'où les trois rapports du tableau ci-dessus.
 
-**À refaire en priorité sur Tomoe Gozen et William Wallace**, dont les
-statistiques sont vérifiées au point près et dont les dégâts de base sont
-connus. Quatre nombres à relever.
+**Pour la suite, il faut quatre ou cinq mesures de plus**, choisies pour opposer
+la portée et la vitesse d'attaque : c'est là que se cache le terme restant
+(§2.d). Bons candidats parmi les héros aux dégâts de base connus : Robin des
+Bois et Guillaume Tell (à distance, vitesses très différentes), Miyamoto Musashi
+et William Wallace (mêlée, du simple au double en vitesse).
 
 ---
 
@@ -282,14 +340,11 @@ Concernés au catalogue : `WilliamTell`, `Hatshepsut`, `AdaLovelace`,
 1. **Récupérer les 128 dégâts de base manquants** depuis Forge of Games
    (§5). Débloque la colonne « ? » du tableau, et la formule de puissance qui ne
    pouvait être testée que sur 11 des 98 héros de Thomas.
-2. **Refaire la mesure avec/sans équipement** (§3) sur Tomoe Gozen et William
-   Wallace. Quatre nombres, aucune ressource dépensée, et les exposants se
-   calculent alors directement.
+2. **Quatre ou cinq mesures avec/sans équipement de plus** (§3), choisies pour
+   opposer portée et vitesse, afin d'attaquer le terme restant (§2.d).
 3. **Capturer « Stats de profil » d'Hatchepsout** pour lever la contradiction
    sur les coefficients de progression (§1).
 4. **Relever le panthéon des attaquants de zone**, puis des autres classes.
-5. Seulement ensuite : reconstruire le terme de classe et de compétence, avec
-   une quinzaine de mesures.
 
 **Le principe qui a tout fait avancer, à ne pas lâcher :** ne rien deviner. Une
 valeur inconnue reste inconnue ; une règle non mesurée n'est pas codée. Les deux
