@@ -871,31 +871,34 @@ function rendreStats() {
 
 // La puissance sous le héros, avec ce qu'elle vaut et ce qu'elle ne vaut pas.
 //
-// Le gros chiffre est APPROCHÉ — 4,5 % d'erreur en moyenne, 11 % au pire — et
-// l'écran le dit. L'écart entre les deux configurations, lui, est bien plus sûr :
-// l'erreur du modèle est propre au héros et se simplifie dans le rapport. C'est
-// pourquoi le pourcentage est écrit aussi gros que le total, et pas en petit.
+// Le gros chiffre est APPROCHÉ — 2,3 % d'erreur en moyenne — et l'écran le dit.
+// L'écart entre les deux configurations, lui, est bien plus sûr : l'erreur du
+// modèle est propre au héros et se simplifie quand on compare deux états du
+// même héros.
+//
+// L'écart est la DIFFÉRENCE DES DEUX NOMBRES AFFICHÉS, comme dans le tableau de
+// statistiques : le prendre autrement donnerait une ligne qui ne s'additionne pas.
 function rendrePuissance(contexte, simule, actuel) {
   const bloc = $('#resumePuissance');
   const p = FORMULES.puissance(simule, contexte);
   const p0 = FORMULES.puissance(actuel, contexte);
   if (p == null) { bloc.innerHTML = ''; return; }
 
-  const ecart = p0 == null ? 0 : p - p0;
-  const pourcent = p0 ? (ecart / p0) * 100 : 0;
-  const signe = ecart > 0.5 ? 'positif' : ecart < -0.5 ? 'negatif' : '';
-  const infobulle = "Puissance ESTIMÉE, pas celle du jeu : le modèle tombe à 4,5 % en moyenne "
-    + "et à 11 % dans le pire cas sur les 22 héros mesurés. L'écart entre deux configurations "
-    + "est beaucoup plus fiable que le total, parce que l'erreur du modèle est propre au héros "
-    + "et disparaît dans la comparaison.";
+  const affiche = Math.round(p);
+  const ecart = p0 == null ? 0 : affiche - Math.round(p0);
+  const signe = ecart > 0 ? 'positif' : ecart < 0 ? 'negatif' : '';
+  const infobulle = "Puissance ESTIMÉE, pas celle du jeu : la formule est bien celle du jeu, "
+    + "retrouvée dans ses données, mais il lui manque encore une constante d'environ 1 400 "
+    + "dont on ignore l'origine. Le résultat tombe à 2,3 % en moyenne sur les 22 héros mesurés. "
+    + "L'écart entre deux configurations est plus fiable que le total, parce que l'erreur du "
+    + "modèle est propre au héros et disparaît dans la comparaison.";
 
   bloc.innerHTML = `<span class="blocPuissance" title="${esc(infobulle)}">
     <span class="titrePuissance">Puissance <em>estimée</em></span>
-    <span class="valeurPuissance">${nombre(Math.round(p))}</span>
-    ${Math.abs(ecart) > 0.5 ? `<span class="ecartPuissance ${signe}">
-        ${ecart > 0 ? '+' : '−'}${nombre(Math.round(Math.abs(ecart)))}
-        <span class="pourPuissance">${ecart > 0 ? '+' : '−'}${nombre(Math.abs(pourcent).toFixed(1))} %</span>
-      </span>` : '<span class="ecartPuissance">équipement réel</span>'}
+    <span class="valeurPuissance">${nombre(affiche)}</span>
+    ${ecart !== 0
+      ? `<span class="ecartPuissance ${signe}">${ecart > 0 ? '+' : '−'}${nombre(Math.abs(ecart))}</span>`
+      : '<span class="ecartPuissance">équipement réel</span>'}
   </span>`;
 }
 
@@ -1061,15 +1064,15 @@ function ligneStat(stat, simule, actuel, incomplete = false) {
   const delta = s.brut - a.brut;
   // Sur la charge, gagner du temps c'est descendre : la couleur suit le bénéfice.
   const bon = s.inverse ? delta < 0 : delta > 0;
-  // L'ÉCART D'UNE STATISTIQUE ENTIÈRE S'ÉCRIT EN ENTIER. Le jeu n'affiche jamais
-  // de décimale sur l'attaque ou les points de vie : en montrer une dans la
-  // colonne d'écart donnait un « +128,3 » qui ne correspondait à rien de visible.
-  // On arrondit à l'unité SUPÉRIEURE, en valeur absolue : mieux vaut annoncer un
-  // point de trop qu'un point de moins quand on compare deux configurations.
-  const pourAffichage = FORMAT_STAT[stat] === 'entier'
-    ? Math.sign(delta) * Math.ceil(Math.abs(delta))
-    : delta;
-  const ecart = Math.abs(delta) < 1e-9
+  // L'ÉCART D'UNE STATISTIQUE ENTIÈRE EST LA DIFFÉRENCE DES DEUX NOMBRES AFFICHÉS.
+  // Le jeu n'écrit jamais de décimale sur l'attaque ou les points de vie, et un
+  // « +128,3 » ne correspondait à rien de visible. Mais arrondir l'écart ne suffit
+  // pas : arrondi à l'unité supérieure il donnait +49 là où les colonnes montrent
+  // 8 432 et 8 480, soit 48 — la ligne ne s'additionnait plus. On prend donc
+  // littéralement la différence de ce qui est écrit, et tout se recoupe.
+  const entier = FORMAT_STAT[stat] === 'entier';
+  const pourAffichage = entier ? Math.round(s.brut) - Math.round(a.brut) : delta;
+  const ecart = Math.abs(pourAffichage) < 1e-9
     ? '<span class="discret">=</span>'
     : `<span class="${bon ? 'hausse' : 'baisse'}">${signe(pourAffichage, (x) => (FORMAT_STAT[stat] || 'pct') === 'pct' || !FORMAT_STAT[stat] ? pourcent(x) : nombre(x))}</span>`;
 

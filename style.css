@@ -1381,13 +1381,13 @@ td.principal { font-weight: 600; }
   font-variant-numeric: tabular-nums;
 }
 .ecartPuissance {
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--discret);
   font-variant-numeric: tabular-nums;
 }
 .ecartPuissance.positif { color: var(--positif); }
 .ecartPuissance.negatif { color: var(--negatif); }
-.pourPuissance { font-weight: 700; margin-left: 3px; }
 
 @media (max-width: 700px) {
   .blocPuissance { padding: 5px 12px 6px; }
