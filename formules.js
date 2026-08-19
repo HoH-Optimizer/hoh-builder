@@ -349,8 +349,27 @@ window.FORMULES = {
   //
   // La structure est celle du jeu, à la parenthèse près — voir RECHERCHE-PUISSANCE.md
   // §15, qui en donne l'arbre. Rend null si une statistique manque.
+  // LES QUATRE STATISTIQUES QUE L'ÉCRAN ÉCRIT EN ENTIER. La puissance se calcule
+  // sur les nombres ARRONDIS, ceux que le joueur a sous les yeux, et non sur les
+  // valeurs internes.
+  //
+  // C'EST UN CHOIX, ET IL VA CONTRE LE JEU. L'arbre de la formule extrait du
+  // game design ne porte qu'UN seul arrondi, tout en haut, qui enveloppe le
+  // calcul entier : le jeu détient donc « Défense = 890,6 », en affiche 891, et
+  // calcule avec 890,6. Arrondir avant de calculer nous en éloigne un peu.
+  //
+  // Thomas l'a demandé en connaissance de cause, pour que l'écran soit cohérent
+  // de bout en bout : la puissance découle alors exactement des nombres écrits
+  // au-dessus, et se vérifie de tête. Le prix est faible et mesuré — de l'ordre
+  // de 6 points sur un héros qui en fait 4 000, contre 93 points d'incertitude
+  // du modèle lui-même.
+  STATS_ARRONDIES: new Set(['Attack', 'Defense', 'MaxHitPoints', 'BaseDamage']),
+
   puissance(feuille, contexte) {
-    const v = (s) => feuille?.[s]?.total ?? 0;
+    const v = (s) => {
+      const x = feuille?.[s]?.total ?? 0;
+      return this.STATS_ARRONDIES.has(s) ? Math.round(x) : x;
+    };
     const P = this.PUISSANCE;
     const esquive = v('Evasion');
     if (esquive >= 1) return null;
