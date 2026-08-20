@@ -223,10 +223,25 @@ const initiales = (texte) => joliNom(texte).split(' ').map((m) => m[0]).join('')
 
 // Le wiki n'a pas de portrait pour les variantes légendaires. Faute de mieux, on
 // montre celui du héros qu'elles doublent : c'est le même personnage.
+// L'IMAGE SUIT L'IMMORTALISATION. Sept héros existent en deux versions : celle
+// qu'on obtient, et celle qu'on immortalise — cinq étoiles, statistiques de base
+// plus hautes, ET UNE AUTRE ILLUSTRATION. Le compte garde l'identifiant d'origine
+// et signale la seconde par son champ « montee » (hero_star_up).
+//
+// Le catalogue porte les deux jeux d'images depuis le début ; c'est le site qui
+// allait chercher la mauvaise, parce qu'il demandait l'identifiant du compte.
+// Thomas l'a vu sur son Hatchepsout : cinq étoiles en jeu, coiffe verte, et le
+// site lui montrait le portrait de la version à quatre étoiles.
+const identiteHeros = (h) => h?.montee || h?.id;
+
 const portraitsDe = (id, dossier = 'heros') => {
-  const chemins = [`images/${dossier}/${encodeURIComponent(id)}.webp`];
-  const base = id.replace(/Legendary$/, '');
-  if (base !== id) chemins.push(`images/${dossier}/${encodeURIComponent(base)}.webp`);
+  const identite = identiteHeros(herosParId.get(id)) || id;
+  const chemins = [`images/${dossier}/${encodeURIComponent(identite)}.webp`];
+  // Deux replis : l'identifiant demandé, puis le nom sans « Legendary ».
+  for (const autre of [id, String(identite).replace(/Legendary$/, '')]) {
+    const chemin = `images/${dossier}/${encodeURIComponent(autre)}.webp`;
+    if (!chemins.includes(chemin)) chemins.push(chemin);
+  }
   return chemins;
 };
 
@@ -357,6 +372,13 @@ const catalogueHeros = () => [
 
 function tousLesHeros() {
   const ids = new Set([...catalogueHeros(), ...herosParId.keys()]);
+  // UN HÉROS, UNE LIGNE. Le catalogue décrit séparément les sept variantes
+  // immortalisées ; elles ne sont jamais possédées sous cet identifiant-là — le
+  // compte garde l'identifiant d'origine et pointe la variante par « montee ».
+  // Les lister à part donnerait deux Hatchepsout dans « Tous », dont une que
+  // personne ne peut avoir. On ne garde donc la variante que si le compte la
+  // possède vraiment, ce qui n'arrive pas aujourd'hui mais coûte une ligne.
+  for (const id of [...ids]) if (/Legendary$/.test(id) && !herosParId.has(id)) ids.delete(id);
   return [...ids]
     .map((id) => ({ id, ...(herosParId.get(id) || {}), possede: herosParId.has(id) }))
     // On trie sur le nom affiché, pas sur l'identifiant interne : sinon Cuauhtemoc
@@ -452,11 +474,21 @@ const paliersEveil = (h) => ((window.EVEIL_JEU || {})[h?.id] || []).slice(0, h?.
 
 // Ce que la caserne de son arme apporte au héros. Il y en a une par arme : un
 // héros d'infanterie profite de la caserne d'infanterie, pas des autres.
-function apportCaserne(h) {
+const casernePortee = (h) => {
   const type = (ficheDuHeros(h) || {}).type;
   const caserne = donnees?.compte?.casernes?.[type];
   return (window.CASERNES_JEU || {})[caserne?.batiment] || {};
+};
+
+function apportCaserne(h) {
+  return casernePortee(h).apports || {};
 }
+
+// L'ESCOUADE QUI ACCOMPAGNE LE HÉROS. Elle ne touche aucune statistique de sa
+// fiche — mais sa puissance s'ajoute à la sienne dans le nombre que le jeu écrit
+// sous son nom. C'est ce qu'on a longtemps pris pour une constante (voir
+// puissanceEscorte(), dans formules.js).
+const escorteDuHeros = (h) => casernePortee(h).unite || null;
 
 // Ce que sa relique lui apporte, au palier où elle est montée.
 //
@@ -544,6 +576,9 @@ function contexteHeros(heroId, noeuds) {
     ascensions: niveauProjete == null ? h?.ascensions : undefined,
     eveil: paliersEveil(h),
     caserne: apportCaserne(h),
+    // L'escouade de sa caserne : elle n'entre dans aucune statistique, elle
+    // s'ajoute à la PUISSANCE.
+    escorte: escorteDuHeros(h),
     relique: apportRelique(h),
     // La relique elle-même, pas seulement ce qu'elle apporte : la formule de
     // puissance a besoin de sa RARETÉ et de son NIVEAU, qui n'entrent dans
@@ -925,11 +960,18 @@ function rendrePuissance(contexte, simule, actuel, contexteReel = contexte) {
   const affiche = Math.round(p);
   const ecart = p0 == null ? 0 : affiche - Math.round(p0);
   const signe = ecart > 0 ? 'positif' : ecart < 0 ? 'negatif' : '';
-  const infobulle = "Puissance ESTIMÉE, pas celle du jeu : la formule est bien celle du jeu, "
-    + "retrouvée dans ses données, mais il lui manque encore une constante d'environ 1 400 "
-    + "dont on ignore l'origine. Le résultat tombe à 0,27 % en moyenne sur les 27 héros mesurés. "
-    + "L'écart entre deux configurations est plus fiable que le total, parce que l'erreur du "
-    + "modèle est propre au héros et disparaît dans la comparaison.";
+  // Le détail de la puissance : ce qui vient du héros, ce qui vient de son
+  // escouade. Les deux s'additionnent — c'est la formule du jeu, plus rien n'est
+  // ajusté depuis qu'on a compris d'où venait le second terme.
+  const escorte = FORMULES.puissanceEscorte(contexte?.escorte);
+  const infobulle = "Puissance calculée avec la formule du jeu, retrouvée dans ses données. "
+    + (escorte
+      ? `Elle additionne le héros (${nombre(Math.round(affiche - escorte))}) et l'escouade que lui donne `
+        + `ta caserne (${nombre(Math.round(escorte))}) : le jeu compte les deux sous son nom. `
+      : "La caserne du compte n'est pas connue : la part de l'escouade est approchée. ")
+    + "Elle tombe à 0,27 % en moyenne sur 27 héros relevés, et à 0,04 % sur le seul héros "
+    + "relevé d'un second compte. Reste un écart de quelques points, dû aux arrondis. "
+    + "L'écart entre deux configurations est plus fiable encore que le total.";
 
   bloc.innerHTML = `<span class="blocPuissance" title="${esc(infobulle)}">
     <span class="titrePuissance">Puissance <em>estimée</em></span>
