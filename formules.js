@@ -185,6 +185,30 @@ window.FORMULES = {
 
   ENTIERES: new Set(['Attack', 'Defense', 'MaxHitPoints', 'BaseDamage']),
 
+  /* ------------------------------------- LE TOTAL DES DÉGÂTS DE BASE SE PLAFONNE
+
+     Sur les huit héros dont on possède le tableau « Stats de profil », notre
+     valeur exacte des dégâts de base tombe TOUJOURS juste en dessous de l'entier
+     que le jeu écrit — entre 0,19 et 0,89 en dessous, jamais au-dessus. Huit sur
+     huit. Le cas qui tranche est Isabella : 599,11 chez nous, 600 dans le jeu.
+     Un arrondi ordinaire donnerait 599.
+
+     Et les parties fractionnaires de nos valeurs (0,11 · 0,34 · 0,38 · 0,43 ·
+     0,63 · 0,63 · 0,69 · 0,81) couvrent tout l'intervalle, ce qu'on attend d'un
+     plafond et pas d'un manque : si une contribution nous échappait, elles se
+     serreraient sous 0,5.
+
+     L'AUTRE LECTURE, qu'il faut garder en tête : nos dégâts de base seraient trop
+     bas d'un demi-point, et le jeu arrondirait normalement. Elle explique les
+     mêmes chiffres, avec un manque qui varierait de 0 à 0,39 selon le héros —
+     moins naturel, mais pas impossible. Huit héros ne suffisent pas à trancher.
+
+     Les trois autres statistiques ne montrent rien de tel : l'attaque et la
+     défense se trompent dans les DEUX sens (−0,70 à +0,59), ce qui est la
+     signature d'un arrondi ordinaire et de valeurs justes.                     */
+
+  PLAFONNEES: new Set(['BaseDamage']),
+
   /* ------------------------------------------------------- feuille complète */
 
   // Rassemble toutes les sources pour une statistique donnée et rend le détail,
@@ -344,7 +368,16 @@ window.FORMULES = {
       // Le taux qui a produit la part en pourcentage de l'équipement. Il ne
       // s'additionne pas : il sert à rappeler d'où sort le chiffre.
       tauxEquipement: pourcentage,
-      total: Object.values(parts).reduce((somme, v) => somme + v, 0),
+      // LE TOTAL N'EST PAS LA SOMME DES LIGNES ÉCRITES, et le jeu non plus ne
+      // le fait pas : chaque ligne est plafonnée pour l'affichage, mais le total
+      // vient de la somme EXACTE, arrondie une seule fois. Sur Achille, les
+      // lignes affichées font 2 946 et le jeu écrit 2 945 — c'est cohérent, pas
+      // contradictoire. L'addition à l'écran ne tombe donc pas toujours au point
+      // près, exactement comme dans le jeu.
+      total: entiere
+        ? (this.PLAFONNEES.has(stat) ? Math.ceil : Math.round)(
+          apresEveil + partCaserne + partRelique + partEquipement + pantheon)
+        : Object.values(parts).reduce((somme, v) => somme + v, 0),
       // La même somme, SANS aucun arrondi. Le jeu arrondit ce qu'il écrit, mais
       // calcule la puissance sur ses valeurs exactes : sa formule ne porte qu'un
       // seul arrondi, tout en haut.

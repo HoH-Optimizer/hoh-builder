@@ -2124,3 +2124,84 @@ ajustement. Chaque terme, chaque constante, chaque « sans bonus » a son nœud 
 le fichier. La seule chose encore établie par la mesure plutôt que par la lecture
 est le fait que les deux puissances **s'additionnent** — et c'est confirmé sur
 deux comptes à moins de 1 %.
+
+---
+
+## 24. Le diagnostic, fait une fois : deux statistiques sur quatre
+
+Thomas : « tu le fais une fois, tu détermines si les valeurs de la formule au
+moment de l'affichage et les nôtres sont les bonnes ; si ce n'est pas le cas, tu
+cherches celles qui diffèrent, et on les cherche dans le fichier. »
+
+C'est la bonne méthode, et elle n'a pas besoin d'aller lire dans le jeu : le
+tableau « Stats de profil » AFFICHE toutes les entrées de la formule. Huit héros,
+deux comptes, et voici l'écart entre notre valeur EXACTE, avant tout arrondi, et
+celle du jeu.
+
+| | Attaque | Défense | Points de vie | Dégâts de base |
+|---|---|---|---|---|
+| Wallace | +0,19 | −0,01 | +0,92 | −0,37 |
+| Achille | +0,36 | −0,26 | +1,71 | −0,57 |
+| Ulysse | −0,70 | +0,14 | +0,60 | −0,62 |
+| Marie Curie | +0,30 | +0,59 | +1,00 | −0,31 |
+| Isabella | −0,27 | −0,20 | +1,38 | −0,89 |
+| Lily | −0,59 | −0,12 | +0,91 | −0,66 |
+| Edison | −0,57 | −0,19 | 0,00 | −0,19 |
+| Jeanne d'Arc | +0,26 | −0,23 | +0,32 | −0,37 |
+
+**Attaque et défense se trompent dans les deux sens** : c'est du bruit d'arrondi,
+et nos valeurs sont justes.
+
+**Les points de vie sont toujours trop hauts. Les dégâts de base toujours trop
+bas.** Deux biais, deux signes constants — donc deux vraies questions.
+
+### Les dégâts de base : pas un biais, une écriture
+
+Notre exact tombe toujours dans l'intervalle qui précède l'entier du jeu, et les
+parties fractionnaires (0,11 · 0,34 · 0,38 · 0,43 · 0,63 · 0,63 · 0,69 · 0,81)
+couvrent tout l'intervalle. C'est ce qu'on attend d'un PLAFOND, pas d'un manque —
+si une contribution nous échappait, elles se serreraient sous 0,5.
+
+Le cas qui tranche est Isabella : 599,11 chez nous, **600** dans le jeu. Un
+arrondi ordinaire donnerait 599.
+
+Total plafonné pour cette statistique : **8 justes sur 8**.
+
+### Les points de vie : biais réel, trois coupables éliminés
+
+**La caserne est juste** — Edison le prouve : tous ses termes sont des entiers,
+7 656 + 4 670 + 0, et le total tombe EXACTEMENT sur les 12 326 du jeu.
+
+**L'équipement est juste** — le tableau d'Achille écrit +491, on calcule 490,71.
+
+**Donc le déficit est dans la statistique de niveau :**
+
+| | on calcule | il faudrait |
+|---|---|---|
+| Edison | 7 656 | **7 656** |
+| Jeanne d'Arc | 10 080 | 10 079,7 |
+| Isabella | 12 038,4 | 12 037,0 |
+| Marie Curie | 13 490 | 13 489 |
+| Achille | 15 694 | 15 692,3 |
+
+Marie Curie est le cas le plus net : tous ses termes sont entiers — 13 490 +
+4 670 + 70 = 18 230 — et le jeu écrit 18 229. Il manque exactement 1, sans une
+décimale pour l'expliquer.
+
+**LA PISTE, ET POURQUOI ON NE LA PREND PAS.** En ajustant les deux taux sur ces
+cinq héros, on trouve 0,0399 par niveau et 0,0608 par ascension au lieu de 0,04
+et 0,06 — et ça colle aux cinq à moins de 0,001. Mais le catalogue écrit 0,04 et
+0,06, et toute cette soirée a montré que le fichier a raison contre l'ajustement.
+Un point de vie sur vingt mille ne vaut pas qu'on recommence à régler.
+
+### L'état
+
+| | ce matin | ce soir |
+|---|---|---|
+| Statistiques exactes (8 héros × 4) | 17/32 | **22/32** |
+| dont dégâts de base | 2/8 | **8/8** |
+| dont défense | 6/8 | **7/8** |
+| Jeanne d'Arc | — | **exacte sur les quatre** |
+| Puissance, autre compte | +11 % | **8 092 pour 8 093** |
+
+Restent : les points de vie à +1, et l'attaque à −1 sur trois héros.
