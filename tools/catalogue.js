@@ -81,6 +81,47 @@ const STAT = {
   20: 'Defense', 27: 'Focus', 28: 'FocusRegen', 32: 'HitTime',
   34: 'MaxFocus', 35: 'MaxHitPoints', 36: 'MoveSpeed', 39: 'ProjectileSpeed',
   46: 'SquadRows', 47: 'SquadSize', 48: 'SquadSpacingX', 49: 'SquadSpacingY',
+
+  // LE RESTE DE LA TABLE, ÉTABLI LE 20/08/2026 (voir §16 de RECHERCHE-PUISSANCE.md).
+  //
+  // Thomas a signalé que sa relique « Livre des morts » donne 10 % de dégâts de
+  // zone, là où le site n'affichait qu'un « stat_2 » non compté. De fil en
+  // aiguille, TOUS les numéros encore inconnus se sont laissés nommer, par deux
+  // chemins qui se recoupent :
+  //
+  // 1. LE GAME DESIGN NOMME LA STATISTIQUE DE CHAQUE RELIQUE EN CLAIR. Autour de
+  //    « RelicActivation_BookOfTheDead » on lit « unit_stat.AoeDamageAmp », autour
+  //    de Mjöllnir « unit_stat.SingleTargetDamageAmp », et ainsi de suite pour les
+  //    dix-huit reliques concernées. Chaque numéro est ainsi lu sur la relique qui
+  //    le porte — deux reliques indépendantes se recoupent pour 2, 6, 21, 29 et 41.
+  //
+  // 2. LES NUMÉROS SUIVENT L'ORDRE ALPHABÉTIQUE des noms de statistiques. Les
+  //    dix-neuf numéros déjà connus le vérifient sans exception, et les numéros
+  //    lus sur les reliques tombent exactement là où l'alphabet les attend. Les
+  //    statistiques ajoutées après coup au jeu sont, elles, rangées à la suite,
+  //    au-delà de 54 : c'est le cas de CritHealChance (56), LightningDamageAmp
+  //    (58) et DefenseDebuffGivenAmp (61), qui sortent de l'ordre alphabétique.
+  //
+  // Deux vérifications de contrôle, qu'aucun des deux chemins ne prévoyait :
+  // le numéro 45 vaut 10, 3 ou 4 sur 34 unités — SplashDamageDivisor, un diviseur
+  // de dégâts d'éclaboussure ; et le 26 vaut 12, 8, 4 ou 1 sur 476 unités —
+  // ExpectedSquadSize, la taille d'escouade attendue. Les deux tombent juste.
+  2: 'AoeDamageAmp', 6: 'AttackBuffGivenAmp', 16: 'BurnDamageAmp',
+  21: 'DefenseBuffGivenAmp', 23: 'DotDamageAmp', 26: 'ExpectedSquadSize',
+  29: 'HealGivenAmp', 30: 'HealTakenAmp', 41: 'ShieldGivenAmp',
+  43: 'SingleTargetDamageAmp', 44: 'SingleTargetDamageTakenAmp',
+  45: 'SplashDamageDivisor', 51: 'StormcastDamageAmp', 53: 'StunDurationAmp',
+  56: 'CritHealChance', 58: 'LightningDamageAmp', 61: 'DefenseDebuffGivenAmp',
+
+  // DÉDUIT, PAS OBSERVÉ. Le numéro 25 n'apparaît sur aucune relique : personne ne
+  // le nomme en clair. L'alphabet le place entre DotDamageAmp (23) et
+  // ExpectedSquadSize (26), et il ne reste que deux candidats — DotDamageTakenAmp
+  // et Evasion. Les cinq héros qui le portent en gagnent 0,15 à leur cinquième
+  // palier d'éveil : « +15 % d'esquive » est un bonus, « +15 % de dégâts sur la
+  // durée SUBIS » serait une punition. D'où Evasion. Aucun de ces cinq héros n'est
+  // dans le compte de Thomas : la lecture reste donc à confirmer sur un écran.
+  25: 'Evasion',
+
 };
 
 // Même méthode pour la couleur et la classe : les numéros du catalogue ont été
