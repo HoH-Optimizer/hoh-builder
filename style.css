@@ -1393,3 +1393,245 @@ td.principal { font-weight: 600; }
   .blocPuissance { padding: 5px 12px 6px; }
   .valeurPuissance { font-size: 18px; }
 }
+
+/* ============================================================ L'ARBRE DE PANTHÉON
+
+   Il se lit comme dans le jeu : six lignes, deux nœuds de chaque côté d'une
+   charnière qui porte le numéro du palier — ou son cadenas tant qu'il est fermé.
+
+   TROIS ÉTATS, et il faut qu'ils se distinguent au premier coup d'œil :
+     actif      — l'icône en couleur, cerclée d'accent ;
+     ouvert     — activable, l'icône éteinte mais nette ;
+     verrouillé — le palier n'est pas ouvert : l'icône s'efface et ne réagit plus.
+   Un nœud qu'on a changé par rapport au compte porte en plus une pastille. */
+
+.arbrePantheon {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bordure);
+}
+
+.enteteArbre {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.enteteArbre h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.compteArbre { margin: 0; }
+.marqueModifie { color: var(--accent); }
+
+.grilleArbre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* La colonne du milieu relie les paliers, comme le trait vertical du jeu. */
+.ligneArbre {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+}
+
+.ligneArbre::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  bottom: -10px;
+  width: 1px;
+  transform: translateX(-.5px);
+  background: var(--filet);
+  z-index: 0;
+}
+
+.ligneArbre:first-child::before { top: 50%; }
+.ligneArbre:last-child::before { bottom: 50%; }
+
+.coteArbre {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  z-index: 1;
+}
+
+/* Le trait qui joint deux nœuds voisins. */
+.lienNoeud {
+  width: 18px;
+  height: 1px;
+  background: var(--filet);
+}
+
+.charniere {
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: 0 6px;
+  border-radius: 50%;
+  border: 1px solid var(--bordure);
+  background: var(--panneau);
+  color: var(--discret);
+  font-size: .82rem;
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+}
+
+
+.noeudArbre {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  transition: transform .12s ease, filter .12s ease;
+}
+
+.noeudArbre img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+}
+
+.noeudArbre.absent { visibility: hidden; cursor: default; }
+
+/* DEUX SIGNAUX, PAS PLUS.
+
+     la COULEUR dit ce qui est pris : un nœud éteint garde son dessin mais perd
+     ses couleurs, un nœud activé les retrouve ;
+     le HALO dit ce que la souris désigne.
+
+   La première version cerclait les nœuds actifs de vert et posait une pastille
+   sur ceux qu'on avait changés. Trop de marques d'un coup : l'arbre se lisait
+   comme un tableau de bord en alarme. */
+
+.noeudArbre img { filter: grayscale(1) brightness(.5); transition: filter .16s ease; }
+.noeudArbre.actif img { filter: none; }
+
+/* Le halo est porté par un calque à part : il déborde de la pastille sans
+   pousser quoi que ce soit, et s'allume par une seule propriété. */
+.noeudArbre::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 0 0 transparent;
+  transition: box-shadow .16s ease;
+}
+
+.noeudArbre.actif::after { box-shadow: 0 0 12px 2px var(--halo-actif); }
+.noeudArbre:hover::after { box-shadow: 0 0 16px 5px var(--halo-survol); }
+.noeudArbre:hover img { filter: none; }
+.noeudArbre:focus-visible { outline: none; }
+.noeudArbre:focus-visible::after { box-shadow: 0 0 16px 5px var(--halo-survol); }
+
+/* LIGNE COMPLÈTE : deux nœuds sont déjà pris sur cette ligne, les autres ne
+   peuvent plus l'être. Rien de barré ni de cadenassé — le dessin recule d'un cran
+   et le curseur le dit. La bulle, elle, explique pourquoi. */
+.noeudArbre.complet { cursor: default; }
+.noeudArbre.complet img { opacity: .4; }
+.noeudArbre.complet:hover img { filter: grayscale(1) brightness(.5); opacity: .55; }
+.noeudArbre.complet:hover::after { box-shadow: none; }
+
+.videArbre { text-align: center; padding: 8px 0; }
+
+/* ------------------------------------------------- la bulle de survol */
+
+.bulleNoeud {
+  position: fixed;
+  z-index: 60;
+  max-width: 270px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--bordure);
+  background: var(--panneau-clair);
+  box-shadow: var(--ombre-panneau);
+  pointer-events: none;
+  font-size: .86rem;
+}
+
+.bulleNoeud h4 {
+  margin: 0 0 6px;
+  font-size: .95rem;
+  color: var(--texte);
+}
+
+.gainsBulle {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gainsBulle li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gainsBulle img { width: 15px; height: 15px; }
+.gainsBulle span { color: var(--discret); }
+.gainsBulle b { margin-left: auto; color: var(--positif); font-variant-numeric: tabular-nums; }
+
+.combatBulle {
+  margin: 4px 0 0;
+  color: var(--discret);
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.piedBulle {
+  margin: 8px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--filet);
+  color: var(--discret);
+  font-size: .78rem;
+}
+
+/* Le halo d'un nœud de panthéon. Sur fond sombre c'est une lumière blanche ;
+   sur fond clair, un blanc ne se verrait pas — on passe à l'améthyste. */
+:root {
+  --halo-survol: rgba(255, 255, 255, .42);
+  --halo-actif: rgba(255, 233, 170, .42);
+}
+
+:root[data-theme="clair"] {
+  --halo-survol: rgba(92, 58, 160, .40);
+  --halo-actif: rgba(196, 138, 30, .38);
+}
+
+/* Tant qu'une classe n'a pas sa planche d'icônes, le nœud retombe sur l'icône de
+   la statistique qu'il touche : le site les a déjà toutes. Mieux vaut un
+   pictogramme approximatif qu'une pastille vide. */
+.noeudArbre .emblemeNoeud { display: none; }
+.noeudArbre.sansIcone {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--bordure);
+  background: var(--panneau-clair);
+}
+.noeudArbre.sansIcone .emblemeNoeud { display: grid; place-items: center; }
+.noeudArbre.sansIcone .emblemeNoeud img { width: 24px; height: 24px; }
+.noeudArbre.sansIcone.eteint .emblemeNoeud { opacity: .4; filter: grayscale(1); }
+.noeudArbre.sansIcone:hover .emblemeNoeud { opacity: 1; filter: none; }
+.emblemeCombat { font-size: 1.1rem; color: var(--discret); }
