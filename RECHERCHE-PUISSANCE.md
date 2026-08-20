@@ -16,6 +16,10 @@ suit est ce qui n'a pas encore abouti.
 propres données. Le §14 raconte comment on l'a localisée. Tout ce qui précède
 est le chemin — utile pour comprendre, mais dépassé sur le fond.
 
+**Le §16 est le dernier état** : toutes les statistiques du catalogue portent
+enfin un nom, les trois anomalies qui résistaient ont disparu, et l'erreur du
+site est tombée à **0,38 % en moyenne** sur les 22 puissances relevées.
+
 **Ancien avertissement, conservé :** Le §14 change
 tout : la formule n'est pas à reconstituer, elle est ÉCRITE dans les données du
 jeu, et l'on sait maintenant dans quel fichier. Les nœuds de panthéon affichent
@@ -71,7 +75,10 @@ ascension sur ce point.
   +1 en défense et Marie Curie de −14 à +3 en attaque** : les deux anomalies
   disparaissent, et les quarante comparaisons du contrôle tiennent toutes dans
   4 points. Il ne reste que le biais ordinaire de 1 à 4 points, qui est
-  l'arrondi du jeu.
+  l'arrondi du jeu — **et le §17 en explique la plus grosse part : le jeu
+  TRONQUE chaque apport et additionne des entiers.** Le site fait pareil depuis
+  le 20/08/2026. Ce qui subsiste après ça se compte sur une main : 4 points sur
+  l'attaque d'Achille, 2 sur sa défense, 1 sur ses PV, 0 sur ses dégâts de base.
 
   **La leçon, et elle a déjà servi deux fois :** un écart qui sort du lot n'est
   pas du bruit, c'est une donnée d'entrée fausse. Ici comme pour Mian Tansen
@@ -1343,3 +1350,408 @@ possibles, dans l'ordre de vraisemblance :
 
 C'est désormais **une seule inconnue bien cernée**, au lieu d'un brouillard. Et
 elle vaut 1 400, pas 13 %.
+
+---
+
+## 16. Les statistiques sans nom — et l'erreur qui tombe à 0,4 %
+
+Ce paragraphe part d'une phrase de Thomas, le 20 août 2026 :
+
+> « Tu n'as pas pris en compte que sur la relique Livre des morts il y avait 10 %
+> de dégâts de zone dans ton calcul, cela devrait réduire la différence qu'on
+> cherche. »
+
+Il avait raison sur le fait, et raison sur la conséquence — mais pas par le
+chemin qu'il croyait. Le détour vaut d'être écrit.
+
+### Le catalogue désigne les statistiques par un NUMÉRO
+
+`tools/catalogue.js` traduit ces numéros en noms grâce à une table établie de
+proche en proche. Dix-neuf numéros étaient nommés ; les autres ressortaient tels
+quels, sous la forme `stat_2`, `stat_18`, `stat_41`. Ces lignes-là étaient
+**affichées mais non comptées** : le site les montrait sans savoir quoi en faire.
+
+Le Livre des morts porte `stat_2`. Thomas, lui, lit « 10 % de dégâts de zone »
+sur l'écran du jeu, et sa relique est au niveau 10 : le palier 10 de la relique
+vaut exactement 0,10. Le numéro 2 est donc les dégâts de zone.
+
+### Deux chemins indépendants nomment TOUS les numéros restants
+
+**Le premier : le game design nomme la statistique de chaque relique en clair.**
+Autour de `RelicActivation_BookOfTheDead` on lit `unit_stat.AoeDamageAmp` ;
+autour de Mjöllnir `unit_stat.SingleTargetDamageAmp` ; autour de la Torche de
+Prométhée `unit_stat.BurnDamageAmp`. Dix-huit reliques, dix-huit noms. Cinq
+numéros sont même portés par deux reliques différentes, qui se recoupent.
+
+**Le second : les numéros suivent l'ordre alphabétique des noms.** Les dix-neuf
+numéros déjà connus le vérifient sans exception — 4 AssetRadius, 5 Attack,
+9 AttackRange, 10 AttackSpeed, 11 BaseDamage… — et les noms lus sur les reliques
+tombent exactement là où l'alphabet les attend. Les statistiques ajoutées au jeu
+APRÈS coup sont rangées à la suite, au-delà de 54, et sortent donc de l'ordre :
+c'est le cas de CritHealChance (56), LightningDamageAmp (58) et
+DefenseDebuffGivenAmp (61) — trois numéros que les reliques nomment, et que
+l'alphabet ne pouvait pas trouver.
+
+Deux contrôles que ni l'un ni l'autre chemin ne prévoyait, et qui tombent juste :
+le numéro **45** vaut 10, 3 ou 4 sur 34 unités — `SplashDamageDivisor`, un
+diviseur de dégâts d'éclaboussure ; le numéro **26** vaut 12, 8, 4 ou 1 sur
+476 unités — `ExpectedSquadSize`, la taille d'escouade attendue, celle-là même
+qui figure dans la formule de puissance du §15.
+
+Un seul numéro reste déduit et non observé : le **25**, qu'aucune relique ne
+porte. L'alphabet ne laisse que deux candidats, `DotDamageTakenAmp` et
+`Evasion` ; les cinq héros qui le portent en gagnent 0,15 à leur cinquième palier
+d'éveil, et « +15 % d'esquive » est un bonus quand « +15 % de dégâts sur la durée
+SUBIS » serait une punition. D'où Evasion. Aucun de ces cinq héros n'est dans le
+compte de Thomas : la lecture reste à confirmer sur un écran.
+
+### Ce qui manquait vraiment : le crit gagné à l'éveil
+
+Les dégâts de zone n'entrent PAS dans la puissance — le §15 est formel, et la
+formule du jeu ne les mentionne pas. La phrase de Thomas n'aurait donc rien dû
+changer à la puissance.
+
+Sauf que la table des numéros ne sert pas qu'aux reliques : elle sert aussi aux
+**paliers d'éveil**. Et 56 paliers sur 720 portaient un numéro non nommé, dont
+`stat_18` et `stat_19` — **les chances de crit et les dégâts critiques**, qui,
+eux, sont dans la formule.
+
+Les trois héros que ce journal traînait comme « anomalies » depuis le début —
+Spartacus −7,0 %, Boadicée −4,2 %, Tomoe −3,4 % — sont **exactement les trois
+héros éveillés au rang V dont le cinquième palier donne `stat_18`**. Spartacus,
+le pire des trois, est aussi le seul à porter en plus `stat_19` à son deuxième
+palier. Le site leur retirait donc, sans le savoir, 20 points de chances de crit
+et 40 points de dégâts crit.
+
+Ce n'était pas du bruit. C'était, pour la quatrième fois dans ce dossier, une
+donnée d'entrée incomplète.
+
+### Le résultat, sur les 22 puissances relevées
+
+| | erreur moyenne | pire |
+|---|---|---|
+| avant | 1,66 % | 6,97 % (Spartacus) |
+| numéros nommés | 1,15 % | 2,99 % |
+| **constante réajustée à 1 416** | **0,38 %** | **2,08 %** (Ulysse) |
+
+Les trois anomalies disparaissent : Spartacus +0,07 %, Boadicée +0,12 %, Tomoe
++0,14 %. **Quatorze héros sur vingt-deux tombent sous 0,2 %**, et cinq au point
+près. Il ne reste plus d'anomalie isolée, seulement un léger excès sur cinq héros
+(Ulysse +2,1 %, Mérérouka +1,3 %, Ada Lovelace +1,1 %, Léonard +1,1 %,
+Hatchepsout +1,0 %).
+
+**La constante bouge vers la mesure du §13, pas contre elle.** Elle valait 1 465
+quand on l'ajustait sur des statistiques incomplètes — elle compensait alors une
+partie de ce qui manquait. Sur des statistiques complètes, elle vaut **1 416**,
+là où les écrans de montée de niveau mesuraient 1 383 ± 4 par un dispositif
+entièrement différent. Les deux se rapprochent de 82 à 33 points d'écart.
+
+### Un piège trouvé au passage : le modificateur d'ère
+
+Une relique est mise à l'échelle de l'ère du joueur : +50 d'attaque en donne 143
+au Haut Moyen Âge (×2,854, arrondi au supérieur). Le site appliquait ce calcul à
+**toutes** les lignes de la relique. Tant que les dégâts de zone n'étaient pas
+comptés, cela ne se voyait pas ; dès qu'ils l'ont été, Hua Mulan s'est retrouvée
+avec `ceil(0,10 × 2,854)` = **1**, soit +100 % de dégâts de zone.
+
+Deux fois faux : la mise à l'échelle ne vaut que pour les statistiques comptées
+en points — Thomas lit bien 10 %, et non 29 %, à son ère — et l'arrondi au
+supérieur, inoffensif sur des entiers, écrase toute fraction sur 1. Corrigé dans
+`apportRelique()` : le tri se fait sur la liste `ABSOLUES` de `formules.js`.
+
+### Ce qu'il reste à vérifier dans le jeu
+
+1. **Spartacus** : le site lui donne maintenant 25 % de chances de crit et
+   204,85 % de dégâts crit. À confronter à son écran « Stats de profil ».
+2. **Le numéro 25** (esquive) : aucun des cinq héros concernés n'est dans le
+   compte. À voir si l'un d'eux passe un jour.
+3. **La constante** reste inexpliquée. Elle vaut maintenant 1 416, et les trois
+   pistes du §15 restent ouvertes — la plus probable étant qu'une statistique
+   d'entrée fournie au calcul ne soit pas tout à fait celle du jeu.
+
+---
+
+## 17. Le jeu ne garde que des entiers
+
+> **À LIRE AVEC LE §18.** La règle des entiers est juste, mais ce paragraphe
+> conclut à une TRONCATURE : c'est faux. Le jeu arrondit. La troncature ne
+> semblait marcher que parce que les taux de montée étaient trop hauts.
+
+Thomas, le 20 août 2026, en ouvrant le détail d'une statistique :
+
+> « Dans le jeu je n'ai aucun chiffre avec décimale, à part la chance critique.
+> Tu comptes l'éveil 327,1, mon jeu ne compte que 327. Le panthéon, tu me donnes
+> 217,3 ; moi j'ai 217. »
+
+C'est la règle qui manquait, et le journal la cherchait depuis le début sous le
+nom vague d'« arrondi du jeu » (§1). Le jeu **tronque chaque apport** et **fait
+la somme des entiers**.
+
+### Le témoin était déjà écrit, deux mois avant qu'on le comprenne
+
+`formules.js` porte cette phrase depuis le premier jour :
+
+> « 17,65 % de sa base (1 454) font 257, plus 49 à plat = 306, et le jeu compte
+> bien **305** pour l'équipement. »
+
+305, c'est 49 + 256. Or le calcul exact donne 256,605. Le jeu **tronque**, il
+n'arrondit pas : arrondir aurait donné 257, donc 306. On avait relevé l'écart
+d'un point sans en tirer la règle.
+
+Deuxième chose que ce témoin impose : **l'assiette d'un pourcentage reste la
+valeur exacte**. Les 256,605 se lisent sur 1 453,855, pas sur 1 453. Le jeu garde
+donc ses décimales en interne et ne tronque qu'au moment de poser la ligne.
+
+### Ce que ça donne sur Achille
+
+Le jeu ne sépare pas non plus le plat et le pourcentage d'un objet : une seule
+ligne « équipement ». Le site fait maintenant pareil.
+
+| Source | Site | Jeu |
+|---|---|---|
+| Base au niveau 1 | 130 | |
+| Montée au niveau 160 | 1 323 | |
+| Éveil | 327 | **327** ✓ |
+| Caserne | 518 | |
+| Relique | 129 | |
+| Équipement et ensembles | 305 | **305** ✓ |
+| Panthéon | 217 | **217** ✓ |
+| **Total attaque** | **2 949** | **2 945** |
+
+| | avant | après | jeu |
+|---|---|---|---|
+| Attaque | 2 951 | 2 949 | 2 945 |
+| Défense | 1 802 | 1 801 | 1 799 |
+| Points de vie | 20 855 | 20 854 | 20 853 |
+| Dégâts de base | 773 | **773** | **773** ✓ |
+
+Les dégâts de base tombent juste. Les trois autres se rapprochent mais gardent
+un excès de 1, 2 et 4 points.
+
+Sur la puissance, l'effet est neutre : 0,39 % d'erreur moyenne contre 0,38 %
+avant, et le pire écart descend de 2,08 % à 1,97 %.
+
+### Ce qui reste, et la mesure qui le trancherait
+
+Le résidu ne vient plus des décimales. Il vient d'une des lignes elles-mêmes.
+
+**La DÉFENSE d'Achille est le cas le plus propre du dossier** : pas d'éveil, pas
+de panthéon, aucun pourcentage. Cinq nombres, une addition :
+
+```
+    108  base
++ 1 099  montée au niveau 160
++   518  caserne
++    43  relique (Gant de Fauconnerie, 15 x 2,854 = 42,81)
++    33  équipement
+= 1 801     le jeu en affiche 1 799
+```
+
+Deux points, et cinq lignes seulement pour les loger. Trois suspects :
+
+1. **la relique** : 42,81 est arrondi au SUPÉRIEUR (43) par la règle du wiki. Si
+   le jeu tronquait, ce serait 42 — et l'attaque perdrait 129 → 128, plus un
+   point de panthéon, soit 3 des 4 points manquants ;
+2. **la montée en niveau**, que le §1 soupçonne d'être 1 à 4 points trop haute ;
+3. **la caserne**, jamais recoupée sur Achille.
+
+**Il suffit que Thomas lise ces cinq nombres sur son écran.** Celui qui diffère
+désigne le coupable, sans ambiguïté possible.
+
+---
+
+## 18. Les taux de montée dormaient dans le catalogue
+
+Le §17 demandait à Thomas cinq nombres. Sa réponse a tout débloqué :
+
+> « Je veux bien citer les cinq nombres, mais tu as bon sur les trois derniers,
+> et les deux premiers, je ne les ai pas. »
+
+Le jeu n'affiche donc PAS la base ni la montée en niveau : il n'en montre que la
+somme. Mais il confirme les trois autres lignes de la défense d'Achille —
+caserne 518, relique 43, équipement 33. Par soustraction :
+
+```
+    1 799  (le jeu)
+  −   518  caserne
+  −    43  relique
+  −    33  équipement
+  = 1 205  base + montée au niveau 160
+```
+
+Le site en calculait **1 207,8**. L'écart n'était donc pas un arrondi : **le taux
+de montée lui-même était faux.**
+
+### Où le trouver : la rubrique 8, déclarée et jamais lue
+
+`tools/catalogue.js` déclare depuis toujours :
+
+```js
+PROGRESSION: 8,  // vitesse de montée des statistiques par niveau
+```
+
+…et ne s'en sert nulle part. La rubrique contient six entrées, une par famille
+de statistiques, chacune donnant un couple **{ par niveau ; par ascension }**
+pour les quatre raretés — identique pour les quatre. Deux couples en sortent :
+
+| | par niveau | par ascension |
+|---|---|---|
+| attaque et défense | **0,045** | **0,20** |
+| points de vie et dégâts de base | 0,04 | 0,06 |
+
+Le site utilisait `{ 0,0465 ; 0,186 }` pour l'attaque et la défense — un
+ajustement, honnêtement signalé comme tel dans `formules.js` (« les taux par
+ascension ont été mesurés »). Il tombait à 1 à 4 points près. C'est très bien
+pour un ajustement, et c'est exactement le « biais ordinaire » que le §1
+traînait depuis le premier jour.
+
+### Et le jeu ARRONDIT, il ne tronque pas
+
+Le §17 concluait à une troncature, sur le témoin des 17,65 % d'Achille :
+256,605 et le jeu qui compte 305 au lieu de 306.
+
+**C'était un faux ami.** Avec le bon taux, la part en pourcentage ne vaut plus
+256,605 mais **255,95** — et 49 + 255,95 s'arrondit en 305. Le même chiffre, par
+la bonne route. La troncature n'était qu'une façon de compenser un taux trop
+haut.
+
+Troisième fois dans ce dossier qu'un écart d'un point désigne une entrée fausse
+plutôt qu'un arrondi. C'est une règle, maintenant.
+
+### Le résultat sur Achille
+
+| | avant | après | jeu |
+|---|---|---|---|
+| **Attaque** | 2 951 | **2 945** | **2 945** ✓ |
+| **Défense** | 1 802 | **1 799** | **1 799** ✓ |
+| Points de vie | 20 855 | 20 855 | 20 853 |
+| Dégâts de base | 773 | 773 | 774 |
+
+L'attaque et la défense — les deux statistiques que le journal donnait pour
+définitivement approchées — tombent **exactement** sur l'écran du jeu, ligne par
+ligne :
+
+```
+     130  base au niveau 1
++  1 320  montée au niveau 160
++    326  éveil
++    518  caserne
++    129  relique
++    305  équipement et ensembles      (49 à plat + 17,65 % de 1 450)
++    217  panthéon                     (50 % de la relique + 50 % de l'équipement)
+=  2 945
+```
+
+Sur la puissance, l'erreur moyenne descend à **0,36 %** et William Wallace tombe
+au point près (14 843 pour 14 843).
+
+### Ce qui reste : deux nombres, et une vérification
+
+1. **Points de vie, +2.** La ligne caserne (4 670) n'a jamais été recoupée sur
+   Achille, et la ligne équipement se calcule à 491. L'une des deux est à un ou
+   deux points près.
+2. **Dégâts de base, −1.** Une seule ligne à part la base : l'équipement, que le
+   site calcule à 30. S'il affiche 31, tout tombe.
+3. **L'éveil de l'attaque.** Le site écrit maintenant **326** ; Thomas avait cité
+   327. La somme, elle, tombe juste avec 326 — mais si son écran dit vraiment
+   327, alors une autre ligne est un point plus bas, et il faut le savoir.
+
+---
+
+## 19. Neuf écrans, et le site tombe sur le jeu
+
+Thomas a envoyé le 20/08/2026 les captures qui manquaient : le tableau **« Stats
+de profil » complet d'Achille**, et neuf **écrans d'amélioration** donnant, pour
+chaque héros, ses quatre statistiques ET sa puissance.
+
+### Le tableau d'Achille, colonne par colonne
+
+Le jeu range exactement comme le site : base, caserne, éveil, reliques,
+équipement, panthéon, total.
+
+| | Jeu | Site |
+|---|---|---|
+| Attaque | 518 · 327 · 129 · 305 · 217 → **2 945** | **2 945** ✓ |
+| Défense | 518 · — · 43 · 33 · — → **1 799** | **1 799** ✓ |
+| Points de vie | 4 670 · — · — · 491 · — → **20 853** | 20 855 |
+| Dégâts de base | — · — · — · 31 · — → **774** | 773 |
+| Chances de crit | 3,96 % · 5 % → **13,96 %** | **13,96 %** ✓ |
+| Vitesse d'attaque | 12 · 21 · 3 → **96 coups/min** | **96** ✓ |
+| Esquive · Soins reçus | 5 % · 10 % (panthéon) | ✓ |
+
+La colonne « stats de base » affiche 0 : le jeu ne montre pas la valeur montée en
+niveau, il ne montre que les apports. La base implicite se retrouve par
+soustraction.
+
+### Les neuf héros
+
+Puissances relevées, et ce que le site en dit après les corrections des §16 à §18 :
+
+| Héros | Niveau | Puissance du jeu | Site | Écart |
+|---|---|---|---|---|
+| Jeanne d'Arc | 90 | 11 768 | **11 768** | **0** |
+| William Wallace | 110 | 14 843 | **14 843** | **0** |
+| Achille | 160 | 28 142 | 28 143 | +1 |
+| Thomas Alva Edison | 80 | 9 375 | 9 374 | −1 |
+| Isabella I | 105 | 14 215 | 14 211 | −4 |
+| Ulysse | 102 | 13 763 | 13 758 | −5 |
+| Marie Curie | 134 | 21 138 | 21 150 | +12 |
+| Lily la Tigresse | 80 | 9 607 | 9 594 | −13 |
+| Hatchepsout | 110 | 17 700 | 17 974 | **+274** |
+
+Sur les quatre statistiques principales, huit héros sur neuf tombent **à un point
+près ou pile**. Jeanne d'Arc et Edison sont exacts sur les cinq nombres.
+
+**Ulysse n'était pas une anomalie, c'était une mesure périmée.** Sa puissance
+relevée valait 13 488 ; elle vaut 13 763 aujourd'hui, et le site disait 13 758.
+Les 2 % d'écart du §16 étaient l'écart entre deux dates, pas entre deux calculs.
+
+### Lily la Tigresse tranche l'assiette des ensembles de parure
+
+Le §1 avait établi qu'un ensemble de PARURE qui donne des PV se calcule sur une
+assiette large — niveau + caserne + ce que les objets viennent d'apporter. Il
+manquait un cas pour savoir si l'ÉVEIL en fait partie : chez Wallace, Isabella et
+Jeanne d'Arc, qui portent tous le Chacal (+10 % de PV), l'éveil ne donne aucun
+point de vie. Les deux lectures y donnaient le même nombre.
+
+Lily la Tigresse porte le même Chacal **et** un éveil qui donne +38 % de PV.
+
+| | PV |
+|---|---|
+| assiette sans l'éveil | 16 641 |
+| **assiette avec l'éveil** | **16 928** |
+| le jeu | **16 927** |
+
+L'éveil est dans l'assiette. Corrigé dans `formules.js`.
+
+### Ce qui reste : Hatchepsout, et elle seule
+
+Elle porte la même structure que Lily — un ensemble de parure (Égyptien royal,
++7,5 % de PV) et un ensemble d'armement (Dharma). À une différence près :
+**le Dharma donne AUSSI des PV** (+5 %), là où le Samouraï de Lily donne de la
+défense.
+
+Et elle exige la règle inverse :
+
+| | PV | écart |
+|---|---|---|
+| assiette avec l'éveil (règle de Lily) | 21 115 | +707 |
+| assiette sans l'éveil | 20 832 | +424 |
+| **assiette ordinaire, sans caserne ni éveil** | **20 409** | **+1** |
+| le jeu | 20 408 | |
+
+Ses trois autres statistiques sont exactes, y compris l'attaque — ce qui clôt au
+passage la vieille question du §1 sur sa colonne d'éveil : son éveil ne donne
+bien aucune attaque.
+
+**Une capture de son tableau « Stats de profil » suffit à trancher** : la ligne
+ÉVEIL et la ligne ÉQUIPEMENT des points de vie diront laquelle des trois
+assiettes le jeu applique, et pourquoi elle diffère de Lily.
+
+### Où en est la puissance
+
+Sur les **27 héros** dont la puissance est connue : **0,27 % d'erreur moyenne**,
+pire écart 1,55 % — et ce pire écart est Hatchepsout, dont on sait maintenant
+qu'il vient de ses points de vie, pas de la formule.
+
+Sans elle : **0,22 % de moyenne**, et cinq héros au point près.

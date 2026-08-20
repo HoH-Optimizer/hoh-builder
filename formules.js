@@ -27,7 +27,7 @@
    du héros n'existe dans AUCUNE donnée : ni dans l'export du compte, ni dans le
    catalogue. La FORMULE, elle, a été retrouvée dans les données du jeu — voir le §15 du
    journal. Ce qui reste approché est une constante additive d'environ 1 400, et
-   le résultat tombe à 1,7 % en moyenne, 7 % au pire, sur les héros relevés. Voir puissance(),
+   le résultat tombe à 0,27 % en moyenne sur les 27 héros relevés. Voir puissance(),
    plus bas, qui porte le détail de ce qui est mesuré et de ce qui est ajusté.
    Le journal complet de l'enquête est dans RECHERCHE-PUISSANCE.md : y aller
    AVANT de retenter quoi que ce soit sur ce sujet, tout y est, et rien n'a
@@ -58,10 +58,23 @@ window.FORMULES = {
      « par ascension » ont été mesurés. Les points de vie tombent au point près,
      l'attaque et la défense à une unité près.                                 */
 
+  // LES TAUX SONT CEUX DU JEU, plus aucun n'est ajusté. Ils dormaient dans le
+  // catalogue depuis le début, à la rubrique 8, que tools/catalogue.js déclarait
+  // sans jamais la lire : six entrées, une par famille de statistiques, chacune
+  // donnant un couple { par niveau, par ascension } pour les quatre raretés —
+  // identique pour les quatre. Deux couples seulement en sortent :
+  //
+  //     { 0,045 ; 0,20 }   attaque et défense
+  //     { 0,04  ; 0,06 }   points de vie et dégâts de base
+  //
+  // L'ancien couple { 0,0465 ; 0,186 } était un ajustement, et il tombait à
+  // 1 à 4 points du jeu — le « biais ordinaire » que le journal traînait depuis
+  // le début (§18). Avec les taux du jeu, l'attaque et la défense d'Achille
+  // tombent EXACTEMENT sur son écran : 2 945 et 1 799.
   MONTEE: {
     MaxHitPoints: { parNiveau: 0.04, parAscension: 0.06 },
-    Attack: { parNiveau: 0.0465, parAscension: 0.186 },
-    Defense: { parNiveau: 0.0465, parAscension: 0.186 },
+    Attack: { parNiveau: 0.045, parAscension: 0.20 },
+    Defense: { parNiveau: 0.045, parAscension: 0.20 },
     // Les dégâts de base montent au même rythme que les points de vie. Mesuré sur
     // onze héros de Thomas, relevés un par un sur l'écran d'amélioration du jeu :
     // niveaux 20 à 110, trois à cinq étoiles, avec ou sans équipement. Les onze
@@ -118,6 +131,29 @@ window.FORMULES = {
   // de la statistique de niveau. Seuls les points de vie sont dans ce cas à la
   // mesure ; le détail et les relevés sont commentés dans detail(), plus bas.
   SET_SUR_CASERNE: new Set(['MaxHitPoints']),
+
+  /* ------------------------------------- LE JEU NE GARDE QUE DES ENTIERS
+
+     Thomas l'a signalé le 20/08/2026 : dans le jeu, AUCUNE ligne du détail
+     d'une statistique ne porte de décimale — sauf les statistiques qui SONT
+     des pourcentages, comme les chances de crit. Là où le site écrivait
+     « Éveil 327,1 » et « Panthéon 217,3 », son écran affiche 327 et 217.
+
+     Ce n'est pas qu'un habillage : le total du jeu est la SOMME DE CES
+     ENTIERS. Chaque apport est ARRONDI au plus proche avant d'entrer dans la
+     somme ; l'assiette des pourcentages, elle, reste la valeur exacte.
+
+     ATTENTION AU FAUX AMI. On a d'abord conclu que le jeu TRONQUAIT, sur ce
+     témoin : les 17,65 % d'équipement d'Achille valaient 256,605, et le jeu
+     compte 305, soit 49 + 256 et non 49 + 257. La conclusion était fausse, et
+     la cause était ailleurs : les taux de montée étaient un peu trop hauts.
+     Avec ceux du jeu (voir MONTEE), la part vaut 255,95 — et 49 + 255,95
+     s'ARRONDIT en 305. Le même chiffre, par la bonne route.
+
+     La leçon, pour la troisième fois dans ce dossier : un écart d'un point
+     n'est pas un arrondi, c'est une entrée fausse.                          */
+
+  ENTIERES: new Set(['Attack', 'Defense', 'MaxHitPoints', 'BaseDamage']),
 
   /* ------------------------------------------------------- feuille complète */
 
@@ -222,8 +258,15 @@ window.FORMULES = {
       partPourcentage = pourcentage;
     } else {
       const partObjet = auNiveau * pourcentageObjet;
+      // L'ÉVEIL EST DANS L'ASSIETTE. Lily la Tigresse l'a tranché le 20/08/2026 :
+      // elle est la première héroïne du compte à cumuler un ensemble de PARURE
+      // qui donne des PV (le Chacal, +10 %) ET un éveil qui en donne aussi
+      // (+38 %). Chez Wallace, Isabella et Jeanne d'Arc, qui portent le même
+      // Chacal, l'éveil ne donne pas de PV : l'assiette sans éveil et l'assiette
+      // avec éveil y sont le même nombre, et les deux tombaient juste.
+      //   sans l'éveil : 16 641   avec l'éveil : 16 928   le jeu : 16 927
       const assietteParure = this.SET_SUR_CASERNE.has(stat)
-        ? auNiveau + partCaserne + partObjet
+        ? apresEveil + partCaserne + partObjet
         : auNiveau;
       partParure = assietteParure * pourcentageParure;
       partPourcentage = partObjet + partParure;
@@ -248,19 +291,29 @@ window.FORMULES = {
       + amplifiable * amplifie('equipement')
       + partRelique * amplifie('relique');
 
-    const total = apresEveil + partCaserne + partRelique + partEquipement + pantheon;
+    // CHAQUE APPORT EST ARRONDI, et le total est leur somme — voir ENTIERES,
+    // plus haut. L'équipement compte pour UNE ligne : le jeu ne sépare pas ce
+    // qu'un objet donne à plat de ce qu'il donne en pourcentage, et le témoin
+    // d'Achille (49 + 255,95 -> 305) porte sur leur somme, pas sur chacun.
+    const entiere = this.ENTIERES.has(stat);
+    const t = (x) => (entiere ? Math.round(x) : x);
+
+    const parts = {
+      base: t(base),
+      niveau: t(auNiveau - base),          // ce que le niveau seul a ajouté
+      eveil: t(apresEveil - auNiveau),
+      caserne: t(partCaserne),
+      relique: t(partRelique),
+      equipement: t(partEquipement),
+      pantheon: t(pantheon),
+    };
 
     return {
-      base,
-      niveau: auNiveau - base,          // ce que le niveau seul a ajouté
-      eveil: apresEveil - auNiveau,
-      caserne: partCaserne,
-      relique: partRelique,
-      equipementPlat: apport.plat || 0,
-      equipementPourcentage: pourcentage,
-      apportPourcentage: partPourcentage,
-      pantheon,
-      total,
+      ...parts,
+      // Le taux qui a produit la part en pourcentage de l'équipement. Il ne
+      // s'additionne pas : il sert à rappeler d'où sort le chiffre.
+      tauxEquipement: pourcentage,
+      total: Object.values(parts).reduce((somme, v) => somme + v, 0),
     };
   },
 
@@ -296,10 +349,10 @@ window.FORMULES = {
 
      ⚠ CE CHIFFRE EST APPROCHÉ, ET IL FAUT LE DIRE À L'ÉCRAN.
 
-     Sur les 22 héros dont la puissance a été relevée dans le jeu, il tombe à
-     4,5 % en moyenne et à 10,7 % dans le pire cas. Ce n'est PAS le chiffre du
-     jeu : c'est le meilleur modèle qu'on ait, et il est affiché parce qu'un
-     ordre de grandeur vaut mieux qu'un vide, pas parce qu'il serait juste.
+     Sur les 27 héros dont la puissance a été relevée dans le jeu, il tombe à
+     0,27 % en moyenne — et cinq d'entre eux au point près. Ce n'est PAS le
+     chiffre du jeu : il lui manque encore une constante dont on ignore
+     l'origine, et le total reste donc approché.
 
      CE QUI EST FIABLE, EN REVANCHE : l'ÉCART ENTRE DEUX CONFIGURATIONS du même
      héros. L'erreur du modèle est un facteur propre au héros, qui multiplie les
@@ -317,14 +370,13 @@ window.FORMULES = {
          valent 0,485 et non ½ : elle dilue les variations. Deux méthodes
          indépendantes la retrouvent.
 
-     CE QUI EST AJUSTÉ FAUTE DE MIEUX, et il faut le savoir :
-       - « vitesse » vaut 0,400 ici parce que c'est ce qui minimise l'erreur
-         d'affichage. Le survol des nœuds, lui, MESURE 0,13. Les deux ne
-         s'accordent pas, et on ne sait pas encore pourquoi (§10) ;
-       - « capacite » et « constante » sont ajustés sur les 22 héros.
+     CE QUI EST AJUSTÉ FAUTE DE MIEUX, et il faut le savoir : UN SEUL nombre,
+     « constante ». Tous les autres sont ceux du jeu, lus dans son game design
+     (§15). La constante, elle, est ajustée sur les 22 héros relevés — et deux
+     dispositifs indépendants tombent au même endroit (§13, §16).
 
-     À REFAIRE dès qu'une mesure nouvelle arrive : les coefficients sortent de
-     « fit22 », l'ajustement décrit au §9.                                     */
+     À REFAIRE dès qu'une mesure nouvelle arrive : réajuster « constante » sur
+     l'ensemble des puissances relevées.                                       */
 
   // LES CONSTANTES DU JEU, lues telles quelles dans son fichier de game design.
   // Ce ne sont plus des valeurs ajustées : ce sont les siennes. Les nombres du
@@ -350,9 +402,15 @@ window.FORMULES = {
     // manque vaut ~1 420 sur TOUT héros de bas niveau, à 1 % près sur neuf
     // héros. C'est exactement la constante mesurée indépendamment sur les
     // écrans de montée de niveau (1 383 ± 4, voir §13 du journal).
-    // Ce n'est donc pas un rustine : c'est un terme réel, dont on ne sait pas
+    // Ce n'est donc pas une rustine : c'est un terme réel, dont on ne sait pas
     // encore d'où il sort. Le §15 liste les trois pistes.
-    constante: 1465,
+    //
+    // 1 416 est la valeur qui minimise l'erreur sur les 22 héros relevés UNE FOIS
+    // LES STATISTIQUES COMPLÈTES (§16 : les chances de crit et les dégâts crit
+    // gagnés à l'éveil n'étaient pas comptés). L'ajustement précédent, fait sur
+    // des statistiques incomplètes, donnait 1 465 : il compensait en partie ce
+    // qui manquait. La valeur a donc bougé vers la mesure du §13, pas contre elle.
+    constante: 1416,
   },
 
   // La puissance du héros. feuille = ce que rend detail(), contexte = le héros.
@@ -373,12 +431,15 @@ window.FORMULES = {
   // au-dessus, et se vérifie de tête. Le prix est faible et mesuré — de l'ordre
   // de 6 points sur un héros qui en fait 4 000, contre 93 points d'incertitude
   // du modèle lui-même.
-  STATS_ARRONDIES: new Set(['Attack', 'Defense', 'MaxHitPoints', 'BaseDamage']),
+  //
+  // Depuis que detail() tronque chaque apport (voir ENTIERES), ces quatre totaux
+  // sont DÉJÀ entiers : l'arrondi ci-dessous ne fait plus rien. On le garde pour
+  // que la règle reste écrite là où elle s'applique.
 
   puissance(feuille, contexte) {
     const v = (s) => {
       const x = feuille?.[s]?.total ?? 0;
-      return this.STATS_ARRONDIES.has(s) ? Math.round(x) : x;
+      return this.ENTIERES.has(s) ? Math.round(x) : x;
     };
     const P = this.PUISSANCE;
     const esquive = v('Evasion');

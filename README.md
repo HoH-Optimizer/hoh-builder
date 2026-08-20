@@ -51,11 +51,20 @@ navigateur où l'extension n'est pas installée.
   gagner ou perdre. Le total est approché — voir « Limites connues » — mais **l'écart en
   pourcentage, lui, est fiable** : l'erreur du modèle est propre au héros et se simplifie
   quand on compare deux configurations du même héros.
-- Un onglet **Panthéon** à côté des statistiques : l'arbre du héros tel que le jeu le
-  dessine, avec l'état réel de son compte, et surtout **ce que chaque nœud lui
-  rapporterait en points** — « +32 de dégâts de base », « +126 d'attaque » — calculé par
-  la même chaîne que le tableau de statistiques. Le coût et la règle d'ouverture des
-  paliers y sont aussi. Le site ne conseille aucun chemin : voir plus bas pourquoi.
+- **L'arbre de panthéon, sous le héros**, dessiné comme dans le jeu — six lignes,
+  vingt-deux nœuds. **On y clique pour activer ou éteindre un nœud, et les
+  statistiques suivent**, exactement comme quand on change une pièce d'équipement :
+  la colonne ÉCART montre alors ce que le nœud vaudrait. Au survol, une bulle dit ce
+  qu'il rapporte **à ce héros-là**, en points. Une seule règle est imposée, celle du
+  jeu : **deux nœuds par ligne au maximum**. Le reste est libre, et il n'y a que deux
+  signaux à lire — la COULEUR dit ce qui est pris, le HALO dit ce que la souris
+  désigne. Illustré pour les **attaquants individuels** ; les autres classes
+  s'affichent avec l'icône de la statistique touchée.
+- Un onglet **Panthéon** à côté des statistiques, qui EXPLIQUE le même arbre en toutes
+  lettres : ce que chaque nœud rapporterait — « +32 de dégâts de base », « +126
+  d'attaque » — calculé par la même chaîne que le tableau de statistiques, avec le coût
+  et la règle d'ouverture des paliers. Le site ne conseille aucun chemin : voir plus
+  bas pourquoi.
 - Chaque ligne se déplie sur **l'addition complète**, source par source, avec le
   cumul qui monte : base, niveau, éveil, caserne, relique, équipement
 - Tout est en français : héros, objets, ensembles et statistiques portent le nom
@@ -71,7 +80,7 @@ toutes, sauf une :
 | Source | État |
 |---|---|
 | Statistique de base du héros | du catalogue du jeu |
-| Montée en niveau et ascensions | formule reconstituée, voir plus bas |
+| Montée en niveau et ascensions | du catalogue du jeu (rubrique 8) |
 | Paliers d'éveil | du catalogue du jeu |
 | Caserne de son arme | du catalogue, le palier venant du compte |
 | Relique portée | du catalogue, mise à l'échelle de l'ère du joueur |
@@ -101,12 +110,12 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 
 | Manque | Conséquence |
 |---|---|
-| La puissance est **estimée**, pas exacte | La FORMULE, elle, est désormais exacte : elle a été retrouvée dans les données du jeu lui-même, coefficients compris. Ce qui reste approché est une constante d'environ 1 400 qu'il faut ajouter pour que les chiffres tombent, et dont on ne sait pas encore d'où elle sort. Le résultat est à **1,7 % en moyenne, 7 % au pire** sur les héros relevés. Le nombre affiché est donc un ordre de grandeur, et l'écran le dit. L'**écart entre deux configurations** d'un même héros, en revanche, est bien plus sûr. Le détail de l'enquête est dans [`RECHERCHE-PUISSANCE.md`](RECHERCHE-PUISSANCE.md). |
+| La puissance est **estimée**, pas exacte | La FORMULE, elle, est désormais exacte : elle a été retrouvée dans les données du jeu lui-même, coefficients compris. Ce qui reste approché est une constante d'environ 1 400 qu'il faut ajouter pour que les chiffres tombent, et dont on ne sait pas encore d'où elle sort. Le résultat est à **0,27 % en moyenne** sur les 27 héros relevés, et cinq d'entre eux tombent au point près — Jeanne d'Arc, William Wallace, Achille, Edison, Isabella. Le nombre affiché est donc un ordre de grandeur, et l'écran le dit. L'**écart entre deux configurations** d'un même héros, en revanche, est bien plus sûr. Le détail de l'enquête est dans [`RECHERCHE-PUISSANCE.md`](RECHERCHE-PUISSANCE.md). |
 | Aucun conseil sur le panthéon | L'onglet montre ce que chaque nœud rapporte, il ne recommande pas de chemin. Optimiser la puissance affichée donnerait de mauvais conseils : « Ruine généralisée » (+10 % de dégâts de zone) ne rapporte **aucune** puissance alors que c'est sans doute l'un des meilleurs nœuds au combat, tandis que l'esquive, qui en rapporte le plus, ne sert que si l'on encaisse. L'arbitrage reste au joueur. |
 | Panthéon de quatre classes sur six | Les arbres des attaquants individuels, des attaquants de zone, des soigneurs et des défenseurs sont relevés — 72 % des héros du compte de test. Manquent les manipulateurs et les soutiens. Un nœud inconnu est ignoré et signalé. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
-| Attaque et défense à ±1 | Les points de vie tombent au point près ; l'attaque et la défense peuvent différer d'une unité, le jeu arrondissant à un endroit qu'on ne voit pas. Sans effet sur les écarts entre configurations. |
-| 8 % des paliers d'éveil | 56 paliers sur 720 portent sur quatre statistiques que le catalogue désigne par un numéro qu'on n'a pas encore su nommer. Ils sont signalés à l'écran, mais non comptés. |
+| ~~Attaque et défense à ±1~~ | **Réglé le 20/08/2026.** Les taux de montée en niveau étaient ajustés faute de mieux ; ils sont désormais lus dans le catalogue du jeu, et le jeu arrondit chaque apport avant de les additionner. L'attaque et la défense d'Achille tombent EXACTEMENT sur son écran, ligne par ligne. Restent 2 points sur ses points de vie et 1 sur ses dégâts de base. |
+| ~~8 % des paliers d'éveil~~ | **Résolu le 20/08/2026.** Les 56 paliers qui portaient un numéro de statistique non identifié sont désormais nommés et comptés — dont les chances de crit et les dégâts crit, qui manquaient à trois héros et faussaient leur puissance. |
 | Icônes de 7 pièces d'équipement | Le wiki ne les héberge pas et aucune capture ne les montre. Le site affiche à la place l'icône de l'ensemble. Il manque Warden (chapeau, cou, anneau), Berserker et Countess (main, vêtement). |
 
 Deux réglages restent à la main du joueur, parce que l'export ne les donne pas de
