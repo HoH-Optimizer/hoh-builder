@@ -393,7 +393,7 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .vignette { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: var(--panneau-clair); }
 .portrait { width: 74px; height: 74px; border-radius: 18px; object-fit: cover; background: var(--panneau-clair); }
 .icone { width: 40px; height: 40px; }
-.pastilleSet { width: 26px; height: 26px; margin-right: 7px; vertical-align: -8px; }
+.pastilleSet { width: 34px; height: 34px; margin-right: 7px; vertical-align: -11px; }
 .iconeStat { width: 18px; height: 18px; margin-right: 7px; vertical-align: -4px; object-fit: contain; }
 /* Une icône de statistique absente disparaît : le libellé porte déjà l'information. */
 .iconeStat.sansIcone { display: none; }
@@ -990,13 +990,20 @@ td.principal { font-weight: 600; }
    attributs s'y rangent donc sur deux colonnes — mais seulement quand chacune
    peut tenir ses 190 px : sur une ligne étroite, auto-fit n'en garde qu'une et
    l'on retrouve la disposition ci-dessus. */
+/* UN ATTRIBUT PAR LIGNE, et le chiffre contre son libellé.
+
+   La disposition en deux colonnes tenait sur deux lignes, mais elle éloignait
+   chaque valeur de ce qu'elle qualifiait : « Attaque » d'un côté de la colonne,
+   « +33 » à l'autre bout, et l'œil devait faire le trajet. Quatre lignes serrées
+   se lisent d'un bloc. */
 .emplacement .attributsObjet {
   width: auto;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 2px 26px;
+  grid-template-columns: 1fr;
+  gap: 1px;
 }
-.attr { display: flex; align-items: baseline; gap: 5px; font-size: 12px; color: var(--discret); }
-.attr b { color: var(--texte); font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: auto; padding-left: 16px; }
+.attr { display: flex; align-items: baseline; gap: 4px; font-size: 12px; color: var(--discret); }
+.attr .iconeStat { margin-right: 0; }
+.attr b { color: var(--texte); font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 5px; }
 .attr.principalAttr { font-size: 12.5px; }
 .attr.principalAttr b { color: var(--accent); }
 .attr .iconeStat { width: 14px; height: 14px; margin: 0; vertical-align: 0; }
@@ -1239,7 +1246,7 @@ td.principal { font-weight: 600; }
   .groupeEmplacements + .groupeEmplacements { margin-top: 7px; padding-top: 7px; }
   .listeSets { margin-top: 8px; gap: 5px; }
   .badgeSet { padding: 3px 10px 3px 5px; font-size: 11px; }
-  .pastilleSet { width: 22px; height: 22px; margin-right: 6px; vertical-align: -7px; }
+  .pastilleSet { width: 28px; height: 28px; margin-right: 6px; vertical-align: -9px; }
   .bonusSet { font-size: 10px; }
 
   .enteteStats { margin-bottom: 2px; }
@@ -1411,21 +1418,25 @@ td.principal { font-weight: 600; }
   border-top: 1px solid var(--bordure);
 }
 
+/* L'en-tête est CENTRÉ sur l'arbre qu'il annonce, et écrit comme une phrase.
+   En capitales et rejeté à gauche, il ressemblait à un onglet de plus. */
 .enteteArbre {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  margin-bottom: 26px;
 }
 
 .enteteArbre h3 {
   margin: 0;
-  font-size: 1rem;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: .01em;
 }
 
+.enteteArbre .sousTitreCote { display: block; margin: 3px 0 0; }
 .compteArbre { margin: 0; }
 .marqueModifie { color: var(--accent); }
 
