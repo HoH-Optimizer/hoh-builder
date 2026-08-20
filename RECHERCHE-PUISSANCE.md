@@ -1755,3 +1755,372 @@ pire écart 1,55 % — et ce pire écart est Hatchepsout, dont on sait maintenan
 qu'il vient de ses points de vie, pas de la formule.
 
 Sans elle : **0,22 % de moyenne**, et cinq héros au point près.
+
+---
+
+## 20. Un second compte, et la constante s'effondre
+
+Le 20 août 2026 au soir, quelqu'un d'autre a installé le site. Son William
+Wallace n'affichait pas la même puissance que le jeu. C'est le premier test hors
+du compte de Thomas, et il tranche une question qu'on ne pouvait pas trancher
+seuls.
+
+### Tout ce qui n'est pas la puissance tombe juste
+
+Son compte n'a rien de commun avec celui de Thomas : **ère féodale** (et non Haut
+Moyen Âge), **caserne au palier 23** donnant 328/328/3060 (et non 518/518/4670),
+un Wallace **niveau 80** avec **huit nœuds de panthéon** activés là où celui de
+Thomas n'en a aucun.
+
+| | le site | son écran |
+|---|---|---|
+| Attaque | **1 020** | **1 020** |
+| Défense | **1 262** | **1 262** |
+| Points de vie | 14 630 | 14 629 |
+| Dégâts de base | 613 | 614 |
+
+Deux exactes, deux à un point. **Toute la chaîne des statistiques généralise** :
+la montée en niveau, la caserne, l'éveil, l'équipement, et l'arbre des défenseurs
+que le compte de Thomas n'avait jamais exercé — sa colonne panthéon donne +49 en
+défense, soit 50 % de ses 58 d'équipement plus 50 % de ses 40 de relique, les
+nœuds « Équipement renforcé » et « Rempart de Reliques », au point près.
+
+Sa relique se retrouve même au palier près : +25 attaque, +40 défense, +10 % de
+bouclier donné, ce sont les **Figurines de Lewis au niveau 7** mises à l'échelle
+de son ère (×1,902). La règle d'arrondi au supérieur et la non-mise à l'échelle
+des pourcentages sont donc vraies à deux ères différentes.
+
+### La puissance, elle, est à +10,9 %
+
+> le jeu : **8 093** — le site : **8 974**
+
+Et comme tout le reste tombe juste, l'écart ne peut venir que de la formule.
+
+**La constante qui ferait tomber son Wallace vaut 535.** Chez Thomas, elle vaut
+1 416, ajustée sur vingt-sept héros allant du niveau 20 au niveau 160.
+
+**Ce n'est donc pas une constante du jeu. Elle dépend du compte.**
+
+### La piste, et elle était déjà écrite
+
+Le §15 listait trois explications possibles pour ce terme. La troisième était :
+« le jeu ajoute une base que la formule ne dit pas ». Et le §14 avait relevé, en
+lisant le moteur, un `SupportUnitPowerFormulaDefinitionId` — une formule de
+puissance pour les **unités d'escorte**.
+
+Or ce qui distingue les deux comptes, c'est justement la caserne : 518/518/4670
+contre 328/328/3060. Si la puissance affichée sous un héros est celle du héros
+PLUS celle de son escorte, alors :
+
+- le terme est le même pour tous les héros d'un compte — ce qu'on observe, une
+  constante qui tient du niveau 20 au niveau 160 ;
+- il change d'un compte à l'autre avec la caserne — ce qu'on observe aussi.
+
+Les deux valeurs vont dans le bon sens : 1 416 pour la caserne forte, 535 pour la
+faible. Le rapport, 2,65, ne se lit pas encore directement dans le rapport des
+statistiques de caserne (1,58 en attaque, 1,53 en points de vie) — il manque
+la taille d'escouade et les statistiques propres de l'unité.
+
+### Ce qui trancherait
+
+**Trois ou quatre héros de plus sur son compte**, relevés sur l'écran
+d'amélioration, et choisis à des niveaux très différents.
+
+- Si 535 tombe juste sur tous, le terme est bien une constante par compte, et il
+  reste à la calculer depuis la caserne plutôt qu'à l'ajuster.
+- Si l'écart suit le niveau, ce n'est pas un terme additif et il faut tout
+  reprendre.
+
+En attendant, le site le dit : l'infobulle sous la puissance et le README portent
+désormais l'avertissement. Les 0,27 % valaient pour un compte, pas pour le jeu.
+
+---
+
+## 21. LA CONSTANTE, C'ÉTAIT L'ESCOUADE
+
+Le §20 laissait l'enquête dans son plus mauvais état : la formule marchait sur un
+compte et se trompait de 11 % sur un autre, et le terme fautif était celui qu'on
+n'avait jamais su expliquer.
+
+Thomas a envoyé la capture d'une **caserne**. Elle porte deux blocs :
+
+```
+AMÉLIORATIONS                    [icône d'unité, petit 3]   ATQ 917 · DÉF 1223 · PV 2330
+BOOST APPLIQUÉ À TOUS LES HÉROS INFANTERIE                  ATQ 518 · DÉF 518  · PV 4670
+```
+
+Le second, on l'utilisait depuis des jours. **Le premier, jamais.**
+
+### Le bâtiment porte son unité, dans les données
+
+Chaque caserne du catalogue contient, à côté de son forfait, l'unité qu'elle
+fournit :
+
+```
+unit.Unit_HighMiddleAges_Player_Infantrymen
+   nombre : 3          ← le petit chiffre sous l'icône
+   niveau : 130
+   stats  : ATQ 105 · DÉF 140 · PV 333 · dégâts 12 · vitesse 1,25
+            taille d'escouade 3 · escouade attendue 12
+```
+
+### Une unité ne monte pas comme un héros
+
+Ses statistiques de base montent **par niveau, sans ascensions**, et à un taux
+plus élevé. Ces taux dormaient dans la **même rubrique 8** que ceux des héros,
+dans un troisième champ qu'on avait laissé de côté : **0,06** pour l'attaque et
+la défense, **0,0465** pour les points de vie et les dégâts de base.
+
+| au niveau 130 | calculé | l'écran de Thomas |
+|---|---|---|
+| ATQ | 917,7 | **917** |
+| DÉF | 1 223,6 | **1 223** |
+| PV | 2 330,5 | **2 330** |
+
+### Et sa puissance se calcule avec la formule des héros
+
+À deux détails près, tous deux lus dans les données et non supposés :
+
+1. **une unité n'a pas de régénération de focus.** Le terme de rareté et de
+   capacité est multiplié par ce rapport : il vaut donc zéro, et le facteur de
+   combat se réduit à la vitesse d'attaque ;
+2. **sa taille d'escouade ne vaut pas 1**, et elle multiplie tout.
+
+| | puissance de l'escouade | constante qu'il fallait |
+|---|---|---|
+| caserne d'infanterie, palier 32 (Thomas) | **1 426** | 1 416 |
+| caserne d'infanterie, palier 23 (l'autre compte) | **539** | 535 |
+
+Moins de 1 % sur les deux, mesurés à des mois de progression d'écart.
+
+Et le détail qui achève : au palier de Thomas, les cinq armes donnent 1 426,
+1 423, 1 426, 1 429, 1 427. **Le jeu équilibre ses unités à puissance égale** —
+voilà pourquoi une seule constante tombait juste sur ses vingt-sept héros, toutes
+classes confondues, et pourquoi on a pu la prendre pour une constante du jeu.
+
+### Ce que le jeu affiche sous un héros
+
+> **la puissance du héros + celle de son escouade**
+
+C'est tout. Il n'y a jamais eu de constante.
+
+### Le résultat
+
+| | avant | après |
+|---|---|---|
+| 27 héros du compte de Thomas | 0,27 % | **0,27 %** |
+| le Wallace de l'autre compte | **+10,89 %** | **+0,04 %** (8 096 pour 8 093) |
+
+Sur le compte de Thomas rien ne bouge — ses casernes donnaient 1 418, l'ajustement
+valait 1 416. Sur un compte qui n'a jamais servi à régler quoi que ce soit, on
+passe de 11 % à trois points.
+
+**Plus un seul nombre ajusté ne subsiste dans le calcul de la puissance.** Tout
+vient des données du jeu : le coefficient, les exposants, les multiplicateurs de
+rareté, les taux de montée, la mise à l'échelle des reliques, et maintenant
+l'escouade.
+
+### La leçon, la quatrième et la plus chère
+
+Pendant onze paragraphes, un terme inexpliqué a été traité comme une constante à
+ajuster. Il tombait juste sur vingt-sept héros, ce qui l'a rendu crédible. Il a
+fallu **un second compte** pour révéler qu'il variait — et la réponse était dans
+le catalogue depuis le premier jour, dans un champ du même bâtiment dont on lisait
+déjà l'autre moitié.
+
+*Un ajustement qui marche est le meilleur déguisement d'une donnée qu'on n'a pas
+lue.*
+
+---
+
+## 22. Le jeu arrondit vers le HAUT — et ne calcule pas là-dessus
+
+Thomas, après le §21 : « on a la formule, on a juste à remplacer par des valeurs
+et on doit trouver le résultat, avec la prise en compte du troncage ».
+
+Il avait raison, et il restait deux choses à comprendre.
+
+### L'arrondi n'est pas le même selon la ligne
+
+Le §17 avait conclu « le jeu arrondit au plus proche ». C'était vrai des lignes
+qu'on avait sous les yeux, et faux en général. Six lignes lues sur les tableaux
+« Stats de profil » — deux comptes, deux héros — le montrent :
+
+| ligne | valeur exacte | le jeu écrit |
+|---|---|---|
+| Achille, éveil ATQ | 326,28 | **327** |
+| Achille, équipement ATQ | 304,95 | 305 |
+| Achille, panthéon ATQ | 216,98 | 217 |
+| Achille, équipement DÉG | 30,03 | **31** |
+| Wallace (autre compte), équipement DÉG | 43,05 | **44** |
+| Wallace (autre compte), panthéon DÉG | 27,14 | **28** |
+
+Les quatre lignes en gras tranchent : l'arrondi ordinaire donnerait 326, 30, 43 et
+27. **Le jeu plafonne.**
+
+La montée en niveau, elle, se tronque — testé, l'arrondir fait tomber le nombre
+de statistiques exactes de 19 à 10 sur 32.
+
+> **montée en niveau : plancher · tout le reste : plafond**
+
+Les dégâts de base passent de **2 justes sur 8** à **7 sur 8**. C'était le point
+qui manquait depuis le §18, et il ne venait pas d'une donnée absente mais d'un
+sens d'arrondi.
+
+### Mais la puissance ne se calcule pas sur ces entiers
+
+Les plafonner et calculer la puissance dessus la fait dériver : de 15 héros à
+moins de 5 points, on tombe à 6. Il a fallu séparer les deux :
+
+> le jeu ÉCRIT des entiers plafonnés, et CALCULE sur les valeurs exactes
+
+Ce qui est cohérent avec sa propre formule (§15), qui ne porte qu'un seul
+arrondi, tout en haut. `detail()` rend donc deux totaux : celui qu'on affiche, et
+celui qui sert au calcul.
+
+### Où l'on en est
+
+| | avant le §22 | après |
+|---|---|---|
+| Statistiques exactes (8 héros × 4) | 17/32 | **19/32** |
+| Dégâts de base exacts | 2/8 | **7/8** |
+| Puissance à moins de 5 points | 13/26 | **15/26** |
+| Puissance à moins de 10 points | 20/26 | **21/26** |
+| Wallace de l'autre compte | +3 | **+3** |
+
+### Ce qui reste, et c'est peu
+
+- **L'attaque d'Achille** : le jeu implique 1 449 de base+niveau là où l'on
+  calcule 1 450,15. Un point et demi, sur la seule ligne qu'aucun écran ne
+  montre — il faudra un héros dont l'éveil ne touche pas l'attaque pour la lire
+  directement.
+- **Les points de vie**, toujours un ou deux points au-dessus.
+- **Hatchepsout**, +268, et c'est toujours ses points de vie (§19).
+- **Le crit de l'escouade**, ouvert : la table des défauts du catalogue dit qu'il
+  compte, Achille dit le contraire, et les vingt-six héros donnent raison à la
+  table.
+
+### Deux idées de Thomas, testées dans la foulée
+
+**« La vitesse d'attaque n'est pas en décimal dans le jeu, elle est en entier. »**
+Vrai : le jeu écrit « 96 coups/min », jamais 96,24. En faisant entrer la vitesse
+ARRONDIE dans la formule, les deux héros dont toutes les entrées sont vérifiées
+sur un écran s'améliorent nettement :
+
+| | vitesse exacte | vitesse en coups/min entiers |
+|---|---|---|
+| Achille | +9 | **−2** |
+| Wallace (autre compte) | +3 | **−1** |
+
+Sur les vingt-six héros l'effet est neutre en moyenne — ce qui est attendu, leurs
+autres entrées n'étant pas vérifiées. On garde donc l'arrondi, et l'on note que
+la vitesse SANS BONUS, elle, doit rester exacte : l'arrondir aussi renvoie ce
+même Wallace à −9. Cohérent : celle-là ne s'affiche nulle part.
+
+**« Fais varier la taille d'escouade et la taille attendue. »** Fait, et le
+verdict est sans appel — les valeurs du catalogue sont les bonnes, et de très
+loin :
+
+| taille · attendue | écart médian |
+|---|---|
+| **3 · 12 (le catalogue)** | **5** |
+| 3 · 3 | 191 |
+| 3 · 1 | 504 |
+| 1 · 12 | 927 |
+| 12 · 12 | 4 265 |
+
+La question est close : l'escouade compte trois unités, et son facteur
+d'escouade attendue se lit sur douze.
+
+### L'état au terme de la soirée
+
+| | |
+|---|---|
+| Puissance à moins de 5 points | **16 héros sur 26** |
+| Puissance à moins de 10 points | 20 sur 26 |
+| Écart médian | **5 points** |
+| Artémise · Guillaume Tell | **exacts au point** |
+| Wallace de l'autre compte | **−1** |
+
+---
+
+## 23. Il y a DEUX formules, et elles sont jumelles
+
+Thomas, après le §22 : « RégénFocus / RégénFocus_base, tu les trouves dans le
+fichier aussi, ou c'est toi qui les sors ? »
+
+La question méritait mieux qu'une réponse de mémoire. On est donc allé lire.
+
+### Tout est dans le fichier, terme par terme
+
+Le bloc de formule, à l'octet 13 908 308, cite douze statistiques — exactement
+les douze qu'on utilise :
+
+```
+Attack · Defense · MaxHitPoints · Evasion · BaseDamage · CritChance
+CritDamage · ExpectedSquadSize · AttackSpeed · AttackRange · FocusRegen · SquadSize
+```
+
+Et ses types de nœuds répondent à eux seuls à la question posée :
+
+```
+FormulaRoundDTO                        l'arrondi, unique, tout en haut
+FormulaPowerDTO                        l'exposant
+FormulaDivisionDTO                     1,218÷1000, 1/(1−Esquive), RégénFocus÷RégénFocus_base
+HeroUnitStatFormulaTermDTO             « la statistique du héros »
+HeroUnitStatUnboostedFormulaTermDTO    « la statistique SANS BONUS »
+HeroUnitRarityFormulaTermDTO           la rareté
+HeroAbilityLevelFormulaTermDTO         la capacité
+RelicRarityFormulaTermDTO              la rareté de la relique
+RelicLevelFormulaTermDTO               son niveau
+```
+
+`HeroUnitStatUnboostedFormulaTermDTO` est la réponse : le moteur a un type de
+nœud dédié pour « cette statistique, mais sans ses bonus ». Les termes en
+« _base » ne sont pas une invention du document communautaire.
+
+Et `FormulaRoundDTO` confirme par la lecture ce que le §22 avait établi par la
+mesure : **un seul arrondi, tout en haut**.
+
+### Deux constantes n'étaient pas les bonnes
+
+| | on avait | le fichier |
+|---|---|---|
+| coefficient | 0,001218002 | **1,218 ÷ 1000** |
+| pas de capacité | 0,024994 | **0,025** |
+
+Le coefficient est écrit en deux nombres reliés par un nœud de division, ce qui
+explique qu'on ne le trouvait pas d'un bloc. Les deux valeurs venaient du
+document communautaire ; l'écart est infime — deux points sur Achille — mais
+autant citer la source exactement. Corrigé.
+
+Au passage, la phrase du §15 sur la « virgule fixe sur 16 bits » est fausse : le
+fichier porte des flottants 64 bits ronds. Elle venait du même document.
+
+### Et la formule de l'escouade était juste à côté
+
+```
+formula.unit_power_hero        octet 13 908 308
+formula.expected_unit_power    octet 13 912 310
+```
+
+Quatre mille octets plus loin, un second corps de formule — **jumeau du premier**.
+Mêmes types de nœuds, mêmes constantes dans le même ordre, mêmes statistiques,
+CritChance et CritDamage comprises.
+
+**Cela tranche la question laissée ouverte au §22 :** oui, le crit compte pour
+l'escouade. Achille disait le contraire, les vingt-six autres héros disaient
+l'inverse, et le fichier donne raison aux vingt-six.
+
+Ce qui s'annule, en revanche, c'est le terme de rareté et de capacité : la
+formule le multiplie par (RégénFocus ÷ RégénFocus sans bonus), et une unité de
+caserne n'a pas de régénération de focus — sa fiche ne porte que dix
+statistiques, et celle-là n'y est pas.
+
+### Ce que le dossier vaut maintenant
+
+Plus rien, dans le calcul de la puissance, ne vient d'une déduction ou d'un
+ajustement. Chaque terme, chaque constante, chaque « sans bonus » a son nœud dans
+le fichier. La seule chose encore établie par la mesure plutôt que par la lecture
+est le fait que les deux puissances **s'additionnent** — et c'est confirmé sur
+deux comptes à moins de 1 %.

@@ -71,17 +71,23 @@ window.FORMULES = {
   // 1 à 4 points du jeu — le « biais ordinaire » que le journal traînait depuis
   // le début (§18). Avec les taux du jeu, l'attaque et la défense d'Achille
   // tombent EXACTEMENT sur son écran : 2 945 et 1 799.
+  // UNE UNITÉ ORDINAIRE NE MONTE PAS COMME UN HÉROS : elle n'a pas d'ascensions,
+  // et son taux par niveau est plus élevé. Ce taux est le troisième champ de la
+  // même entrée de la rubrique 8 — 0,06 pour l'attaque et la défense, 0,0465 pour
+  // les points de vie et les dégâts de base. Vérifié sur la caserne d'infanterie
+  // de Thomas : son unité de niveau 130 affiche 917 / 1223 / 2330 en jeu, et la
+  // règle donne 917,7 / 1223,6 / 2330,5.
   MONTEE: {
-    MaxHitPoints: { parNiveau: 0.04, parAscension: 0.06 },
-    Attack: { parNiveau: 0.045, parAscension: 0.20 },
-    Defense: { parNiveau: 0.045, parAscension: 0.20 },
+    MaxHitPoints: { parNiveau: 0.04, parAscension: 0.06, parNiveauUnite: 0.0465 },
+    Attack: { parNiveau: 0.045, parAscension: 0.20, parNiveauUnite: 0.06 },
+    Defense: { parNiveau: 0.045, parAscension: 0.20, parNiveauUnite: 0.06 },
     // Les dégâts de base montent au même rythme que les points de vie. Mesuré sur
     // onze héros de Thomas, relevés un par un sur l'écran d'amélioration du jeu :
     // niveaux 20 à 110, trois à cinq étoiles, avec ou sans équipement. Les onze
     // tombent à un point près, l'écart résiduel étant l'arrondi que le jeu affiche.
     // Ils manquaient à cette table : le site les laissait à leur valeur de niveau 1,
     // et annonçait 131 là où le jeu affiche 779.
-    BaseDamage: { parNiveau: 0.04, parAscension: 0.06 },
+    BaseDamage: { parNiveau: 0.04, parAscension: 0.06, parNiveauUnite: 0.0465 },
   },
 
   // Le niveau maximum d'un héros : dix par ascension. Le jeu s'arrête à 200.
@@ -139,9 +145,33 @@ window.FORMULES = {
      des pourcentages, comme les chances de crit. Là où le site écrivait
      « Éveil 327,1 » et « Panthéon 217,3 », son écran affiche 327 et 217.
 
-     Ce n'est pas qu'un habillage : le total du jeu est la SOMME DE CES
-     ENTIERS. Chaque apport est ARRONDI au plus proche avant d'entrer dans la
-     somme ; l'assiette des pourcentages, elle, reste la valeur exacte.
+     Ce n'est pas qu'un habillage : le total écrit par le jeu est la SOMME DE CES
+     ENTIERS. Et l'arrondi n'est pas le même partout — c'est Thomas qui a insisté
+     pour qu'on le regarde de près, et il avait raison :
+
+       LA MONTÉE EN NIVEAU se TRONQUE ;
+       TOUT LE RESTE — éveil, caserne, relique, équipement, panthéon — se
+       PLAFONNE, c'est-à-dire s'arrondit vers le HAUT.
+
+     Six lignes lues sur les tableaux « Stats de profil » du jeu le disent, et
+     aucune ne dit le contraire :
+
+       Achille, éveil ATQ          326,28 -> 327
+       Achille, équipement ATQ     304,95 -> 305
+       Achille, panthéon ATQ       216,98 -> 217
+       Achille, équipement DÉG      30,03 -> 31
+       Wallace (autre compte), équipement DÉG   43,05 -> 44
+       Wallace (autre compte), panthéon DÉG     27,14 -> 28
+
+     Les quatre dernières sont décisives : l'arrondi ordinaire y donnerait 30, 43
+     et 27, et le jeu écrit 31, 44 et 28. C'est ce plafond qui manquait pour que
+     les dégâts de base tombent juste — ils passent de 2 justes sur 8 à 7 sur 8.
+
+     ET LA PUISSANCE NE SE CALCULE PAS LÀ-DESSUS. Elle se calcule sur les valeurs
+     EXACTES, sans aucun arrondi intermédiaire : la formule du jeu (§15) ne porte
+     qu'un seul arrondi, tout en haut. C'est pour cela que detail() rend aussi un
+     champ « exact » à côté du total écrit à l'écran. Mélanger les deux — calculer
+     la puissance sur des lignes plafonnées — la fait dériver de dix points.
 
      ATTENTION AU FAUX AMI. On a d'abord conclu que le jeu TRONQUAIT, sur ce
      témoin : les 17,65 % d'équipement d'Achille valaient 256,605, et le jeu
@@ -296,16 +326,17 @@ window.FORMULES = {
     // qu'un objet donne à plat de ce qu'il donne en pourcentage, et le témoin
     // d'Achille (49 + 255,95 -> 305) porte sur leur somme, pas sur chacun.
     const entiere = this.ENTIERES.has(stat);
-    const t = (x) => (entiere ? Math.round(x) : x);
+    const plancher = (x) => (entiere ? Math.floor(x) : x);
+    const plafond = (x) => (entiere ? Math.ceil(x) : x);
 
     const parts = {
-      base: t(base),
-      niveau: t(auNiveau - base),          // ce que le niveau seul a ajouté
-      eveil: t(apresEveil - auNiveau),
-      caserne: t(partCaserne),
-      relique: t(partRelique),
-      equipement: t(partEquipement),
-      pantheon: t(pantheon),
+      base: plancher(base),
+      niveau: plancher(auNiveau - base),   // ce que le niveau seul a ajouté
+      eveil: plafond(apresEveil - auNiveau),
+      caserne: plafond(partCaserne),
+      relique: plafond(partRelique),
+      equipement: plafond(partEquipement),
+      pantheon: plafond(pantheon),
     };
 
     return {
@@ -314,6 +345,10 @@ window.FORMULES = {
       // s'additionne pas : il sert à rappeler d'où sort le chiffre.
       tauxEquipement: pourcentage,
       total: Object.values(parts).reduce((somme, v) => somme + v, 0),
+      // La même somme, SANS aucun arrondi. Le jeu arrondit ce qu'il écrit, mais
+      // calcule la puissance sur ses valeurs exactes : sa formule ne porte qu'un
+      // seul arrondi, tout en haut.
+      exact: apresEveil + partCaserne + partRelique + partEquipement + pantheon,
     };
   },
 
@@ -382,9 +417,20 @@ window.FORMULES = {
   // Ce ne sont plus des valeurs ajustées : ce sont les siennes. Les nombres du
   // jeu sont en virgule fixe sur 16 bits, d'où 0,0167999… pour 0,0168.
   PUISSANCE: {
-    coefficient: 0.001218002,
+    // TOUTES CES VALEURS SONT DANS LE FICHIER DE GAME DESIGN, à l'octet près, et
+    // rassemblées au même endroit — l'arbre de la formule. On y lit ses nœuds
+    // (« FormulaMultiplicationDTO », « FormulaDivisionDTO »), ses termes
+    // (« HeroUnitStatFormulaTermDTO », « HeroUnitRarityFormulaTermDTO ») et,
+    // entre eux, ces constantes-ci, dans cet ordre : 0,5 · 0,0168 · −1,25 ·
+    // 1,35 · 0,9 · 2,03 · 1,75 · 0,025 · 0,005 · 0,01 · 1,218 · 1000.
+    //
+    // Le coefficient y est écrit en DEUX nombres, 1,218 et 1000, reliés par un
+    // nœud de division. On l'écrit donc de la même façon plutôt que de recopier
+    // un 0,001218002 qui venait du document communautaire — l'écart est
+    // infime, mais autant citer la source exactement.
+    coefficient: 1.218 / 1000,
     portee: 0.0168,            // par point de portée au-delà de 1,25
-    capacite: 0.024994,        // par niveau de capacité au-delà du premier
+    capacite: 0.025,           // par niveau de capacité au-delà du premier
     rarete: { 2: 0.90, 3: 1.35, 4: 1.75, 5: 2.03 },
     // LA RARETÉ D'UNE RELIQUE NE VIENT PAS DU COMPTE — il ne la donne pas — mais
     // du CATALOGUE : c'est une propriété du type de relique. Le catalogue la code
@@ -396,21 +442,89 @@ window.FORMULES = {
     // niveau au-delà de 11, que le jeu range à part. Le prendre pour une rareté
     // faussait à la fois le niveau et ce terme-ci.
     rareteRelique: { 4: 0.005, 5: 0.01 },
-    // LE SEUL NOMBRE QUI RESTE AJUSTÉ, et il est assumé. La formule du jeu n'a
-    // aucune constante additive, mais il en faut une pour que les chiffres
-    // tombent : sans elle la formule sous-estime de 26 % en moyenne, et le
-    // manque vaut ~1 420 sur TOUT héros de bas niveau, à 1 % près sur neuf
-    // héros. C'est exactement la constante mesurée indépendamment sur les
-    // écrans de montée de niveau (1 383 ± 4, voir §13 du journal).
-    // Ce n'est donc pas une rustine : c'est un terme réel, dont on ne sait pas
-    // encore d'où il sort. Le §15 liste les trois pistes.
+    // CE N'EST PLUS UNE CONSTANTE — c'est l'ESCOUADE. Voir puissanceEscorte()
+    // juste en dessous et le §21 du journal.
     //
-    // 1 416 est la valeur qui minimise l'erreur sur les 22 héros relevés UNE FOIS
-    // LES STATISTIQUES COMPLÈTES (§16 : les chances de crit et les dégâts crit
-    // gagnés à l'éveil n'étaient pas comptés). L'ajustement précédent, fait sur
-    // des statistiques incomplètes, donnait 1 465 : il compensait en partie ce
-    // qui manquait. La valeur a donc bougé vers la mesure du §13, pas contre elle.
+    // Ce nombre a été le dernier mystère du dossier : il fallait ajouter environ
+    // 1 400 pour que la puissance tombe, sans savoir d'où ça venait. Un second
+    // compte a montré qu'il n'était pas constant du tout — il valait 535 chez ce
+    // joueur-là. C'est la puissance des trois unités que la caserne du joueur
+    // donne au héros : elle s'ajoute à la sienne dans le nombre affiché.
+    //
+    // La valeur ci-dessous ne sert plus que de FILET, quand le compte ne dit pas
+    // quelle caserne le joueur possède. C'est l'ancien ajustement, celui du
+    // compte de Thomas.
     constante: 1416,
+  },
+
+  /* --------------------------------------------- LA PUISSANCE DE L'ESCOUADE
+
+     Une caserne fait deux choses : elle donne un forfait au héros de son arme,
+     et elle lui donne une ESCOUADE. Le jeu additionne les deux puissances dans
+     le nombre qu'il écrit sous le héros.
+
+     L'unité monte à un taux par niveau, sans ascensions (voir MONTEE), et sa
+     puissance se calcule avec la MÊME formule que celle d'un héros — à deux
+     détails près, qui sont dans les données et non dans une hypothèse :
+
+       - une unité ordinaire n'a pas de régénération de focus. Le terme de rareté
+         et de capacité est multiplié par ce rapport : il vaut donc ZÉRO, et le
+         facteur de combat se réduit à sa vitesse d'attaque ;
+       - sa taille d'escouade, elle, ne vaut pas 1 comme celle d'un héros : c'est
+         le petit chiffre sous son icône en jeu, et il multiplie tout ;
+     LA FORMULE DE L'ESCOUADE EST DANS LE FICHIER, ET C'EST LA MÊME. Le game
+     design en porte DEUX, posées côte à côte :
+
+         formula.unit_power_hero        octet 13 908 308
+         formula.expected_unit_power    octet 13 912 310
+
+     Leurs deux corps se suivent, et ils sont JUMEAUX — mêmes types de nœuds,
+     mêmes constantes, dans le même ordre : 0,5 · 0,0168 · −1,25 · 1,35 · 0,9 ·
+     2,03 · 1,75 · 0,025 · 0,005 · 0,01 · 1,218 · 1000. Et les mêmes statistiques,
+     CritChance et CritDamage comprises.
+
+     Cela tranche la question qu'on ne savait pas trancher : OUI, le crit compte
+     pour l'escouade, avec les valeurs par défaut (5 % et 150 %). Achille disait
+     le contraire, les vingt-six autres héros disaient l'inverse, et le fichier
+     donne raison aux vingt-six. Le résidu d'Achille vient d'ailleurs.
+
+     CE QUI S'ANNULE, EN REVANCHE : le terme de rareté et de capacité. La formule
+     le multiplie par (RégénFocus ÷ RégénFocus sans bonus), et une unité de
+     caserne n'a PAS de régénération de focus — sa fiche ne porte que dix
+     statistiques, et celle-là n'y est pas. Le facteur de combat se réduit donc à
+     sa vitesse d'attaque. Ce n'est pas une hypothèse : c'est ce que donnent ses
+     données.
+
+     VÉRIFIÉ SUR DEUX COMPTES, à moins de 1 % :
+       caserne d'infanterie au palier 32 -> 1 426, il fallait 1 416
+       caserne d'infanterie au palier 23 ->   539, il fallait   535                */
+
+  puissanceEscorte(unite) {
+    const stats = unite?.stats;
+    if (!stats || !unite.niveau) return null;
+
+    const P = this.PUISSANCE;
+    const auNiveau = (nom) => {
+      const taux = this.MONTEE[nom]?.parNiveauUnite;
+      const brut = (stats[nom] || 0) * (taux ? 1 + taux * (unite.niveau - 1) : 1);
+      // Les quatre grandes statistiques s'écrivent en entier, ici comme ailleurs.
+      return this.ENTIERES.has(nom) ? Math.trunc(brut) : brut;
+    };
+
+    const crit = stats.CritChance ?? this.DEFAUTS.CritChance;
+    const critDegats = stats.CritDamage ?? this.DEFAUTS.CritDamage;
+    const attendue = stats.ExpectedSquadSize || 1;
+    const combat = (stats.AttackSpeed || 1)
+      * (1 + P.portee * ((stats.AttackRange ?? 1.25) - 1.25));
+
+    const noyau = auNiveau('Attack') * auNiveau('Defense') * auNiveau('MaxHitPoints')
+      * auNiveau('BaseDamage')
+      * (1 + crit * (critDegats - 1))
+      * (0.5 + 0.5 / attendue)
+      * combat;
+
+    if (!(noyau > 0)) return null;
+    return P.coefficient * (stats.SquadSize || 1) * Math.sqrt(noyau);
   },
 
   // La puissance du héros. feuille = ce que rend detail(), contexte = le héros.
@@ -437,10 +551,9 @@ window.FORMULES = {
   // que la règle reste écrite là où elle s'applique.
 
   puissance(feuille, contexte) {
-    const v = (s) => {
-      const x = feuille?.[s]?.total ?? 0;
-      return this.ENTIERES.has(s) ? Math.round(x) : x;
-    };
+    // LA PUISSANCE SE CALCULE SUR LES VALEURS EXACTES, pas sur les nombres
+    // écrits à l'écran : la formule du jeu ne porte qu'un arrondi, tout en haut.
+    const v = (s) => feuille?.[s]?.exact ?? feuille?.[s]?.total ?? 0;
     const P = this.PUISSANCE;
     const esquive = v('Evasion');
     if (esquive >= 1) return null;
@@ -461,7 +574,18 @@ window.FORMULES = {
     // trouvait « sans effet » (§8).
     const vitesseSansBonus = base.AttackSpeed || 1;
     const regenSansBonus = base.FocusRegen || 1;
-    const combat = v('AttackSpeed') * (1 + P.portee * (v('AttackRange') - 1.25))
+
+    // LA VITESSE D'ATTAQUE ENTRE EN COUPS PAR MINUTE ENTIERS. Le jeu ne l'écrit
+    // jamais autrement — « 96 coups/min », jamais 96,24 — et c'est Thomas qui a
+    // fait remarquer qu'il fallait l'essayer. Les deux héros dont TOUTES les
+    // entrées sont vérifiées sur un écran y gagnent : Achille passe de +9 à −2,
+    // et le Wallace de l'autre compte de +3 à −1.
+    //
+    // La vitesse SANS BONUS, elle, reste exacte : l'arrondir aussi renvoie ce
+    // même Wallace à −9. C'est cohérent — celle-là ne s'affiche nulle part, elle
+    // vient du catalogue.
+    const vitesseEcrite = Math.round(v('AttackSpeed') * 60) / 60;
+    const combat = vitesseEcrite * (1 + P.portee * (v('AttackRange') - 1.25))
       + ((P.rarete[etoiles] || 0) + (competence - 1) * P.capacite)
         * (v('FocusRegen') / regenSansBonus)
         * vitesseSansBonus;
@@ -475,7 +599,10 @@ window.FORMULES = {
       * (1 + (relique ? (P.rareteRelique[relique.rarete] || 0) * relique.niveau : 0));
 
     if (!(noyau > 0)) return null;
-    return P.coefficient * escouade * Math.sqrt(noyau) + P.constante;
+    // Le héros, PLUS son escouade. Faute de caserne connue, on retombe sur
+    // l'ancien ajustement — mieux vaut un ordre de grandeur qu'un héros nu.
+    const escorte = this.puissanceEscorte(contexte?.escorte);
+    return P.coefficient * escouade * Math.sqrt(noyau) + (escorte ?? P.constante);
   },
 
   // Un attribut verrouillé est connu du jeu mais sa valeur n'a pas encore été

@@ -349,21 +349,44 @@ async function principal() {
 
   /* --- casernes ------------------------------------------------------------ */
 
-  // Chaque caserne accorde un forfait aux héros de son arme (« hero_building_boost »).
-  // C'est la dernière source chiffrée qui manquait : le compte dit quelle caserne
-  // le joueur possède, le catalogue dit ce qu'elle rapporte.
+  // Chaque caserne accorde un forfait aux héros de son arme (« hero_building_boost »),
+  // ET fournit l'ESCOUADE qui accompagne le héros au combat. Les deux comptent.
+  //
+  // L'ESCOUADE EST LA CONSTANTE MANQUANTE. Pendant toute l'enquête sur la formule
+  // de puissance, il fallait ajouter un terme d'environ 1 400 qu'on n'expliquait
+  // pas. C'est la puissance de ces unités-là : la puissance affichée sous un héros
+  // est la SIENNE plus celle de son escorte. Deux comptes le confirment à moins de
+  // 1 % (voir §21 de RECHERCHE-PUISSANCE.md).
+  //
+  // Le bâtiment porte son unité dans « f100 » : son niveau, son nom, et ses
+  // statistiques de base — les mêmes numéros que partout ailleurs. Le nombre
+  // d'unités est la taille d'escouade, ce petit chiffre sous l'icône en jeu.
   const casernes = {};
   for (const batiment of lire(RUBRIQUE.BATIMENTS)) {
-    for (const partie of tableau(batiment.f4)) {
-      const boost = partie?.f105;
-      if (typeof boost?.f1 !== 'string' || !/_Barracks_/.test(boost.f1)) continue;
-      const apports = {};
-      for (const s of tableau(boost.f2)) {
-        const nom = STAT[s?.f1 ?? 0];
-        if (nom) apports[nom] = s.f2 ?? 0;
-      }
-      casernes[boost.f1.replace('hero_building_boost.', '')] = apports;
+    const parties = tableau(batiment.f4);
+    const boost = parties.map((partie) => partie?.f105)
+      .find((b) => typeof b?.f1 === 'string' && /_Barracks_/.test(b.f1));
+    if (!boost) continue;
+
+    const apports = {};
+    for (const s of tableau(boost.f2)) {
+      const nom = STAT[s?.f1 ?? 0];
+      if (nom) apports[nom] = s.f2 ?? 0;
     }
+
+    const porteuse = parties.map((partie) => partie?.f100?.f1).find(Boolean);
+    const brute = porteuse?.f2;
+    let unite = null;
+    if (brute) {
+      const stats = {};
+      for (const s of tableau(brute.f4)) {
+        const nom = STAT[s?.f1 ?? 0];
+        if (nom) stats[nom] = s.f2 ?? 0;
+      }
+      unite = { nom: brute.f3, niveau: porteuse.f1, stats };
+    }
+
+    casernes[boost.f1.replace('hero_building_boost.', '')] = { apports, unite };
   }
 
   /* --- âges ---------------------------------------------------------------- */
@@ -493,8 +516,15 @@ async function principal() {
   fs.writeFileSync(
     path.join(RACINE, 'casernes-jeu.js'),
     entete('CASERNES', version, [
-      "Ce que chaque caserne apporte aux héros de son arme. L'export du compte dit",
-      'laquelle le joueur possède ; ce fichier dit ce qu\'elle vaut.',
+      "Ce que chaque caserne apporte aux héros de son arme, et l'ESCOUADE qu'elle",
+      "leur donne. L'export du compte dit laquelle le joueur possède.",
+      '',
+      '  apports : le forfait accordé au héros (attaque, défense, points de vie) ;',
+      "  unite   : l'unité d'escorte — son niveau et ses statistiques de base.",
+      '',
+      "L'escouade n'est pas décorative : sa puissance s'AJOUTE à celle du héros dans",
+      'le nombre que le jeu affiche sous son nom. C\'est la « constante » que le',
+      'journal a cherchée pendant toute son enquête.',
     ]) + `window.CASERNES_JEU = ${objetParLigne(casernes)};\n`,
   );
 

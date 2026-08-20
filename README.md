@@ -67,6 +67,12 @@ navigateur où l'extension n'est pas installée.
   bas pourquoi.
 - Chaque ligne se déplie sur **l'addition complète**, source par source, avec le
   cumul qui monte : base, niveau, éveil, caserne, relique, équipement
+- **Les héros immortalisés sont montrés tels que tu les as.** Sept héros existent
+  en deux versions — celle qu'on obtient et celle qu'on immortalise, qui monte d'un
+  cran d'étoiles, part de statistiques plus hautes et change d'illustration. Le site
+  lit la version de ton compte et n'affiche qu'elle : ton Hatchepsout cinq étoiles a
+  son portrait à cinq étoiles, et la version à quatre étoiles n'apparaît nulle part
+  dans ta liste. L'inverse est vrai aussi.
 - Tout est en français : héros, objets, ensembles et statistiques portent le nom
   que le jeu leur donne
 - **Deux thèmes**, améthyste sombre et améthyste clair, au bouton du bandeau. Le
@@ -81,6 +87,7 @@ toutes, sauf une :
 |---|---|
 | Statistique de base du héros | du catalogue du jeu |
 | Montée en niveau et ascensions | du catalogue du jeu (rubrique 8) |
+| Escouade qui accompagne le héros | du catalogue du jeu (l'unité de chaque caserne) |
 | Paliers d'éveil | du catalogue du jeu |
 | Caserne de son arme | du catalogue, le palier venant du compte |
 | Relique portée | du catalogue, mise à l'échelle de l'ère du joueur |
@@ -110,7 +117,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 
 | Manque | Conséquence |
 |---|---|
-| La puissance est **estimée**, pas exacte | La FORMULE, elle, est désormais exacte : elle a été retrouvée dans les données du jeu lui-même, coefficients compris. Ce qui reste approché est une constante d'environ 1 400 qu'il faut ajouter pour que les chiffres tombent, et dont on ne sait pas encore d'où elle sort. Le résultat est à **0,27 % en moyenne** sur les 27 héros relevés, et cinq d'entre eux tombent au point près — Jeanne d'Arc, William Wallace, Achille, Edison, Isabella. Le nombre affiché est donc un ordre de grandeur, et l'écran le dit. L'**écart entre deux configurations** d'un même héros, en revanche, est bien plus sûr. Le détail de l'enquête est dans [`RECHERCHE-PUISSANCE.md`](RECHERCHE-PUISSANCE.md). |
+| ~~La puissance est **estimée**~~ | **Réglé le 20/08/2026.** La formule est celle du jeu, retrouvée dans ses données, et **plus aucun nombre n'y est ajusté**. Le terme qu'on ne savait pas expliquer — il fallait ajouter environ 1 400 — était la **puissance de l'escouade** que la caserne du joueur donne au héros : le jeu compte les deux sous son nom. Résultat : **0,27 % d'erreur moyenne** sur les 27 héros relevés du compte de départ, et **0,04 %** sur le héros relevé d'un second compte, où l'écart valait 11 % la veille. Il reste quelques points d'arrondi. Le §21 du journal raconte la découverte. |
 | Aucun conseil sur le panthéon | L'onglet montre ce que chaque nœud rapporte, il ne recommande pas de chemin. Optimiser la puissance affichée donnerait de mauvais conseils : « Ruine généralisée » (+10 % de dégâts de zone) ne rapporte **aucune** puissance alors que c'est sans doute l'un des meilleurs nœuds au combat, tandis que l'esquive, qui en rapporte le plus, ne sert que si l'on encaisse. L'arbitrage reste au joueur. |
 | Panthéon de quatre classes sur six | Les arbres des attaquants individuels, des attaquants de zone, des soigneurs et des défenseurs sont relevés — 72 % des héros du compte de test. Manquent les manipulateurs et les soutiens. Un nœud inconnu est ignoré et signalé. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
@@ -256,6 +263,17 @@ node tools/images.js
 ```
 
 Récupère les illustrations manquantes. Ne retélécharge jamais ce qui est déjà là.
+
+```bash
+node tools/detourer.js "Nouveau dossier/icone.png" images/sets/Jackal.png 96
+```
+
+Détoure une icône posée sur un fond clair et la range à la taille du site. Les images
+fournies sont des PNG « à fond transparent » vus dans un éditeur, mais le damier de
+transparence y est PEINT : le fichier est entièrement opaque. L'outil part des BORDS
+et avance de proche en proche — tout ce qui est clair, gris et relié au bord est du
+fond. Passer par les bords plutôt que par la couleur seule protège les parties claires
+de l'icône elle-même.
 
 ```bash
 node tools/decouper.js --controle
