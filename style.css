@@ -45,6 +45,11 @@
   --halo-entete:
     radial-gradient(820px 160px at 0% 0%, rgba(79, 220, 170, .1), transparent 70%),
     radial-gradient(620px 160px at 100% 0%, rgba(150, 90, 230, .14), transparent 70%);
+  /* Le même halo, mais déployé : l'écran d'accueil n'a qu'une carte à montrer, et
+     tout le reste de la page est vide. Ces deux lueurs font de ce vide un fond. */
+  --halo-accueil:
+    radial-gradient(1000px 520px at 50% -10%, rgba(79, 220, 170, .1), transparent 68%),
+    radial-gradient(820px 460px at 85% 6%, rgba(150, 90, 230, .16), transparent 72%);
 
   /* Rareté : la couleur du liseré, à gauche de chaque ligne d'équipement… */
   --r2: #9d93b0;
@@ -98,6 +103,9 @@
   --halo-entete:
     radial-gradient(820px 160px at 0% 0%, rgba(18, 153, 111, .09), transparent 70%),
     radial-gradient(620px 160px at 100% 0%, rgba(122, 74, 200, .1), transparent 70%);
+  --halo-accueil:
+    radial-gradient(1000px 520px at 50% -10%, rgba(18, 153, 111, .1), transparent 68%),
+    radial-gradient(820px 460px at 85% 6%, rgba(122, 74, 200, .13), transparent 72%);
 
   --r2: #6b7681;
   --r3: #2f6fae;
@@ -126,6 +134,20 @@ body {
   color: var(--texte);
   background: var(--fond);
 }
+
+/* Le navigateur peint quatre choses que la feuille ne lui demandait pas : la
+   surbrillance de sélection, le curseur de saisie, la barre de défilement de la
+   page et l'anneau de mise au point. Livrées telles quelles, elles n'ont ni
+   l'améthyste ni l'émeraude du reste — ce sont les seuls endroits du site qui
+   n'appartenaient à personne. Elles rejoignent le thème ici.
+
+   L'anneau est déclaré tôt dans la feuille exprès : les rares éléments qui
+   dessinent eux-mêmes leur mise au point — les nœuds du panthéon — le
+   redéfinissent plus bas et l'emportent, comme il se doit. */
+::selection { background: var(--accent-voile-fort); color: var(--texte); }
+html { scrollbar-width: thin; scrollbar-color: var(--accent-sombre) transparent; }
+input, select, textarea { caret-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 h1 {
   margin: 0 0 3px;
@@ -295,17 +317,55 @@ main:not(.vide) > #colonneHeros {
   color: var(--discret);
 }
 .sousTitreCote { font-size: 11px; text-transform: none; letter-spacing: 0; opacity: .75; }
+
+/* Sur un grand écran, les colonnes d'équipement s'étiraient sans limite : la
+   ligne atteignait sept cents pixels pour deux cents pixels de texte, et la
+   croix « retirer » se retrouvait à un demi-mètre de l'objet qu'elle retire.
+   Les lignes cessent donc de s'étirer.
+
+   Ce qui reste de place part vers l'EXTÉRIEUR, pas vers le centre : les deux
+   colonnes se resserrent autour du héros, ce qui est tout l'objet d'un
+   comparateur — les deux états que l'on compare doivent être près l'un de
+   l'autre. En dessous du format où le héros passe au-dessus, la question ne se
+   pose plus : il n'y a qu'une colonne, et tout redevient aligné à gauche. */
+.cote { display: grid; }
+.cote > * { width: 100%; max-width: 400px; }
+@media (min-width: 901px) {
+  .comparateur > .cote:first-child { justify-items: end; }
+  .comparateur > .cote:last-child { justify-items: start; }
+}
+
 .emplacements { display: grid; gap: 7px; }
 .listeSets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 
 /* Le héros se cale au milieu de la hauteur du comparateur plutôt que de rester
    accroché en haut : les deux colonnes d'équipement l'encadrent alors vraiment. */
-.personnage { display: grid; justify-items: center; align-self: center; gap: 8px; }
+/* Le héros ne flotte plus au milieu du panneau : une lueur l'entoure, une
+   ellipse lui sert de sol. Les deux sont peintes avec l'émeraude du site, et
+   l'ellipse est posée en fond de l'image elle-même — elle suit donc sa boîte,
+   quelle que soit la largeur, sans repère chiffré à maintenir. */
+.personnage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-self: center;
+  gap: 14px;
+}
+.personnage::before {
+  content: "";
+  position: absolute;
+  inset: -4% 0 10%;
+  background: radial-gradient(58% 52% at 50% 44%, var(--accent-voile-fort), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.personnage > * { position: relative; z-index: 1; }
 .pied {
   width: 100%;
   height: 430px;
   object-fit: contain;
   object-position: center bottom;
+  background: radial-gradient(ellipse 30% 4.5% at 50% 96%, var(--lueur-accent), transparent 70%);
   filter: drop-shadow(var(--ombre-pied));
 }
 .pied.sansIcone { display: none; }
@@ -321,22 +381,113 @@ main:not(.vide) > #colonneHeros {
 /* ---------- Écran d'accueil (aucun export chargé) ---------- */
 
 #accueil { display: none; }
-main.vide { grid-template-columns: 1fr; justify-items: center; }
+/* Tant qu'aucun export n'est chargé, cette carte EST le site : le visiteur qui
+   arrive ne voit rien d'autre. Elle cesse donc d'être une boîte posée dans un
+   grand vide — la page entière se met à son service, le halo de l'en-tête
+   descend derrière elle, et la carte prend la place qui va avec son rôle. */
+main.vide {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-content: start;
+  min-height: 74vh;
+  padding: 5vh 20px 60px;
+  background: var(--halo-accueil);
+}
 main.vide > .panneau:not(.accueil) { display: none; }
-main.vide #accueil { display: block; max-width: 620px; margin-top: 24px; padding: 26px 28px; }
+main.vide #accueil {
+  display: block;
+  width: 100%;
+  max-width: 680px;
+  margin-top: 0;
+  padding: 40px 44px 32px;
+}
 
-.accueil h3 { margin: 22px 0 10px; font-size: 14px; color: var(--texte); }
-.accueil .intro { font-size: 15px; line-height: 1.65; }
+/* « Bienvenue » n'est plus une étiquette en petites capitales posée au-dessus du
+   texte : c'est le titre de l'écran, écrit à la taille que mérite la première
+   chose qu'on lit en arrivant. Le reste de la page garde ses h2 discrets. */
+.accueil h2 {
+  margin: 0 0 16px;
+  font-size: clamp(30px, 4.4vw, 42px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -.02em;
+  text-transform: none;
+  color: var(--texte);
+  text-wrap: balance;
+}
+.accueil h3 {
+  margin: 32px 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .11em;
+  color: var(--accent);
+}
+.accueil .intro { max-width: 62ch; font-size: 15.5px; line-height: 1.65; }
+/* Le premier paragraphe dit à quoi sert le site : il se lit un cran plus grand. */
+.accueil .intro:first-of-type { font-size: 17px; color: var(--texte); }
 .accueil .confidentialite { color: var(--accent); }
-.accueil ol { margin: 0; padding-left: 20px; color: var(--discret); }
-.accueil li { margin-bottom: 9px; line-height: 1.6; }
 .accueil strong { color: var(--texte); }
+
+/* Une procédure d'installation : ici l'ORDRE est l'information, et les numéros
+   ont donc le droit de se voir. Ils deviennent des jetons — les mêmes pastilles
+   d'accent que le reste du site — et la liste se lit comme une suite d'étapes
+   au lieu d'un paragraphe indenté. */
+.accueil ol {
+  display: grid;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: etape;
+  color: var(--discret);
+}
+.accueil li {
+  position: relative;
+  margin: 0;
+  padding-left: 44px;
+  line-height: 1.6;
+  counter-increment: etape;
+}
+.accueil li::before {
+  content: counter(etape);
+  position: absolute;
+  left: 0;
+  top: -1px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  background: var(--accent-voile-fort);
+  border: 1px solid var(--accent-sombre);
+  border-radius: 50%;
+}
+
 .zoneTelechargement {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 14px;
-  margin: 0 0 20px;
+  gap: 10px 16px;
+  margin: 0 0 26px;
+}
+/* Le téléchargement est la SEULE action de l'écran. C'est le seul endroit du
+   site où un mouvement est autorisé : un soulèvement au survol, et rien
+   d'autre nulle part ailleurs, pour qu'il reste un signal et non un tic. */
+.zoneTelechargement .bouton.principal {
+  padding: 14px 26px;
+  font-size: 15px;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px var(--lueur-accent);
+  transition: transform .3s cubic-bezier(.16, 1, .3, 1),
+              box-shadow .3s cubic-bezier(.16, 1, .3, 1);
+}
+.zoneTelechargement .bouton.principal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 34px var(--lueur-accent);
 }
 .etatExtension {
   padding: 9px 12px;
@@ -347,11 +498,24 @@ main.vide #accueil { display: block; max-width: 620px; margin-top: 24px; padding
   border: 1px solid var(--accent-sombre);
   border-radius: 14px;
 }
-.sourceProjet { margin: 22px 0 0; padding-top: 16px; border-top: 1px solid var(--bordure); }
+.accueil .discret:not(.sourceProjet) { margin: 24px 0 0; line-height: 1.6; }
+.sourceProjet { margin: 30px 0 0; padding-top: 18px; border-top: 1px solid var(--bordure); }
 .accueil a { color: var(--accent); }
 
+/* Sur un téléphone, la marge intérieure de la carte mangeait un tiers de la
+   largeur : la mesure de ligne tombait sous trente caractères. */
+@media (max-width: 700px) {
+  main.vide { padding: 3vh 12px 40px; }
+  main.vide #accueil { padding: 26px 22px 24px; }
+  .accueil h2 { font-size: 30px; }
+  .accueil .intro:first-of-type { font-size: 16px; }
+  .accueil li { padding-left: 38px; }
+  .accueil li::before { width: 25px; height: 25px; font-size: 12px; }
+  .zoneTelechargement .bouton.principal { padding: 13px 20px; }
+}
+
 .accueil code, .accueil kbd {
-  padding: 1px 6px;
+  padding: 2px 7px;
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
   font-size: 12px;
   color: var(--texte);
@@ -658,7 +822,16 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
   gap: 24px;
   align-items: start;
 }
-@media (max-width: 900px) { .grilleStats { grid-template-columns: 1fr; } }
+/* Quatre colonnes de chiffres n'entrent pas dans un téléphone. Sans ces deux
+   lignes, c'est la PAGE qui partait de côté : une barre de défilement
+   horizontale apparaissait sur tous les écrans étroits, accueil compris, et les
+   titres se retrouvaient coupés à gauche. Désormais le tableau défile seul.
+   « minmax(0, 1fr) » est la moitié qui compte : une piste « 1fr » refuse de
+   devenir plus étroite que son contenu, et le tableau élargissait le panneau au
+   lieu de déborder dedans. */
+@media (max-width: 900px) {
+  .grilleStats { grid-template-columns: minmax(0, 1fr); overflow-x: auto; }
+}
 
 .coteStats { display: grid; gap: 12px; align-content: start; }
 
@@ -763,15 +936,19 @@ select option { color: var(--texte); background: var(--panneau); }
 
 /* ---------- Familles de statistiques ---------- */
 
+/* Plus d'air AU-DESSUS du titre qu'en dessous : c'est ce qui rattache chaque
+   titre au bloc qu'il annonce, au lieu de le laisser flotter entre deux. */
 tr.famille th {
-  padding: 14px 0 6px;
-  font-size: 10.5px;
+  padding: 24px 0 7px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: .12em;
   color: var(--accent);
   text-align: left;
-  border-bottom: 1px solid var(--bordure);
+  border-bottom: 1px solid var(--accent-sombre);
 }
+tbody tr.famille:first-child th { padding-top: 10px; }
 
 /* ---------- Détail d'une statistique ---------- */
 
@@ -855,21 +1032,30 @@ tr.detail td { padding: 0; border-bottom: 1px solid var(--bordure); }
 
 /* Le panneau occupe toute la largeur, mais quatre colonnes courtes n'en ont pas
    besoin : on borne la table pour que les chiffres restent près de leur libellé. */
-table { width: 100%; max-width: 760px; border-collapse: collapse; font-size: 13.5px; }
+table { width: 100%; max-width: 760px; border-collapse: collapse; font-size: 14px; }
 /* Un libellé par ligne : « Dégâts de base » ne doit pas se couper en deux. */
 td.libelle { white-space: nowrap; }
 tr.modifiee td { background: var(--accent-voile); }
 th {
-  padding: 5px 10px;
+  padding: 7px 10px;
   font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: .04em;
+  letter-spacing: .09em;
   color: var(--discret);
   text-align: right;
   border-bottom: 1px solid var(--bordure);
 }
 th:first-child { text-align: left; }
-td { padding: 4px 10px; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--filet); }
+td { padding: 7px 10px; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--filet); }
+
+/* Les quatre colonnes se valaient à l'œil, alors qu'une seule est le sujet :
+   celle qu'on manipule. L'équipement actuel recule d'un ton — il sert de point
+   de comparaison — et le simulé prend le poids. Réservé aux lignes de
+   statistiques : les lignes de détail n'ont qu'une cellule, et l'étirer sur
+   quatre colonnes la ferait entrer par erreur dans cette règle. */
+tr[data-stat] > td:nth-child(2) { color: var(--discret); }
+tr[data-stat] > td:nth-child(3) { font-weight: 600; color: var(--texte); }
+tr[data-stat] > td:last-child { font-weight: 700; }
 td:first-child { text-align: left; font-variant-numeric: normal; width: 34%; }
 th:nth-child(2), th:nth-child(3), td:nth-child(2), td:nth-child(3) { width: 22%; }
 th:last-child, td:last-child { width: 22%; }
@@ -1253,7 +1439,7 @@ td.principal { font-weight: 600; }
   table { font-size: 13px; }
   th { padding: 2px 9px; }
   td { padding: 1px 9px; }
-  tr.famille th { padding: 5px 0 2px; }
+  tr.famille th { padding: 16px 0 4px; }
   .blocRelique { padding: 9px 11px; }
   .blocRelique h3 { margin-bottom: 5px; }
   .iconeRelique { width: 42px; height: 42px; }
@@ -1363,32 +1549,38 @@ td.principal { font-weight: 600; }
    configurations, lui, est fiable. D'où le pourcentage écrit
    aussi lisiblement que le nombre, et le mot « estimée » assumé. */
 
+/* C'est le chiffre que l'on vient chercher : il se lit de loin, et le socle qui
+   le porte reprend la lueur du héros au lieu du gris du panneau. */
 .blocPuissance {
   display: grid;
   justify-items: center;
-  gap: 1px;
-  padding: 7px 16px 8px;
-  background: var(--panneau-clair);
+  gap: 2px;
+  padding: 12px 28px 13px;
+  background:
+    radial-gradient(130% 150% at 50% 0%, var(--accent-voile), transparent 72%),
+    var(--panneau-clair);
   border: 1px solid var(--bordure);
-  border-radius: 12px;
+  border-radius: 16px;
+  box-shadow: var(--ombre-panneau);
   cursor: help;
 }
 .titrePuissance {
-  font-size: 9.5px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: .13em;
   color: var(--discret);
 }
 .titrePuissance em { font-style: normal; opacity: .8; }
 .valeurPuissance {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -.025em;
   color: var(--or-etoiles);
   font-variant-numeric: tabular-nums;
 }
 .ecartPuissance {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--discret);
   font-variant-numeric: tabular-nums;
@@ -1397,8 +1589,8 @@ td.principal { font-weight: 600; }
 .ecartPuissance.negatif { color: var(--negatif); }
 
 @media (max-width: 700px) {
-  .blocPuissance { padding: 5px 12px 6px; }
-  .valeurPuissance { font-size: 18px; }
+  .blocPuissance { padding: 8px 16px 9px; }
+  .valeurPuissance { font-size: 25px; }
 }
 
 /* ============================================================ L'ARBRE DE PANTHÉON
@@ -1413,9 +1605,11 @@ td.principal { font-weight: 600; }
    Un nœud qu'on a changé par rapport au compte porte en plus une pastille. */
 
 .arbrePantheon {
-  margin-top: 18px;
-  padding-top: 16px;
+  margin-top: 26px;
+  padding: 26px 0 8px;
   border-top: 1px solid var(--bordure);
+  /* L'arbre est une seconde scène, sous celle du héros : la même lueur l'annonce. */
+  background: radial-gradient(64% 46% at 50% 0%, var(--accent-voile), transparent 70%);
 }
 
 /* L'en-tête est CENTRÉ sur l'arbre qu'il annonce, et écrit comme une phrase.
@@ -1431,14 +1625,10 @@ td.principal { font-weight: 600; }
 
 .enteteArbre h3 {
   margin: 0;
-  font-size: 1.15rem;
-  font-weight: 600;
-  letter-spacing: .01em;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
 }
-
-.enteteArbre .sousTitreCote { display: block; margin: 3px 0 0; }
-.compteArbre { margin: 0; }
-.marqueModifie { color: var(--accent); }
 
 .grilleArbre {
   display: flex;
@@ -1646,3 +1836,30 @@ td.principal { font-weight: 600; }
 .noeudArbre.sansIcone.eteint .emblemeNoeud { opacity: .4; filter: grayscale(1); }
 .noeudArbre.sansIcone:hover .emblemeNoeud { opacity: 1; filter: none; }
 .emblemeCombat { font-size: 1.1rem; color: var(--discret); }
+
+/* Le seul mouvement de la feuille est le soulèvement du bouton de
+   téléchargement. Pour qui a demandé à son système de ne plus animer les
+   interfaces, il disparaît aussi. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* La mise en page qui tient sans défiler paie l'air que l'on vient d'ajouter
+   ailleurs : à 1 800 px de large, chaque pixel vertical est déjà compté. Elle
+   reprend donc ses valeurs serrées pour la scène du héros et pour l'arbre.
+
+   Ce bloc est en toute fin de feuille et non dans le resserrement plus haut :
+   la section PANTHÉON est écrite APRÈS lui, et à spécificité égale elle
+   l'emporterait. */
+@media (min-width: 1800px) and (min-height: 880px) {
+  .personnage { gap: 8px; }
+  .blocPuissance { padding: 8px 20px 9px; }
+  .valeurPuissance { font-size: 26px; }
+  .arbrePantheon { margin-top: 14px; padding: 14px 0 2px; }
+  .enteteArbre { margin-bottom: 14px; }
+  .enteteArbre h3 { font-size: 1.25rem; }
+}

@@ -944,7 +944,7 @@ function rendreStats() {
 
 // La puissance sous le héros, avec ce qu'elle vaut et ce qu'elle ne vaut pas.
 //
-// Le gros chiffre est APPROCHÉ — 0,27 % d'erreur en moyenne — et l'écran le dit.
+// Le gros chiffre est APPROCHÉ — 0,05 % d'erreur en moyenne — et l'écran le dit.
 // L'écart entre les deux configurations, lui, est bien plus sûr : l'erreur du
 // modèle est propre au héros et se simplifie quand on compare deux états du
 // même héros.
@@ -969,7 +969,7 @@ function rendrePuissance(contexte, simule, actuel, contexteReel = contexte) {
       ? `Elle additionne le héros (${nombre(Math.round(affiche - escorte))}) et l'escouade que lui donne `
         + `ta caserne (${nombre(Math.round(escorte))}) : le jeu compte les deux sous son nom. `
       : "La caserne du compte n'est pas connue : la part de l'escouade est approchée. ")
-    + "Elle tombe à 0,27 % en moyenne sur 27 héros relevés, et à 0,04 % sur le seul héros "
+    + "Elle tombe à 0,05 % en moyenne sur 16 des 19 héros dont la puissance est relevée, et à 0,02 % sur le seul héros "
     + "relevé d'un second compte. Reste un écart de quelques points, dû aux arrondis. "
     + "L'écart entre deux configurations est plus fiable encore que le total.";
 
@@ -1204,14 +1204,11 @@ function rendreArbrePantheon(contexte) {
     </div>`;
   }).join('');
 
-  const modifies = [...actifs].filter((id) => !reels.has(id)).length
-    + [...reels].filter((id) => !actifs.has(id)).length;
-
-
+  // L'en-tête ne porte plus que le nom. La description de la classe et le
+  // décompte des nœuds ont été retirés : l'arbre juste en dessous les dit déjà,
+  // et ce qui a été changé par rapport au compte reste marqué nœud par nœud.
   hote.innerHTML = `<header class="enteteArbre">
-      <h3>Panthéon<span class="sousTitreCote">${esc(arbre.nom.toLowerCase())} · deux nœuds par ligne au maximum</span></h3>
-      <p class="discret compteArbre">${actifs.size} nœud${actifs.size > 1 ? 's' : ''} sur 22${
-        modifies ? ` · <b class="marqueModifie">${modifies} modifié${modifies > 1 ? 's' : ''}</b>` : ''}</p>
+      <h3>Panthéon</h3>
     </header>
     <div class="grilleArbre">${lignes}</div>`;
 }
