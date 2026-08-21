@@ -182,9 +182,25 @@ const multiplicateur = (v) => Number(v).toFixed(3).replace(/.?0+$/, '').replace(
 //     stockée est un temps gagné, donc « -0,36 s » pour un 0,36 dans les données ;
 //   - la vitesse d'attaque s'affiche en coups par minute, soit soixante fois la
 //     valeur stockée (« 3 coups/min » pour 0,05).
+
+// LES COUPS PAR MINUTE S'ÉCRIVENT TOUJOURS EN ENTIER, et le jeu ARRONDIT au plus
+// proche — il ne plafonne pas, contrairement aux apports de statistiques (§22).
+// Quatre témoins, dont les deux seuls héros dont on possède l'écran complet :
+//
+//   Marie Curie  équipement 2,1  -> le jeu écrit  +2   (le plafond donnerait 3)
+//                total     62,1  -> le jeu écrit   62  (le plafond donnerait 63)
+//   Achille      équipement 21,24 -> le jeu écrit +21  (le plafond donnerait 22)
+//                total     96,24 -> le jeu écrit   96  (le plafond donnerait 97)
+//   Wallace      total     50,58 -> le jeu écrit   51
+//   Artémise     total     72,66 -> le jeu écrit   73
+//
+// On passe donc par cette seule fonction, pour que les trois endroits qui
+// affichent une vitesse ne puissent plus diverger.
+const coupsMin = (v) => nombre(Math.round(FORMULES.coupsParMinute(v)));
+
 function valeurAttribut(stat, valeur, type) {
   if (stat === 'InitialFocusInSecondsBonus') return `${signe(-valeur, (v) => nombre(v))} s`;
-  if (stat === 'AttackSpeed') return `${signe(valeur, (v) => nombre(FORMULES.coupsParMinute(v)))} coups/min`;
+  if (stat === 'AttackSpeed') return `${signe(valeur, coupsMin)} coups/min`;
   return type === 'pourcentage' ? signe(valeur, pourcent) : signe(valeur, nombre);
 }
 const pourcent = (v) => `${(v * 100).toFixed(2).replace(/\.?0+$/, '').replace('.', ',')} %`;
@@ -1362,7 +1378,7 @@ function valeurStat(stat, feuilleStats) {
   switch (FORMAT_STAT[stat]) {
     case 'entier': return { texte: nombre(Math.round(v)), brut: v };
     case 'decimal': return { texte: nombre(v), brut: v };
-    case 'coups': return { texte: `${nombre(Math.round(FORMULES.coupsParMinute(v)))} coups/min`, brut: v };
+    case 'coups': return { texte: `${coupsMin(v)} coups/min`, brut: v };
     // Le jeu écrit « Mêlée » plutôt qu'une distance quand le héros frappe au contact.
     case 'portee': return { texte: v <= 1.5 ? 'Mêlée' : nombre(v), brut: v };
     case 'vitesse': return { texte: `${nombre(v)} ${v >= 2.5 ? '(rapide)' : v >= 2 ? '(moyenne)' : '(lente)'}`, brut: v };
@@ -1424,7 +1440,7 @@ function detailHtml(stat, simule, actuel) {
   const d = simule[stat] || {};
   const estPourcentage = !FORMULES.ABSOLUES.has(stat);
   const ecrire = (v) => (estPourcentage ? pourcent(v)
-    : FORMAT_STAT[stat] === 'coups' ? `${nombre(FORMULES.coupsParMinute(v))} coups/min`
+    : FORMAT_STAT[stat] === 'coups' ? `${coupsMin(v)} coups/min`
     : nombre(v));
 
   // Les sources, dans l'ordre où le jeu les empile. On garde le cumul à chaque

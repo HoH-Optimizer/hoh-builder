@@ -1994,6 +1994,22 @@ de statistiques exactes de 19 à 10 sur 32.
 
 > **montée en niveau : plancher · tout le reste : plafond**
 
+**UNE EXCEPTION, trouvée le 22/08/2026 : la VITESSE D'ATTAQUE s'arrondit au plus
+proche.** Elle s'écrit toujours en coups par minute entiers, et le plafond s'y
+trompe — sur les deux seuls héros dont on possède l'écran complet :
+
+| | on calcule | plafond | arrondi | le jeu |
+|---|---|---|---|---|
+| Marie Curie, équipement | 2,1 | 3 | **2** | **+2** |
+| Marie Curie, total | 62,1 | 63 | **62** | **62** |
+| Achille, équipement | 21,24 | 22 | **21** | **+21** |
+| Achille, total | 96,24 | 97 | **96** | **96** |
+| Wallace, total | 50,58 | 51 | **51** | **51** |
+| Artémise, total | 72,66 | 73 | **73** | **73** |
+
+C'est un détail d'AFFICHAGE seulement : la puissance, elle, se calcule sur la
+vitesse arrondie depuis le §22, et rien ne change de ce côté.
+
 Les dégâts de base passent de **2 justes sur 8** à **7 sur 8**. C'était le point
 qui manquait depuis le §18, et il ne venait pas d'une donnée absente mais d'un
 sens d'arrondi.
