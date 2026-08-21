@@ -11,9 +11,30 @@
    (« pantheon_node.layer3_node3_SingleStriker ») : il suffit alors de regarder
    ici ce que chacun rapporte.
 
-   CE QUI EST COUVERT. Quatre arbres sur six : ATTAQUANTS INDIVIDUELS, ATTAQUANTS
-   DE ZONE, SOIGNEURS et DÉFENSEURS. Manquent les manipulateurs et les soutiens.
-   Un nœud inconnu est simplement ignoré, et signalé à l'écran.
+   CE QUI EST COUVERT. Les SIX arbres, depuis le 22/08/2026 : attaquants
+   individuels, attaquants de zone, soigneurs, défenseurs, soutiens et
+   manipulateurs.
+
+   IL RESTE CINQ NŒUDS PAR CLASSE À NOMMER chez les soutiens et les manipulateurs
+   — layer3_node4 et tout le palier 5. Ce sont des EFFETS DE COMBAT : ils ne
+   touchent aucune statistique et ne rapportent aucune puissance (voir §8 du
+   journal), donc le calcul est complet ; seuls leur nom et leur description
+   manquent à l'écran. Ils portent « aRelever: true ».
+
+   LES SIX ARBRES ONT LE MÊME SQUELETTE. Vingt des vingt-deux positions portent
+   le même nœud dans les six classes. Deux seulement varient :
+
+     layer3_node3   l'effet de combat propre à la classe
+     layer6_node1   Ascension de FORCE (attaque) chez les attaquants et les
+                    manipulateurs, Ascension de FER (défense) chez les soigneurs,
+                    les défenseurs et les soutiens
+
+   Ces deux-là ont été relevés à l'écran pour les soutiens et les manipulateurs,
+   comme tout le reste. Le squelette, lui, a été vérifié sur un cinquième arbre
+   avant d'être posé : Medusa (manipulatrice, compte D) a huit nœuds activés, et
+   la colonne PANTHÉON de son tableau « Stats de profil » tombe exactement —
+   +102 d'attaque, +42 de défense, +38 de dégâts, crit 10 %, dégâts crit 177,9 %,
+   esquive 5 %.
 
    L'ARBRE EST LE MÊME POUR TOUS LES HÉROS D'UNE CLASSE. Vérifié : les
    vingt-deux nœuds relevés sur Léonard de Vinci et sur Marie Curie concordent
@@ -214,6 +235,72 @@ window.PANTHEON_JEU = {
 
       // Comme les soigneurs, les défenseurs montent la DÉFENSE et non l'attaque.
       "layer6_node1": { "nom": "Ascension de fer", "parNiveau": true, "effets": [{ "stat": "Defense", "valeur": 0.01, "type": "proportionnel" }] },
+      "layer6_node2": { "nom": "Ascension de vitalité", "parNiveau": true, "effets": [{ "stat": "MaxHitPoints", "valeur": 0.01, "type": "proportionnel" }] },
+    },
+  },
+  "Supporter": {
+    "nom": "Soutiens",
+    "noeuds": {
+      "layer1_node1": { "nom": "Précision mortelle", "effets": [{ "stat": "CritChance", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node2": { "nom": "Tranchant létal", "effets": [{ "stat": "CritDamage", "valeur": 0.20, "type": "pourcentage" }] },
+      "layer1_node3": { "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node4": { "nom": "Assaut éclair", "effets": [{ "stat": "AttackSpeed", "valeur": 0.05, "type": "plat" }] },
+
+      "layer2_node1": { "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node2": { "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node3": { "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
+      "layer2_node4": { "nom": "Pas fantôme", "effets": [{ "stat": "Evasion", "valeur": 0.05, "type": "pourcentage" }] },
+
+      "layer3_node1": { "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
+      "layer3_node2": { "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
+      "layer3_node3": { "nom": "Purge opportune", "effets": [{ "type": "combat", "texte": "Lorsque le héros utilise sa capacité, retire 1 effet négatif de tous les alliés" }] },
+      "layer3_node4": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+
+      "layer4_node1": { "nom": "Équipement affûté", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Attack", "valeur": 0.50 }] },
+      "layer4_node2": { "nom": "Équipement renforcé", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Defense", "valeur": 0.50 }] },
+      "layer4_node3": { "nom": "Fureur de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Attack", "valeur": 0.50 }] },
+      "layer4_node4": { "nom": "Rempart de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Defense", "valeur": 0.50 }] },
+
+      "layer5_node1": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node2": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node3": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node4": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+
+      // Comme les soigneurs et les défenseurs, les soutiens montent la DÉFENSE.
+      "layer6_node1": { "nom": "Ascension de fer", "parNiveau": true, "effets": [{ "stat": "Defense", "valeur": 0.01, "type": "proportionnel" }] },
+      "layer6_node2": { "nom": "Ascension de vitalité", "parNiveau": true, "effets": [{ "stat": "MaxHitPoints", "valeur": 0.01, "type": "proportionnel" }] },
+    },
+  },
+  "Manipulator": {
+    "nom": "Manipulateurs",
+    "noeuds": {
+      "layer1_node1": { "nom": "Précision mortelle", "effets": [{ "stat": "CritChance", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node2": { "nom": "Tranchant létal", "effets": [{ "stat": "CritDamage", "valeur": 0.20, "type": "pourcentage" }] },
+      "layer1_node3": { "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node4": { "nom": "Assaut éclair", "effets": [{ "stat": "AttackSpeed", "valeur": 0.05, "type": "plat" }] },
+
+      "layer2_node1": { "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node2": { "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node3": { "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
+      "layer2_node4": { "nom": "Pas fantôme", "effets": [{ "stat": "Evasion", "valeur": 0.05, "type": "pourcentage" }] },
+
+      "layer3_node1": { "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
+      "layer3_node2": { "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
+      "layer3_node3": { "nom": "Dissipation d'enchantement", "effets": [{ "type": "combat", "texte": "Lorsque le héros utilise sa capacité, retire 1 effet positif de tous les ennemis" }] },
+      "layer3_node4": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+
+      "layer4_node1": { "nom": "Équipement affûté", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Attack", "valeur": 0.50 }] },
+      "layer4_node2": { "nom": "Équipement renforcé", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Defense", "valeur": 0.50 }] },
+      "layer4_node3": { "nom": "Fureur de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Attack", "valeur": 0.50 }] },
+      "layer4_node4": { "nom": "Rempart de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Defense", "valeur": 0.50 }] },
+
+      "layer5_node1": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node2": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node3": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node4": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+
+      // Comme les attaquants, les manipulateurs montent l'ATTAQUE.
+      "layer6_node1": { "nom": "Ascension de force", "parNiveau": true, "effets": [{ "stat": "Attack", "valeur": 0.01, "type": "proportionnel" }] },
       "layer6_node2": { "nom": "Ascension de vitalité", "parNiveau": true, "effets": [{ "stat": "MaxHitPoints", "valeur": 0.01, "type": "proportionnel" }] },
     },
   },
