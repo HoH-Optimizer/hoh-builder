@@ -16,7 +16,17 @@ suit est ce qui n'a pas encore abouti.
 propres données. Le §14 raconte comment on l'a localisée. Tout ce qui précède
 est le chemin — utile pour comprendre, mais dépassé sur le fond.
 
-**Le §16 est le dernier état** : toutes les statistiques du catalogue portent
+**Le §25 est le dernier état** : le panthéon est mis hors de cause sur pièce, et
+les dix-neuf puissances relevées sont enfin comptées ensemble — **dix-sept héros
+sur vingt tiennent dans 0,15 %**, moyenne 0,048 %. Les trois qui restent ont
+chacun une cause identifiée, et aucune n'est la formule. Deux pistes ouvertes ce
+jour-là (l'escouade moyennée, la vitesse d'attaque boostée) ont été RÉFUTÉES par
+ces dix-neuf relevés après avoir paru bonnes sur huit : le §25 dit pourquoi.
+Il ne reste qu'UNE question ouverte : l'assiette du pourcentage d'une parure quand
+un second ensemble donne aussi des points de vie (Ashoka et Hatchepsout). Une
+capture la tranche, elle est nommée au §25.
+
+**Le §16 était l'état précédent** : toutes les statistiques du catalogue portent
 enfin un nom, les trois anomalies qui résistaient ont disparu, et l'erreur du
 site est tombée à **0,38 % en moyenne** sur les 22 puissances relevées.
 
@@ -1687,6 +1697,9 @@ soustraction.
 
 Puissances relevées, et ce que le site en dit après les corrections des §16 à §18 :
 
+**CE TABLEAU EST PÉRIMÉ — voir le §25.** Les §21 à §25 ont déplacé ces chiffres ;
+il est conservé tel qu'il a été écrit le 20/08/2026.
+
 | Héros | Niveau | Puissance du jeu | Site | Écart |
 |---|---|---|---|---|
 | Jeanne d'Arc | 90 | 11 768 | **11 768** | **0** |
@@ -2205,3 +2218,257 @@ Un point de vie sur vingt mille ne vaut pas qu'on recommence à régler.
 | Puissance, autre compte | +11 % | **8 092 pour 8 093** |
 
 Restent : les points de vie à +1, et l'attaque à −1 sur trois héros.
+
+---
+
+## 25. Le panthéon est hors de cause, et l'escouade n'a qu'une valeur
+
+Trois questions de Thomas, le 21 août 2026, et elles s'enchaînent : *« essaie la
+formule sur Marie Curie »*, *« et en jouant sur les arrondis ? »*, *« et le
+panthéon, qui est du contenu récent, aurait-il pu changer la formule ? »*
+
+### Marie Curie, terme par terme
+
+| | |
+|---|---|
+| esquive `1/(1−0,05)` | 1,05263 |
+| crit `1 + 0,05 × (1,727−1)` | 1,03635 |
+| relique `1 + 0,005 × 13` | 1,065 |
+| combat `62/60 × (1+0,0168×4,75)` | 1,11579 |
+| combat `+ (2,03 + 39×0,025) × 1 × 1` | 3,00500 |
+| produit sous la racine | 2,6226 × 10¹⁴ |
+| `× 1,218/1000` | **19 724,9** — le héros |
+| escouade | **1 425,8** |
+| **total** | **21 151** pour **21 138** dans le jeu |
+
+### Les arrondis ne portent pas ces treize points
+
+Pour les effacer, il faudrait retrancher 2,93 d'attaque, ou 2,23 de défense, ou
+23,4 de points de vie, ou 0,98 de dégâts de base. Les résidus réellement mesurés
+au §24 valent +0,30 · +0,59 · +1,00 · −0,31 — **dix fois trop petits**. Calculer
+sur exactement les entiers que le jeu affiche donne 21 149 : deux points gagnés
+sur treize.
+
+Sept variantes d'arrondi ont été essayées sur les neuf héros relevés (arrondi
+final retiré, vitesse exacte, vitesse au plancher, statistiques au plafond, au
+plancher, arrondies, escouade non tronquée). Aucune ne descend sous ±6, et
+toutes déplacent l'erreur d'un héros à l'autre sans la réduire.
+
+### Le panthéon : réfuté sur pièce, par trois chemins
+
+1. **L'écran de Curie sépare lui-même les deux parts** : « 19 620 +1 518 ». On
+   calcule 19 630 sans panthéon (+10) et +1 520 d'apport (+2, soit 0,13 %).
+   **Dix des treize points sont là AVANT qu'un seul nœud n'entre.**
+2. **Six des neuf héros relevés n'ont aucun nœud activé** et dérivent quand même
+   — Wallace +18,6 sans panthéon. Et Achille, le plus chargé (9 nœuds, 2 128
+   points de puissance), est le plus juste : −1,8. La corrélation va à l'envers.
+3. **Le catalogue ne contient que deux formules de puissance** :
+   `formula.unit_power_hero` et `formula.expected_unit_power`. Le balayage de
+   tous les identifiants contenant « power » dans les 25 Mo n'en donne pas de
+   troisième. Le `CalculatePantheonInclusivePower` du moteur (§15) n'est pas une
+   formule : c'est l'interrupteur qui décide si l'écran AFFICHE le panthéon
+   dedans ou à côté — exactement ce que montre l'écran de Curie.
+
+Les vingt-deux survols relevés au §8 le confirment nœud par nœud : les onze
+nœuds qui ne rapportent rien dans le jeu ne rapportent rien chez nous non plus,
+et les onze autres se répondent à 1 ou 2 % près.
+
+### Le balayage de 256 formules, et pourquoi il ne compte pas
+
+Huit interrupteurs structurels combinés (vitesse sans bonus arrondie, vitesse
+exacte, esquive en `1+e`, relique en puissance, escouade sans crit, escouade non
+tronquée, capacité comptée au niveau plein, rareté hors du terme de vitesse),
+ajustés sur les huit héros de Thomas.
+
+| | pire écart | RMS |
+|---|---|---|
+| formule actuelle | 18,6 | 8,63 |
+| vitesse sans bonus arrondie | 12,7 | 5,75 |
+| meilleure des 256 | 6,5 | **4,11** |
+
+Et le test qui les tue, sur un héros **gardé hors de l'ajustement** — le Wallace
+du compte témoin, puissance relevée 8 093 :
+
+| | écart |
+|---|---|
+| **formule actuelle** | **−0,7** |
+| vitesse sans bonus arrondie | −8,7 |
+| meilleure des 256 | −3,6 |
+
+Les deux « améliorations » dégradent le seul héros qu'elles n'ont pas servi à
+régler. Deux des cinq interrupteurs gagnants contredisent d'ailleurs le fichier
+du jeu directement : il porte un `FormulaDivisionDTO` pour `1/(1−Esquive)` et une
+multiplication pour la relique.
+
+**Garder un héros hors de l'ajustement est le seul garde-fou qui ait tenu.**
+
+### La piste de l'escouade : essayée, réfutée, retirée
+
+La formule du héros étant lue dans le fichier, on retranche sa part de la
+puissance relevée : il reste l'escouade qu'il FAUDRAIT. Sur huit héros :
+
+| héros | arme · taille | on calcule | il faudrait |
+|---|---|---|---|
+| Jeanne d'Arc | inf. lourde · 2 | 1 424,1 | 1 420,0 |
+| Edison | siège · 1 | 1 425,8 | 1 420,3 |
+| Isabella | inf. lourde · 2 | 1 424,1 | 1 420,3 |
+| Lily | cavalerie · 2 | 1 422,9 | 1 421,1 |
+| Achille | infanterie · 3 | 1 417,6 | 1 419,4 |
+
+Cinq héros, trois armes, trois tailles d'escouade, un seul nombre à 1,1 point
+près. Et le §21 avait établi que le jeu équilibre ses unités à puissance égale :
+nos quatre valeurs par arme (1 417,4 à 1 425,8) devaient donc être notre bruit.
+On a remplacé la valeur de l'arme par la moyenne des unités de MÊME NIVEAU du
+compte — le niveau et non le compte entier, les casernes du compte témoin
+n'étant pas montées ensemble.
+
+Sur ces huit héros, cinq passaient sous 2,1 points.
+
+**PUIS ON A COMPTÉ LES RELEVÉS DISPONIBLES : IL Y EN AVAIT DIX-NEUF, PAS HUIT.**
+
+| | erreur moyenne | pire |
+|---|---|---|
+| escouade par arme (avant) | **0,048 %** | **0,147 %** |
+| moyenne des unités de même niveau | 0,051 % | 0,152 % |
+
+*(seize héros, les trois anomalies connues mises à part)*
+
+Cinq héros s'améliorent, cinq empirent, et les cinq qui empirent sont exactement
+ceux qui n'avaient pas servi à régler : Artémise 0,009 → 0,081 %, Guillaume Tell
+0,010 → 0,104 %, Robin des Bois 0,046 → 0,089 %, Tomoe 0,060 → 0,109 %, Ulysse
+0,035 → 0,065 %.
+
+**Le changement a été RETIRÉ.** `formules.js` et `app.js` sont revenus à
+l'escouade par arme.
+
+*La leçon, la cinquième, et je l'ai apprise en la refaisant : le journal
+contenait dix-neuf relevés, j'en ai pris huit, et j'ai retrouvé exactement le
+piège que le §21 décrit. Compter les mesures disponibles AVANT de régler quoi que
+ce soit.*
+
+### Et la piste « vitesse d'attaque boostée » tombe avec elle
+
+Sur les huit héros, les quatre dont la vitesse n'était pas boostée étaient les
+plus justes. Sur les dix-neuf, ce n'est plus vrai : Robin des Bois n'est pas
+boosté et dérive de 0,046 %, Guillaume Tell l'est et tombe à 0,010 %. Les deux
+groupes ont la même erreur moyenne — 0,042 % contre 0,052 %. **Ce n'était qu'un
+effet d'échantillon.**
+
+### CE QUE VAUT LE CALCUL, HÉROS PAR HÉROS
+
+Dix-neuf puissances relevées, encore valables (même niveau qu'au relevé), plus le
+héros du compte témoin :
+
+| héros | niveau | jeu | site | écart | erreur |
+|---|---|---|---|---|---|
+| Achille | 160 | 28 142 | 28 140 | −2 | **0,006 %** |
+| Artémise I | 60 | 5 780 | 5 781 | +1 | **0,009 %** |
+| Wallace (compte témoin) | 80 | 8 093 | 8 092 | −1 | **0,009 %** |
+| Guillaume Tell | 40 | 4 401 | 4 401 | 0 | **0,010 %** |
+| Reine Boadicée | 90 | 10 417 | 10 415 | −2 | **0,018 %** |
+| Lily la Tigresse | 80 | 9 607 | 9 609 | +2 | **0,019 %** |
+| Isabella I | 105 | 14 215 | 14 219 | +4 | **0,026 %** |
+| Jeanne d'Arc | 90 | 11 768 | 11 772 | +4 | **0,034 %** |
+| Jules César | 111 | 15 211 | 15 216 | +5 | **0,034 %** |
+| Ulysse | 102 | 13 763 | 13 768 | +5 | **0,035 %** |
+| Robin des Bois | 80 | 9 672 | 9 677 | +5 | **0,046 %** |
+| Edison | 80 | 9 375 | 9 380 | +6 | **0,059 %** |
+| Marie Curie | 134 | 21 138 | 21 151 | +13 | **0,060 %** |
+| Tomoe Gozen | 70 | 8 083 | 8 088 | +5 | **0,060 %** |
+| Spartacus | 60 | 7 275 | 7 270 | −6 | **0,076 %** |
+| William Wallace | 110 | 14 843 | 14 862 | +19 | **0,125 %** |
+| Miyamoto Musashi | 50 | 4 995 | 4 988 | −7 | **0,147 %** |
+| — | | | | | |
+| Ashoka le Grand | 81 | 11 126 | 11 184 | +58 | 0,52 % |
+| Léonard de Vinci | 110 | 14 815 | 14 956 | +141 | 0,95 % |
+| Hatchepsout | 110 | 17 700 | 17 987 | +287 | 1,62 % |
+
+**Dix-sept héros sur vingt tiennent dans 0,15 %**, moyenne **0,048 %** — soit un
+demi-point de puissance pour mille. Les trois autres ont chacun une cause
+identifiée, et aucune n'est la formule :
+
+- **Ashoka et Hatchepsout portent la même configuration** : un ensemble de parure
+  ET un ensemble d'armement qui donnent tous deux des points de vie (Chacal +
+  Dharma). C'est le cas ouvert du §19. Ils sont **deux sur deux** — la règle
+  d'assiette des PV est en cause, pas la puissance. Un troisième héros du compte
+  est dans ce cas : **Qin Shi Huang**.
+- **Léonard de Vinci n'était PAS une anomalie : son relevé était périmé.** Sa
+  relique était au **niveau 7** quand la mesure a été prise, et elle est au 8 dans
+  l'export du soir. Au niveau 7, ses quatre statistiques tombent au point près et
+  sa puissance à +10 :
+
+  | relique | attaque | défense | puissance |
+  |---|---|---|---|
+  | niveau 7 | 1 715,7 | 1 555,8 | 14 825 (**+10**) |
+  | niveau 8 (export) | 1 727,7 | 1 560,8 | 14 956 (+141) |
+  | **le jeu, le 19/08** | **1 716** | **1 555** | **14 815** |
+
+  Vérifié que ce n'est pas un défaut de lecture général : baisser TOUTES les
+  reliques d'un niveau fait passer l'erreur moyenne de 13 à 67 points.
+
+  **LES RELEVÉS ROUILLENT.** Une puissance mesurée cesse d'être vraie dès que le
+  héros gagne un niveau de relique, une pièce d'équipement ou un nœud. Avant de
+  conclure à une anomalie, vérifier que la mesure est contemporaine de l'export.
+
+### Ce qui reste, et c'est UNE question
+
+Ashoka et Hatchepsout portent la même configuration : **Dharma (2 pièces, +5 % de
+PV) plus une parure de 3 pièces qui donne aussi des PV**. Le pourcentage de la
+parure se calcule sur une assiette, et les trois lectures possibles ne donnent
+pas la même chose :
+
+| assiette de la parure | Ashoka | Hatchepsout |
+|---|---|---|
+| **A** — niveau + éveil + caserne + objets *(règle actuelle, celle de Lily)* | 16 914 | 21 115 |
+| **B** — sans l'éveil | **16 704** | 20 832 |
+| **C** — ordinaire, niveau seul | 16 138 | **20 409** |
+| ce qu'il faudrait pour que la puissance tombe | **16 713** | **20 390** |
+
+**Ils ne réclament pas la même règle.** Ashoka veut B, Hatchepsout veut C — et
+pour elle ce n'est pas déduit d'une puissance mais LU sur son écran : le jeu
+affiche 20 408, l'assiette C donne 20 409,5.
+
+**LA CAPTURE QUI TRANCHE : le tableau « Stats de profil » d'ASHOKA LE GRAND, ligne
+des points de vie.**
+
+- si elle dit **≈ 16 704** → les deux héros suivent des règles différentes, et il
+  faudra chercher ce qui les sépare (parure du Chacal +10 % chez Ashoka, Égyptien
+  royal +7,5 % chez Hatchepsout) ;
+- si elle dit **≈ 16 138** → l'assiette C vaut pour les deux, la règle est unique,
+  et c'est le relevé de PUISSANCE d'Ashoka qui est périmé — comme Léonard.
+
+Résolue, cette question fait passer Ashoka de 0,52 % à ~0,03 % et Hatchepsout de
+1,62 % à ~0,02 % : **tout le compte tomberait alors sous 0,15 %, sans exception.**
+
+### Arrondir en décimales : essayé, sans effet
+
+Question de Thomas : « et si tu arrondis toutes les valeurs en décimal ? »
+Testé sur les dix-neuf relevés, à toutes les précisions, dans les trois sens.
+
+| variante | erreur moyenne | pire |
+|---|---|---|
+| 4 grandes stats → 1 décimale · plancher | 0,0440 % | 0,147 % |
+| 4 grandes stats → 1 décimale · arrondi | 0,0470 % | 0,147 % |
+| **exact (retenu)** | **0,0478 %** | **0,147 %** |
+| 4 grandes stats → **entiers** · arrondi | 0,0606 % | 0,176 % |
+| 4 grandes stats → entiers · plafond | 0,1034 % | 0,174 % |
+| petites stats → 2 décimales · plafond | 0,1474 % | 0,417 % |
+
+**Le pire écart ne bouge pas** — 0,147 %, Musashi, identique qu'on arrondisse ou
+non. Un arrondi manquant déplacerait les extrêmes ; celui-ci ne touche que la
+troisième décimale de la moyenne.
+
+**Arrondir aux entiers est nettement pire**, ce qui reconfirme le §22 — *le jeu
+ÉCRIT des entiers et CALCULE sur les valeurs exactes* — cette fois sur dix-neuf
+héros au lieu de huit.
+
+Et le « gain » du plancher à une décimale est un mirage : il améliore 15 héros sur
+19 parce que **nos écarts sont majoritairement positifs (+3,1 points en moyenne)**
+et que tronquer pousse tout le monde vers le bas. N'importe quel rabot ferait
+pareil ; multiplier par 0,99994 donnerait le même résultat. Ce n'est pas un
+arrondi qu'on découvre, c'est un biais qu'on masque.
+
+**Ce biais de +3,1 points est en revanche un vrai signal**, et le §24 l'a déjà
+cerné : en ajustant les taux de montée on trouve 0,0399 par niveau au lieu de
+0,04, et ça colle à cinq héros — mais le catalogue écrit 0,04. Ça vaut 0,03 % :
+noté, laissé tranquille.
