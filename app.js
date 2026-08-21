@@ -428,16 +428,35 @@ function agreger(liste) {
   // On retient à part ce qui vient des ensembles : le panthéon amplifie les gains
   // de l'équipement « hors bonus d'ensemble ».
   for (const { bonus, pieces } of setsComplets(liste)) {
-    for (const b of bonus) {
+    for (const [rang, b] of bonus.entries()) {
       const e = (total[b.stat] ||= { plat: 0, pourcentage: 0, set: 0 });
       // Le pourcentage d'un ensemble de PARURE (3 pièces) se retient à part :
       // il ne se calcule pas sur la même assiette que celui d'un objet. Celui
       // d'un ensemble d'ARMEMENT (2 pièces), si — mesuré sur Mian Tansen.
       // On le range quand même à part sous « pourcentageSetArmement », parce
       // que le panthéon n'amplifie aucun bonus d'ensemble. Voir formules.js.
+      //
+      // …ET SEUL LE BONUS PRINCIPAL DE LA PARURE PREND L'ASSIETTE LARGE.
+      // Le catalogue ne porte que deux parures qui donnent des points de vie, et
+      // elles se comportent différemment :
+      //
+      //   Chacal          PV +10 %, PUIS soins reçus +5 %      -> assiette large
+      //   Égyptien royal  soins prodigués +7,5 %, PUIS PV +7,5 % -> ordinaire
+      //
+      // Onze mesures le disent, sur trois comptes : huit porteurs du Chacal
+      // (Tomoe, Wallace, Isabella, Jeanne, Lily, Qin Shi Huang, Medusa, Ashoka)
+      // prennent l'assiette large ; les trois porteurs de l'Égyptien royal
+      // (les deux Hatchepsout et Louis Pasteur) prennent l'ordinaire, à deux
+      // points près sur des comptes qui n'ont servi à régler rien.
+      //
+      // Ce qui décide n'est donc pas le nom de l'ensemble mais LE RANG du bonus
+      // dans sa fiche : le premier est le bonus principal, il prend l'assiette
+      // large ; les suivants se calculent comme un attribut d'objet ordinaire.
+      // Voir RECHERCHE-PUISSANCE.md §28.
       if (b.type === 'pourcentage') {
         e.pourcentage += b.valeur;
-        const cle = pieces >= 3 ? 'pourcentageSet' : 'pourcentageSetArmement';
+        const large = pieces >= 3 && rang === 0;
+        const cle = large ? 'pourcentageSet' : 'pourcentageSetArmement';
         e[cle] = (e[cle] || 0) + b.valeur;
       } else { e.plat += b.valeur; e.set = (e.set || 0) + b.valeur; }
     }

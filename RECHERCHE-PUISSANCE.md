@@ -16,7 +16,13 @@ suit est ce qui n'a pas encore abouti.
 propres données. Le §14 raconte comment on l'a localisée. Tout ce qui précède
 est le chemin — utile pour comprendre, mais dépassé sur le fond.
 
-**Le §27 est le dernier état** : le plat de l'éveil n'entre pas dans l'assiette
+**Le §28 est le dernier état, et le dossier n'a plus d'anomalie** : le pourcentage
+d'une parure ne prend l'assiette large que s'il est le PREMIER bonus de l'ensemble.
+Deux comptes neufs l'ont tranché, dont une seconde Hatchepsout. **Dix-huit héros
+sur dix-huit tiennent dans 0,15 %**, moyenne 0,046 %, et sept héros mesurés sans
+relique tombent à 0,022 %.
+
+**Le §27** : le plat de l'éveil n'entre pas dans l'assiette
 d'un pourcentage de parure — Ashoka le Grand l'a tranché, et **dix-huit héros sur
 dix-neuf tiennent désormais dans 0,15 %**. La vitesse d'attaque sans bonus est
 vérifiée à l'écran (Spartacus, 75 coups/min). Il ne reste qu'Hatchepsout.
@@ -2670,3 +2676,115 @@ mesure est donc son tableau « Stats de profil » repris aujourd'hui**, comme ce
 de Marie Curie : s'il dit 21 115, notre règle est bonne et c'est l'ancien relevé
 qui était périmé ; s'il redit 20 408, il reste une règle à trouver, et elle ne
 concernera qu'elle.
+
+---
+
+## 28. Ce n'était pas Hatchepsout, c'était l'ensemble
+
+Le 22/08/2026, Thomas a fourni deux exports de comptes qu'il n'avait jamais
+donnés — **compte C** (109 héros) et **compte D** (98 héros), tous deux d'une ère
+au-dessus de la sienne, avec des casernes au palier 36-37. Le compte C portait la
+réponse.
+
+### Une seconde Hatchepsout, et elle dit la même chose
+
+Le compte C contient une **Hatchepsout de niveau 100 dans la configuration exacte**
+de celle de Thomas : éveil +38 % de PV, Dharma en armement, Égyptien royal en
+parure. Sa ligne de points de vie :
+
+| | PV |
+|---|---|
+| assiette large (la règle d'alors) | 19 932 |
+| **assiette ordinaire** | **19 228** |
+| **son écran** | **19 226** |
+
+Deux points d'écart, sur un compte qui n'avait jamais servi à régler quoi que ce
+soit. Ce n'était donc pas l'héroïne.
+
+### Le motif, en recoupant onze mesures
+
+| héros | parure portée | assiette qui tombe juste |
+|---|---|---|
+| Tomoe · Wallace · Isabella · Jeanne · Lily · Qin Shi Huang · Ashoka · Medusa | **Chacal** (+10 % PV) | **large** |
+| Hatchepsout (Thomas) · Hatchepsout (compte C) · **Louis Pasteur** (compte C) | **Égyptien royal** (+7,5 % PV) | **ordinaire** |
+
+Louis Pasteur a été la mesure décisive : il porte l'Égyptien royal **sans aucun
+éveil qui donne des PV**, donc rien ne brouille la lecture. On prédisait 14 052
+pour l'assiette ordinaire et 14 480 pour la large. **Son écran dit 14 052.**
+
+### La règle : seul le bonus PRINCIPAL prend l'assiette large
+
+Le catalogue ne contient que deux parures qui donnent des points de vie, et la
+seule différence lisible entre elles est **l'ordre de leurs bonus** :
+
+```
+Chacal          PV +10 %,  puis soins reçus +5 %        -> PV en 1er
+Égyptien royal  soins prodigués +7,5 %,  puis PV +7,5 % -> PV en 2e
+```
+
+> Le pourcentage d'une parure prend l'assiette large **seulement s'il est le
+> premier bonus de l'ensemble**. Les suivants se calculent comme l'attribut
+> ordinaire d'un objet.
+
+Ce n'est pas le NOM de l'ensemble qui est codé — c'est le rang du bonus dans sa
+fiche de catalogue, donc la règle s'appliquera d'elle-même aux ensembles à venir.
+Sur les 305 héros des quatre comptes, **trois** sont concernés.
+
+### Le résultat : plus aucune anomalie
+
+| héros | avant | après |
+|---|---|---|
+| **Hatchepsout** | **+287 (1,62 %)** | **+7,6 (0,043 %)** |
+| tous les autres | | inchangés au point près |
+
+Et les huit lignes de points de vie relevées à l'écran, sur deux comptes :
+
+| | site / jeu |
+|---|---|
+| Hatchepsout (Thomas) | 20 409 / **20 408** |
+| Ashoka le Grand | 16 704 / **16 704** |
+| Lily la Tigresse | 16 928 / **16 927** |
+| Qin Shi Huang | 17 866 / **17 866** |
+| Isabella I | 19 379 / **19 379** |
+| Hatchepsout (compte C) | 19 228 / **19 226** |
+| Louis Pasteur (compte C) | 14 052 / **14 052** |
+| Medusa (compte C) | 20 531 / **20 530** |
+
+**Dix-huit héros sur dix-huit tiennent désormais dans 0,15 %**, erreur moyenne
+**0,046 %**, pire écart 0,147 % (Musashi). Le Wallace du compte témoin, qui n'a
+jamais servi à régler quoi que ce soit, reste à **−0,7**.
+
+*Il n'y a plus une seule anomalie dans le dossier.*
+
+### Et un jeu de contrôle inespéré : sept héros sans relique
+
+Le tableur `heroes_of_history_puissance_1.xlsx` contenait des mesures prises
+**relique retirée**. Le terme de relique s'y annule, et deux des héros n'avaient
+jamais servi à rien :
+
+| héros | puissance site / jeu | écart |
+|---|---|---|
+| Jules César | 14 273 / 14 272 | +0,6 |
+| Jeanne d'Arc | 11 194 / 11 195 | −1,1 |
+| **Lancelot du Lac** | 15 869 / 15 873 | −3,8 |
+| Marie Curie (niv. 135) | 20 008 / 20 004 | +4,2 |
+| Léonard de Vinci | 13 994 / 13 990 | +4,2 |
+| **Ménès** (niv. 98) | 11 096 / 11 092 | +4,3 |
+| Achille | 26 031 / 26 038 | −7,4 |
+
+**Erreur moyenne 0,022 %, pire 0,038 %.** Vingt-huit statistiques, toutes exactes
+ou à un point près. Léonard sans sa relique retombe à +4,2, ce qui reconfirme une
+dernière fois que son ancien +141 venait du seul niveau de relique.
+
+### Ce qui reste ouvert, et c'est peu
+
+- **Deux reliques testées isolément sur Achille** (Arc d'Ulysse et Mjolnir, 5★
+  niveau 10) réclament des facteurs de 1,050 et 1,030 là où la formule en donne
+  1,100. Mais le tableur n'a relevé que leur ATQ et leur DÉF : si ces reliques
+  donnent aussi des dégâts de base ou du crit, le calcul isolé est incomplet — ce
+  que suggère le fait que deux reliques de même rareté et de même niveau
+  réclament des facteurs différents. **Refaire le test en notant les quatre
+  statistiques.**
+  La table de rareté, elle, est bonne : passer les 5★ de 0,01 à 0,005 détruit les
+  cinq porteurs de 5★ du compte (−120 à −173 points).
+- **Le bruit de 0,05 %**, qui est plus petit que la résolution de l'écran (§26).
