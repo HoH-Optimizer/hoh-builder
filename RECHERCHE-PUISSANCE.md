@@ -16,7 +16,12 @@ suit est ce qui n'a pas encore abouti.
 propres données. Le §14 raconte comment on l'a localisée. Tout ce qui précède
 est le chemin — utile pour comprendre, mais dépassé sur le fond.
 
-**Le §26 est le dernier état** : Marie Curie a été lue en entier — trois niveaux
+**Le §27 est le dernier état** : le plat de l'éveil n'entre pas dans l'assiette
+d'un pourcentage de parure — Ashoka le Grand l'a tranché, et **dix-huit héros sur
+dix-neuf tiennent désormais dans 0,15 %**. La vitesse d'attaque sans bonus est
+vérifiée à l'écran (Spartacus, 75 coups/min). Il ne reste qu'Hatchepsout.
+
+**Le §26** : Marie Curie a été lue en entier — trois niveaux
 consécutifs, son tableau « Stats de profil » complet, l'écran de sa caserne. Vingt
 et un de ses vingt-deux nombres sont exacts, et le résidu de +13 sur sa puissance
 est **plus petit que la résolution de l'écran** : l'intervalle compatible avec les
@@ -2580,3 +2585,88 @@ découverte.**
 | Marie Curie | **entièrement lue** : 21 nombres sur 22 exacts, résidu sous la résolution de l'écran |
 | Léonard de Vinci | relevé périmé d'un niveau de relique — résolu |
 | Ashoka · Hatchepsout | **la seule question ouverte** (assiette des PV à deux ensembles) |
+
+---
+
+## 27. Le plat de l'éveil n'est pas dans l'assiette
+
+Thomas a ouvert le tableau d'Ashoka le Grand le 21/08/2026 au soir. Sa ligne de
+points de vie dit **16 704**. On calculait 16 914.
+
+### Ce qu'Ashoka était seul à pouvoir dire
+
+Il est le **seul héros du compte** à cumuler les deux conditions : un éveil qui
+donne des points de vie **à plat** (+300, +600, +1200) et un ensemble de PARURE
+qui en donne en **pourcentage** (le Chacal, +10 %). Trente et un héros ont un
+éveil plat sur les PV ; aucun autre ne porte en plus la parure qui le révèle.
+
+| assiette du pourcentage de parure | Ashoka |
+|---|---|
+| niveau + éveil + caserne + objets *(l'ancienne règle)* | 16 914 |
+| **niveau + éveil EN POURCENTAGE + caserne + objets** | **16 704** |
+| **son écran** | **16 704** |
+
+### La règle, et elle est ordinaire
+
+> Les pourcentages s'appliquent tous à la même assiette ; les additions PLATES se
+> posent par-dessus **sans la nourrir**.
+
+C'est un comportement de moteur de jeu banal, et il réconcilie les deux héros
+qu'on croyait contradictoires :
+
+- **Lily la Tigresse** : son éveil est un POURCENTAGE (+38 %), donc il reste dans
+  l'assiette. Elle retombe sur ses 16 927 (on calcule 16 928), inchangée.
+- **Ashoka** : son éveil est PLAT, donc il en sort. 16 704, au point près.
+
+**Ce n'est pas un ajustement.** C'est la correction d'une valeur que l'écran
+contredisait de 210 points — une statistique lue directement, pas une puissance
+dont on aurait déduit quelque chose.
+
+### Le résultat
+
+| | avant | après |
+|---|---|---|
+| Ashoka, points de vie | 16 914 | **16 704** *(son écran)* |
+| Ashoka, puissance | +58 (0,52 %) | **−2,6 (0,024 %)** |
+| Lily, Marie Curie, Wallace, les quinze autres | | **inchangés au point près** |
+| erreur moyenne (18 héros) | 0,048 % | **0,046 %** |
+
+**Dix-huit héros sur dix-neuf tiennent maintenant dans 0,15 %.**
+
+### Et la vitesse sans bonus est vérifiée
+
+Le même soir, Thomas a lu la fiche de **Spartacus** : **75 coups/min**, sans
+aucun bonus de vitesse. C'est exactement la valeur du catalogue, et elle tombe
+sur un entier — donc aucun arrondi ne peut la maquiller.
+
+Le terme « vitesse d'attaque SANS BONUS » de la formule (§15), qui multiplie la
+rareté et la capacité et qu'aucun écran n'avait jamais montré, est désormais
+confirmé.
+
+### Au passage : les vitesses de base ne sont pas des nombres bizarres
+
+42,84 · 46,14 · 49,98 · 54,54 · 66,66 · 100,02 coups/min avaient l'air tirés au
+sort. Ils sont tous **1 ÷ un nombre rond de dixièmes de seconde** :
+
+| catalogue | coups/min | c'est |
+|---|---|---|
+| 0,714 · 0,769 · 0,833 · 0,909 | 42,84 · 46,14 · 49,98 · 54,54 | 1 coup toutes les 1,4 · 1,3 · 1,2 · 1,1 s |
+| 1,000 · 1,111 · 1,25 | 60 · 66,66 · 75 | 1 · 0,9 · 0,8 s |
+| 1,667 · 2,0 · 2,5 | 100,02 · 120 · 150 | 0,6 · 0,5 · 0,4 s |
+
+Le jeu pense en **secondes entre deux coups**, et le catalogue stocke l'inverse
+arrondi à trois décimales. Remplacer ces valeurs par les fractions exactes fait
+passer l'erreur moyenne de 5,19 à 5,30 points : **rien à changer**, mais on sait
+d'où viennent ces nombres.
+
+### Ce qui reste : Hatchepsout, et elle seule
+
+Elle est désormais **la seule anomalie du compte** : +287, soit 1,62 %. Son éveil
+est un pourcentage comme celui de Lily, donc la nouvelle règle ne la déplace pas,
+et elle réclame toujours l'assiette la plus étroite — le niveau seul.
+
+Son relevé date du 20/08, et le §26 a montré qu'un relevé rouille. **La prochaine
+mesure est donc son tableau « Stats de profil » repris aujourd'hui**, comme celui
+de Marie Curie : s'il dit 21 115, notre règle est bonne et c'est l'ancien relevé
+qui était périmé ; s'il redit 20 408, il reste une règle à trouver, et elle ne
+concernera qu'elle.

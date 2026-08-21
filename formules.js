@@ -319,8 +319,24 @@ window.FORMULES = {
       // Chacal, l'éveil ne donne pas de PV : l'assiette sans éveil et l'assiette
       // avec éveil y sont le même nombre, et les deux tombaient juste.
       //   sans l'éveil : 16 641   avec l'éveil : 16 928   le jeu : 16 927
+      // ET LE PLAT DE L'ÉVEIL N'EST PAS DANS L'ASSIETTE. Ashoka le Grand l'a
+      // tranché le 21/08/2026, et c'est le seul héros du compte qui pouvait le
+      // faire : il est le seul à cumuler un éveil PLAT sur les points de vie
+      // (+300, +600, +1200) et une parure qui en donne aussi (le Chacal, +10 %).
+      //
+      //   avec les 2 100 plats dans l'assiette : 16 914
+      //   sans                                 : 16 704
+      //   son écran « Stats de profil »        : 16 704
+      //
+      // Lily la Tigresse ne contredit pas : son éveil est un POURCENTAGE (+38 %),
+      // donc il reste dans l'assiette, et elle retombe sur ses 16 927.
+      //
+      // La lecture est ordinaire pour un moteur de jeu : les pourcentages
+      // s'appliquent tous à la même assiette, et les additions plates se posent
+      // par-dessus sans la nourrir. Ce n'est pas un réglage — c'est un nombre lu
+      // à l'écran qui contredisait le nôtre de 210 points.
       const assietteParure = this.SET_SUR_CASERNE.has(stat)
-        ? apresEveil + partCaserne + partObjet
+        ? auNiveau * (1 + eveilPct) + partCaserne + partObjet
         : auNiveau;
       partParure = assietteParure * pourcentageParure;
       partPourcentage = partObjet + partParure;
