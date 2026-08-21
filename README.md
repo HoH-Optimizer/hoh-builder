@@ -117,7 +117,7 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 
 | Manque | Conséquence |
 |---|---|
-| ~~La puissance est **estimée**~~ | **Réglé le 20/08/2026.** La formule est celle du jeu, et **plus aucun nombre n’y est ajusté** — coefficients, taux de montée, arrondis, tout est lu dans ses données. Le terme qu’on ne savait pas expliquer était la **puissance de l’escouade** que la caserne donne au héros. Sur un second compte, jamais utilisé pour régler quoi que ce soit : **8 092 pour 8 093**. Restent un point de vie de trop sur vingt mille, et un point d’attaque sur trois héros. Les §20 à §24 du journal racontent tout. |
+| ~~La puissance est **estimée**~~ | **Réglé le 20/08/2026.** La formule est celle du jeu, et **plus aucun nombre n’y est ajusté** — coefficients, taux de montée, arrondis, tout est lu dans ses données. Le terme qu’on ne savait pas expliquer était la **puissance de l’escouade** que la caserne donne au héros. Sur un second compte, jamais utilisé pour régler quoi que ce soit : **8 092 pour 8 093**. **Dix-huit héros sur dix-huit tiennent dans 0,15 %**, erreur moyenne **0,046 %**, et sept héros mesurés sans relique tombent à **0,022 %**. Il ne reste plus une seule anomalie. Les §20 à §28 du journal racontent tout. |
 | Aucun conseil sur le panthéon | L'onglet montre ce que chaque nœud rapporte, il ne recommande pas de chemin. Optimiser la puissance affichée donnerait de mauvais conseils : « Ruine généralisée » (+10 % de dégâts de zone) ne rapporte **aucune** puissance alors que c'est sans doute l'un des meilleurs nœuds au combat, tandis que l'esquive, qui en rapporte le plus, ne sert que si l'on encaisse. L'arbitrage reste au joueur. |
 | Panthéon de quatre classes sur six | Les arbres des attaquants individuels, des attaquants de zone, des soigneurs et des défenseurs sont relevés — 72 % des héros du compte de test. Manquent les manipulateurs et les soutiens. Un nœud inconnu est ignoré et signalé. |
 | Ère du joueur | Elle n'est écrite nulle part dans l'export : on la déduit du bâtiment le plus avancé de la capitale, et un menu permet de la corriger. Elle commande la valeur des reliques. |
@@ -184,14 +184,14 @@ catalogue ne note la statistique que lorsque le héros s'écarte du coup unique 
 seconde ; les 128 autres ont tous une vitesse d'attaque de 1, et donc 90 de dégâts de base.
 
 Vérifié contre le jeu sur Marie Curie, dont le catalogue ne disait rien : avec 90 au
-départ, le site calcule 730 là où le jeu affiche 762, et les 32 d'écart sont exactement
-l'apport de panthéon qui lui manque encore (voir « Limites connues » ci-dessus).
+départ, le site retombe exactement sur les 775 dégâts de base que son écran affiche,
+panthéon compris.
 
 ### Ce qui entre dans la puissance, et ce qui n'y entre pas
 
 Le panthéon a servi de banc d'essai : survoler un nœud sans l'activer affiche la puissance
 qu'il ferait gagner, et un nœud ne change qu'une chose à la fois. Onze équations par héros,
-gratuitement. Trois héros de trois classes ont été relevés ainsi.
+gratuitement. Deux arbres complets ont été relevés ainsi, nœud par nœud.
 
 **Huit grandeurs seulement font bouger la puissance** : attaque, défense, points de vie,
 dégâts de base, chances de coup critique, dégâts critiques, vitesse d'attaque, esquive.
@@ -202,8 +202,10 @@ effets conditionnels de combat. Un nœud qui donne « +10 % de dégâts de zone 
 exactement **zéro** point de puissance.
 
 Chacune des huit entre **en racine** — dix-huit relevés entre 0,483 et 0,489 — et la
-capacité entre **linéairement**. Une **constante** s'ajoute enfin au tout, et c'est elle
-qui explique pourquoi les exposants mesurés ne tombaient pas sur ½ tout rond.
+capacité entre **linéairement**. Le terme qui s'ajoute enfin au tout, et qu'on a longtemps
+pris pour une constante, est la **puissance de l'escouade** que la caserne donne au héros :
+le jeu additionne les deux sous son nom. C'est lui qui expliquait pourquoi les exposants
+mesurés ne tombaient pas sur ½ tout rond.
 
 ### Les bonus d'ensemble : deux assiettes, selon la taille de l'ensemble
 
@@ -216,6 +218,14 @@ large : le niveau, **plus la caserne**, plus ce que les pourcentages ont déjà 
 |---|---|---|
 | Armement (main, vêtement) | 2 | niveau seul, comme un objet |
 | Parure (chapeau, cou, anneau) | 3 | niveau + caserne + apport des pourcentages |
+
+**Et seul le bonus PRINCIPAL de la parure prend l'assiette large.** Le catalogue ne porte
+que deux parures qui donnent des points de vie, et elles ne se comportent pas pareil : le
+Chacal annonce les PV **en premier** et prend l'assiette large ; l'Égyptien royal les
+annonce **en second** et retombe sur l'assiette ordinaire. Ce qui décide n'est donc pas le
+nom de l'ensemble mais le rang du bonus dans sa fiche. Onze mesures sur trois comptes le
+disent, dont deux Hatchepsout et un Louis Pasteur qui n'a aucun éveil pour brouiller la
+lecture.
 
 Mesuré sur quatre héros, au point près : Tomoe Gozen et William Wallace tiennent leurs
 10 % de points de vie du Chacal, une parure — assiette large. Mian Tansen tient ses 5 %

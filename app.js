@@ -1067,10 +1067,26 @@ function rendrePantheon(contexte, apports) {
   const arbre = (window.PANTHEON_JEU || {})[CLASSE_PANTHEON[contexte.details?.classe]];
 
   if (!arbre) {
+    // Le décompte se lit dans les données plutôt que de s'écrire à la main : il
+    // était resté à « trois » alors que les défenseurs avaient été ajoutés.
+    const faites = ['aucune', 'une', 'deux', 'trois', 'quatre', 'cinq', 'six']
+      [Object.keys(window.PANTHEON_JEU || {}).length] || '?';
+    // ET IL FAUT LE DIRE QUAND ÇA COÛTE QUELQUE CHOSE. Si le héros a des nœuds
+    // activés dans un arbre qu'on ne connaît pas, le site ne peut pas les
+    // compter : ses statistiques ET sa puissance sont alors SOUS-ESTIMÉES, et se
+    // taire là-dessus reviendrait à afficher un chiffre faux sans le dire.
+    // Vu sur trois héros de trois comptes différents : deux soutiens, un
+    // manipulateur.
+    const actifs = noeudsReels(contexte.hero).length;
     vue.innerHTML = `<p class="discret videPantheon">L'arbre de panthéon des
       <strong>${esc(nomClasse(contexte.details?.classe))}</strong> n'a pas encore été relevé.
       Il n'existe dans aucune donnée du jeu : il faut le photographier nœud par nœud.
-      Trois classes sur six sont faites.</p>`;
+      ${faites.charAt(0).toUpperCase() + faites.slice(1)} classes sur six sont faites.</p>`
+      + (actifs
+        ? `<p class="alerte">Ce héros a <strong>${actifs} nœud${actifs > 1 ? 's' : ''} activé${actifs > 1 ? 's' : ''}</strong>
+             que le site ne sait pas lire : ses statistiques et sa puissance sont donc
+             <strong>sous-estimées</strong>.</p>`
+        : '');
     return;
   }
 
@@ -1177,8 +1193,10 @@ function rendreArbrePantheon(contexte) {
   const classe = CLASSE_PANTHEON[contexte.details?.classe];
   const arbre = (window.PANTHEON_JEU || {})[classe];
   if (!arbre) {
+    const actifs = noeudsReels(contexte.hero).length;
     hote.innerHTML = `<p class="discret videArbre">L'arbre des
-      <strong>${esc(nomClasse(contexte.details?.classe))}</strong> n'a pas encore été relevé.</p>`;
+      <strong>${esc(nomClasse(contexte.details?.classe))}</strong> n'a pas encore été relevé.${
+        actifs ? ` Ses ${actifs} nœud${actifs > 1 ? 's' : ''} activé${actifs > 1 ? 's' : ''} ne ${actifs > 1 ? 'sont' : 'est'} pas compté${actifs > 1 ? 's' : ''}.` : ''}</p>`;
     return;
   }
 
