@@ -16,7 +16,14 @@ suit est ce qui n'a pas encore abouti.
 propres données. Le §14 raconte comment on l'a localisée. Tout ce qui précède
 est le chemin — utile pour comprendre, mais dépassé sur le fond.
 
-**Le §25 est le dernier état** : le panthéon est mis hors de cause sur pièce, et
+**Le §26 est le dernier état** : Marie Curie a été lue en entier — trois niveaux
+consécutifs, son tableau « Stats de profil » complet, l'écran de sa caserne. Vingt
+et un de ses vingt-deux nombres sont exacts, et le résidu de +13 sur sa puissance
+est **plus petit que la résolution de l'écran** : l'intervalle compatible avec les
+entiers affichés fait 23,7 points de large, et le jeu comme le site tombent dedans.
+Ce n'est plus la formule qui manque de précision, c'est la mesure.
+
+**Le §25** : le panthéon est mis hors de cause sur pièce, et
 les dix-neuf puissances relevées sont enfin comptées ensemble — **dix-sept héros
 sur vingt tiennent dans 0,15 %**, moyenne 0,048 %. Les trois qui restent ont
 chacun une cause identifiée, et aucune n'est la formule. Deux pistes ouvertes ce
@@ -2472,3 +2479,104 @@ arrondi qu'on découvre, c'est un biais qu'on masque.
 cerné : en ajustant les taux de montée on trouve 0,0399 par niveau au lieu de
 0,04, et ça colle à cinq héros — mais le catalogue écrit 0,04. Ça vaut 0,03 % :
 noté, laissé tranquille.
+
+---
+
+## 26. Marie Curie, lue en entier — et la limite de l'instrument
+
+Thomas a envoyé le 21/08/2026 au soir trois captures qui, ensemble, ferment le
+dossier sur cette héroïne : son écran d'amélioration à **trois niveaux
+consécutifs**, son tableau **« Stats de profil » complet**, et l'écran de sa
+**caserne de siège**.
+
+### Les trois niveaux — les taux de montée sont justes
+
+| niveau | ATQ | DÉF | PV | DÉG base | puissance |
+|---|---|---|---|---|---|
+| 135 | 2286 / **2285** | 1737 / **1736** | 18306 / **18305** | 766 / **766** | 21 309 / **21 297** |
+| 136 | 2293 / **2293** | 1742 / **1742** | 18382 / **18381** | 771 / **771** | 21 468 / **21 456** |
+| 137 | 2300 / **2300** | 1747 / **1747** | 18458 / **18457** | 775 / **775** | 21 628 / **21 615** |
+
+*(site / jeu)*
+
+Nos incréments de puissance : **+158,6 · +159,1 · +159,8**. Ceux du jeu : **+159 ·
++159 · +159**. La progression est suivie au dixième de point — les taux de montée
+du catalogue sont bons, et l'écart ne grandit pas avec le héros.
+
+### Le tableau complet — vingt-deux nombres, vingt-et-un exacts
+
+| ligne | le jeu (niveau 137) | le site |
+|---|---|---|
+| Attaque | 518 · 87 · 112 · 311 · 127 → **2 300** | identique |
+| Défense | 518 · — · 38 · 64 · — → **1 747** | identique |
+| Points de vie | 4 670 · — · — · 70 · — → **18 457** | 18 45**8** |
+| Dégâts de base | — · — · — · 93 · 33 → **775** | identique |
+| Dégâts crit | 0 % · +2,7 % objet · +20 % panthéon → **172,7 %** | **172,7 %** |
+| Chances de crit · Esquive | 5 % · 5 % (panthéon) | identiques |
+| Portée · Vitesse d'attaque | 6 · **62 coups/min** (+2 d'équipement) | identiques |
+| Charge normale 8 s | ⇒ régén. focus **12,5** | **12,5** |
+
+**Toutes les entrées de la formule sont désormais lues à l'écran, et toutes sont
+justes.** Cela enterre au passage la piste des dégâts crit ouverte le soir même :
+le jeu affiche bien 172,7 %, notre valeur était la bonne, et le « 1,7007 magique »
+qui aurait fait tomber la puissance pile était une coïncidence — la troisième de
+la journée.
+
+### La caserne de siège innocente l'escouade
+
+| | le jeu | le site |
+|---|---|---|
+| unité (catapulte), ATQ | **1 459** | 1 459 |
+| DÉF | **699** | 699 |
+| PV | **6 178** | 6 17**9** |
+| taille d'escouade | **1** | 1 |
+
+**J'avais conclu une heure plus tôt que l'escouade était surestimée de 0,9 % — par
+élimination. C'était faux, et l'écran le dit.** L'unité est calculée juste, comme
+celle d'infanterie du §21.
+
+### La limite de l'instrument
+
+Reste +13 sur sa puissance. Or le jeu n'affiche que des ENTIERS, et il les
+PLAFONNE (§22) : chaque statistique n'est donc connue qu'à un point près. En
+propageant ces quatre incertitudes dans la formule :
+
+| | |
+|---|---|
+| puissance compatible avec l'écran | **[21 606,4 ; 21 630,2]** |
+| largeur de l'intervalle | **23,7 points** |
+| ce que dit le jeu | 21 615 |
+| ce que dit le site | 21 628 |
+
+**Les deux nombres tiennent dans le même intervalle.** Aucune capture d'écran ne
+peut départager notre modèle du jeu sur ce héros : l'écart résiduel est plus petit
+que la résolution de l'instrument.
+
+C'est la vraie raison pour laquelle les résidus de 0,05 % ne tombent pas, et
+pourquoi tout ce qui a été tenté aujourd'hui pour les faire tomber a échoué au
+contrôle. **Ce n'est pas la formule qui manque de précision, c'est la mesure.**
+
+### Ce qui reste vrai, et qu'on refuse encore
+
+Nos valeurs sont un cheveu TROP HAUTES, et ça se voit directement : les points de
+vie sont à +1 chez Marie Curie aux quatre niveaux relevés, **et à +1 aussi sur
+l'unité de sa caserne**. Cinq fois sur cinq. Notre attaque exacte (2 300,07) et
+nos PV (18 458) sortent même de l'intervalle que l'écran autorise.
+
+Les taux ajustés du §24 (0,0399 par niveau, 0,0608 par ascension pour les PV et
+les dégâts) suppriment ce biais — le décalage moyen passe de **+3,13 à −0,81** et
+l'erreur moyenne de 5,19 à 4,19 points. Mais ils font passer Achille de −1,8 à
+−13, et le catalogue écrit 0,04 et 0,06.
+
+**Refusé, pour la même raison qu'au §24 et qu'au §25 : le catalogue a raison contre
+l'ajustement, et un contrôle qui casse un héros pour en réparer trois n'est pas une
+découverte.**
+
+### L'état, au 21 août 2026 au soir
+
+| | |
+|---|---|
+| 17 héros sur 19 | ≤ 0,15 %, moyenne 0,048 % |
+| Marie Curie | **entièrement lue** : 21 nombres sur 22 exacts, résidu sous la résolution de l'écran |
+| Léonard de Vinci | relevé périmé d'un niveau de relique — résolu |
+| Ashoka · Hatchepsout | **la seule question ouverte** (assiette des PV à deux ensembles) |
