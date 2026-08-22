@@ -140,6 +140,31 @@
         <h2 id="nomHeros">Sélectionne un héros</h2>
         <p id="infoHeros" class="discret"></p>
       </div>
+
+      <!-- REMPLIR LES CINQ EMPLACEMENTS D'UN COUP, avec ce que l'inventaire a de
+           mieux POUR CE HÉROS-LÀ. La barre est posée dans l'en-tête et non dans la
+           colonne simulée, pour ne pas décaler le miroir : les deux moitiés du
+           comparateur doivent rester à la même hauteur.
+
+           Ce que le bouton propose n'est pas un verdict : la configuration se
+           retouche ensuite pièce par pièce comme le reste, et « Rétablir mon
+           équipement réel » la défait d'un clic. -->
+      <div class="barreOptimisation">
+        <button id="optimiser" class="bouton" type="button"
+                title="Cherche, dans ton inventaire, la combinaison qui donne la plus grosse puissance estimée à ce héros — bonus d'ensemble compris.">
+          Équiper au mieux
+        </button>
+        <label class="critereOptimisation"
+               title="Ce que la recherche maximise. « Puissance estimée » pèse le héros entier ; viser une ligne précise sert quand on sait ce qu'on veut faire du héros — et coûte souvent de la puissance, que le compte rendu affiche alors quand même.">
+          pour
+          <select id="critereOptimisation"></select>
+        </label>
+        <label class="caseACocher"
+               title="Décoché, le calcul ne pioche que dans les objets que personne ne porte. Coché, il prend le meilleur où qu'il soit, quitte à le retirer à un autre héros — en simulation seulement : ton compte n'est jamais touché.">
+          <input type="checkbox" id="optimiserToutInventaire"> Piocher aussi chez les autres héros
+        </label>
+        <p id="etatOptimisation" class="etatOptimisation discret" hidden></p>
+      </div>
     </div>
     <div class="comparateur">
       <div class="cote">
@@ -155,6 +180,7 @@
 
       <div class="cote">
         <h3>Équipement simulé<span class="sousTitreCote">clique pour changer</span></h3>
+
         <div id="emplacements" class="emplacements"></div>
         <div id="sets" class="listeSets"></div>
       </div>

@@ -1647,6 +1647,327 @@ function rendreSelecteur() {
     + (lignes || '<li class="discret">Aucune pièce ne réunit ces conditions.</li>');
 }
 
+/* ------------------------------------------------- équiper au mieux
+
+   « Quel est le meilleur équipement pour CE héros ? » — la question que tout
+   joueur se pose devant un inventaire de huit cents pièces, et à laquelle la main
+   ne sait pas répondre : essayer les cinq emplacements l'un après l'autre, c'est
+   des millions de combinaisons.
+
+   CE QUE LE BOUTON CHERCHE SE CHOISIT, dans le menu posé à côté de lui.
+
+   Par défaut, la PUISSANCE ESTIMÉE : c'est le seul critère qui pèse le héros
+   entier, puisque la formule multiplie entre elles l'attaque, la défense, les
+   points de vie, les crits et la vitesse — un tank et un frappeur n'y gagnent
+   donc pas les mêmes pièces. Mais n'importe quelle ligne de la feuille de
+   statistiques peut prendre sa place : « le plus de points de vie », « le plus de
+   soin prodigué », « la charge la plus courte ». Le jeu, lui, ne classe que par
+   puissance ; viser une ligne précise sert quand on sait ce qu'on veut faire du
+   héros, et que la puissance n'en dit rien.
+
+   VISER UNE LIGNE COÛTE LE RESTE, et il faut le savoir : maximiser l'attaque seule
+   fait volontiers perdre de la puissance. Le compte rendu affiche donc toujours
+   les deux — la ligne visée ET la puissance — pour qu'on voie ce qu'on a payé.
+
+   Ce que le bouton propose n'est de toute façon pas un verdict : la configuration
+   se retouche ensuite pièce par pièce comme le reste, et « Rétablir mon
+   équipement réel » la défait. C'est en cela qu'il ne contredit pas le parti pris
+   de l'arbre de panthéon, qui ne conseille rien : un nœud de panthéon se paie et
+   ne se reprend pas, un objet se change d'un clic et ne coûte rien.
+
+   COMMENT, sans essayer les millions de combinaisons. Trois temps :
+
+     1. ÉLAGAGE. Chaque objet est essayé seul, à sa place, sur l'équipement du
+        moment. On ne garde que les meilleurs — plus, pour chaque ensemble, ses
+        deux meilleures pièces par emplacement, sans quoi un bonus d'ensemble ne
+        pourrait jamais se former.
+     2. PLANS D'ENSEMBLE. Un bonus d'ensemble demande DEUX ou TROIS pièces posées
+        en même temps : aucune amélioration pièce par pièce n'y arrive jamais,
+        chaque pas isolé faisant perdre. On énumère donc les plans — « armement
+        Samouraï complet », « parure libre », etc. — et on les croise.
+     3. AFFINAGE. Les meilleurs plans sont repris un par un, et l'on améliore
+        emplacement par emplacement tant que ça monte. Un plan qui ne valait pas
+        son bonus se défait alors de lui-même : rien n'est imposé, tout est mesuré.
+
+   Le résultat est le meilleur TROUVÉ, pas le meilleur possible — mais chaque
+   chiffre qu'il affiche est celui du tableau de statistiques, calculé par la même
+   chaîne, et l'écart se lit comme n'importe quelle autre retouche.              */
+
+const SLOTS_OPTIM = ['Hand', 'Garment', 'Hat', 'Neck', 'Ring'];
+const SLOTS_ARMEMENT = ['Hand', 'Garment'];
+const SLOTS_PARURE = ['Hat', 'Neck', 'Ring'];
+
+// Combien de candidats on garde par emplacement après l'élagage. Assez large pour
+// que l'affinage ait de quoi travailler, assez court pour rester instantané.
+const CANDIDATS_PAR_SLOT = 14;
+const CANDIDATS_PAR_SET = 2;
+const PLANS_AFFINES = 8;
+
+// Le menu des critères reprend les familles de l'écran « Stats », dans le même
+// ordre : ce qu'on cherche à maximiser se retrouve là où on a l'habitude de le
+// lire. Les deux charges y figurent aussi — on les cherche alors les plus
+// COURTES, la seule ligne du tableau où descendre est un gain.
+const CRITERE_PUISSANCE = 'puissance';
+let critereOptimisation = (() => {
+  try { return localStorage.getItem('hoh.critere') || CRITERE_PUISSANCE; }
+  catch { return CRITERE_PUISSANCE; }
+})();
+
+// LE SCORE D'UNE CONFIGURATION. « valeur » est ce qu'on maximise ; « puissance »
+// départage les ex æquo, et ils sont légion — des dizaines de configurations
+// donnent exactement la même attaque, autant retenir la plus puissante d'entre
+// elles plutôt que la première venue.
+function evaluer(contexte, choix) {
+  const liste = SLOTS_OPTIM.map((s) => objets.get(choix[s])).filter(Boolean);
+  const stats = feuille(contexte, agreger(liste));
+  const puissance = FORMULES.puissance(stats, contexte) ?? -Infinity;
+  if (critereOptimisation === CRITERE_PUISSANCE) return { valeur: puissance, puissance, stats };
+  const v = valeurStat(critereOptimisation, stats);
+  // Sur les charges, gagner c'est descendre : on maximise l'opposé.
+  return { valeur: v.inverse ? -v.brut : v.brut, puissance, stats };
+}
+
+const meilleurQue = (a, b) => !b
+  || a.valeur > b.valeur + 1e-9
+  || (Math.abs(a.valeur - b.valeur) <= 1e-9 && a.puissance > b.puissance + 1e-6);
+
+// L'inventaire disponible pour ce héros, emplacement par emplacement. Ce qu'il
+// porte déjà lui reste acquis ; le reste dépend de la case à cocher.
+function inventaireDisponible(heroId, chezLesAutres) {
+  const dispo = { Hand: [], Garment: [], Hat: [], Neck: [], Ring: [] };
+  for (const o of donnees.compte.equipements) {
+    if (!dispo[o.emplacement]) continue;
+    const p = porteur.get(o.id);
+    if (p && p !== heroId && !chezLesAutres) continue;
+    dispo[o.emplacement].push(o);
+  }
+  return dispo;
+}
+
+// Premier temps : chaque objet est essayé seul, à sa place, sur la configuration
+// de départ. Un classement grossier — il ignore ce que les autres emplacements
+// deviendront — mais il suffit à écarter les neuf dixièmes de l'inventaire.
+function elaguer(contexte, depart, dispo) {
+  const notes = new Map();
+  const pool = {};
+  for (const slot of SLOTS_OPTIM) {
+    const classes = dispo[slot]
+      .map((o) => {
+        const note = evaluer(contexte, { ...depart, [slot]: o.id });
+        notes.set(o.id, note);
+        return { o, note };
+      })
+      .sort((a, b) => (meilleurQue(a.note, b.note) ? -1 : 1));
+
+    const gardes = new Map(classes.slice(0, CANDIDATS_PAR_SLOT).map(({ o }) => [o.id, o]));
+    // Les meilleures pièces de chaque ensemble, même médiocres prises seules :
+    // c'est le bonus d'ensemble qui les rachètera, et il n'apparaît qu'à deux ou
+    // trois pièces posées ensemble.
+    const parSet = {};
+    for (const { o } of classes) {
+      const n = (parSet[o.set] = (parSet[o.set] || 0) + 1);
+      if (n <= CANDIDATS_PAR_SET) gardes.set(o.id, o);
+    }
+    pool[slot] = [...gardes.values()];
+  }
+  return { pool, notes };
+}
+
+// Deuxième temps : les plans. Un plan nomme l'ensemble à réunir sur un groupe
+// d'emplacements ; « null » est le plan libre, qui n'impose rien.
+function plansPossibles(pool, slots) {
+  const plans = [null];
+  const occupation = {};
+  for (const slot of slots) {
+    for (const o of pool[slot]) (occupation[o.set] ||= new Set()).add(slot);
+  }
+  for (const [set, occupes] of Object.entries(occupation)) {
+    const taille = taillesDeSet.get(set) ?? slots.length;
+    // Un ensemble d'armement se porte en deux pièces, une parure en trois : le
+    // plan n'a de sens que si l'inventaire peut vraiment le compléter ici.
+    if (taille <= slots.length && occupes.size >= taille) plans.push(set);
+  }
+  return plans;
+}
+
+// Les pièces qu'un plan pose : celles de l'ensemble là où il en a, les mieux
+// classées partout ailleurs.
+function remplirSelonPlan(choix, plan, slots, pool, notes) {
+  const mieux = (a, b) => (meilleurQue(notes.get(b.id), a ? notes.get(a.id) : null) ? b : a);
+  for (const slot of slots) {
+    const candidats = plan ? pool[slot].filter((o) => o.set === plan) : pool[slot];
+    const retenu = (candidats.length ? candidats : pool[slot]).reduce(mieux, null);
+    choix[slot] = retenu ? retenu.id : null;
+  }
+  return choix;
+}
+
+// Troisième temps : on améliore un emplacement à la fois, tant que ça monte.
+// Chaque essai est une feuille de statistiques complète — donc de vrais chiffres,
+// pas une approximation — et un ensemble qui ne vaut pas son bonus se défait tout
+// seul.
+function affiner(contexte, choix, pool) {
+  let meilleur = evaluer(contexte, choix);
+  for (let tour = 0; tour < 6; tour++) {
+    let abouge = false;
+    for (const slot of SLOTS_OPTIM) {
+      let retenu = choix[slot];
+      for (const o of pool[slot]) {
+        if (o.id === choix[slot]) continue;
+        const score = evaluer(contexte, { ...choix, [slot]: o.id });
+        if (meilleurQue(score, meilleur)) { meilleur = score; retenu = o.id; }
+      }
+      if (retenu !== choix[slot]) { choix[slot] = retenu; abouge = true; }
+    }
+    if (!abouge) break;
+  }
+  return { choix, score: meilleur };
+}
+
+// La recherche complète, pour un héros.
+function chercherMeilleurEquipement(heroId, chezLesAutres) {
+  const contexte = contexteHeros(heroId);
+  const dispo = inventaireDisponible(heroId, chezLesAutres);
+  if (SLOTS_OPTIM.every((s) => !dispo[s].length)) return null;
+
+  // On part de ce qui est simulé en ce moment : c'est le point de comparaison du
+  // joueur, et un point de départ déjà correct pour l'élagage.
+  const depart = {};
+  for (const slot of SLOTS_OPTIM) depart[slot] = (equipe[heroId] || {})[slot] ?? null;
+
+  const { pool, notes } = elaguer(contexte, depart, dispo);
+
+  // Les plans d'armement et de parure se croisent : les statistiques se
+  // multiplient entre elles, on ne peut donc pas choisir les deux moitiés
+  // séparément.
+  const combinaisons = [];
+  for (const armement of plansPossibles(pool, SLOTS_ARMEMENT)) {
+    for (const parure of plansPossibles(pool, SLOTS_PARURE)) {
+      const choix = {};
+      remplirSelonPlan(choix, armement, SLOTS_ARMEMENT, pool, notes);
+      remplirSelonPlan(choix, parure, SLOTS_PARURE, pool, notes);
+      combinaisons.push({ choix, score: evaluer(contexte, choix) });
+    }
+  }
+  // L'équipement du moment concourt aussi : si rien ne fait mieux, il gagne.
+  const avant = evaluer(contexte, depart);
+  combinaisons.push({ choix: { ...depart }, score: avant });
+
+  combinaisons.sort((a, b) => (meilleurQue(a.score, b.score) ? -1 : 1));
+  let gagnant = null;
+  for (const candidat of combinaisons.slice(0, PLANS_AFFINES)) {
+    const affine = affiner(contexte, { ...candidat.choix }, pool);
+    if (!gagnant || meilleurQue(affine.score, gagnant.score)) gagnant = affine;
+  }
+  return { ...gagnant, avant };
+}
+
+// Poser le résultat sur le héros. « equiper » se charge de retirer chaque pièce à
+// son ancien porteur — c'est déjà ce qui se passe quand on choisit un objet à la
+// main dans le sélecteur.
+function appliquerEquipement(heroId, choix) {
+  let changees = 0;
+  for (const slot of SLOTS_OPTIM) {
+    const avant = (equipe[heroId] || {})[slot] ?? null;
+    const apres = choix[slot] ?? null;
+    if (avant === apres) continue;
+    changees++;
+    if (apres == null) retirer(heroId, slot);
+    else equiper(heroId, slot, apres);
+  }
+  return changees;
+}
+
+// CE QUE LA RECHERCHE A TROUVÉ, en une phrase. On y écrit toujours la puissance,
+// même quand ce n'est pas elle qu'on visait : c'est le prix de la ligne visée, et
+// il est parfois lourd.
+function compteRenduOptimisation(changees, score, avant) {
+  if (!changees) return 'Rien à changer : c\'est déjà la meilleure configuration trouvée.';
+  const pieces = `${changees} pièce${changees > 1 ? 's' : ''} changée${changees > 1 ? 's' : ''}`;
+  const ecartPuissance = Math.round(score.puissance) - Math.round(avant.puissance);
+  const puissance = `puissance estimée ${signe(ecartPuissance, nombre)}`;
+
+  if (critereOptimisation === CRITERE_PUISSANCE) return `${pieces} · ${puissance}.`;
+
+  // La ligne visée est écrite comme le tableau l'écrit — en points, en secondes
+  // ou en pourcentage selon la statistique — et de part et d'autre d'une flèche,
+  // parce qu'un écart seul ne dit pas d'où l'on part.
+  const nom = libelleStat(critereOptimisation);
+  const de = valeurStat(critereOptimisation, avant.stats).texte;
+  const a = valeurStat(critereOptimisation, score.stats).texte;
+  // La ligne visée ne bouge pas toujours : rien dans l'inventaire ne donne
+  // d'esquive, et c'est alors la puissance qui a départagé les ex æquo. Le dire
+  // franchement vaut mieux qu'un « 5 % → 5 % » qui a l'air d'une erreur.
+  const visee = de === a ? `${nom} sans changement (${a})` : `${nom} ${de} → ${a}`;
+  return `${pieces} · ${visee} · ${puissance}.`;
+}
+
+function optimiser() {
+  const bouton = $('#optimiser');
+  const etat = $('#etatOptimisation');
+  if (!selection || !donnees?.compte) return;
+
+  // La recherche prend le temps qu'elle prend : on rend d'abord la main au
+  // navigateur, pour qu'il ait celui d'écrire « Calcul… ».
+  bouton.disabled = true;
+  bouton.textContent = 'Calcul…';
+  etat.hidden = true;
+
+  setTimeout(() => {
+    let resultat = null;
+    try {
+      resultat = chercherMeilleurEquipement(selection, $('#optimiserToutInventaire').checked);
+    } catch (erreur) {
+      console.error('HOH Builder — échec de la recherche d\'équipement', erreur);
+    }
+    bouton.disabled = false;
+    bouton.textContent = 'Équiper au mieux';
+
+    if (!resultat) {
+      etat.hidden = false;
+      etat.textContent = 'Aucun équipement disponible pour ce héros.';
+      return;
+    }
+
+    const changees = appliquerEquipement(selection, resultat.choix);
+    // Le cache des statistiques ne sert que la liste de gauche, qui montre
+    // l'équipement RÉEL : la simulation ne l'invalide pas.
+    rendreListeHeros();
+    rendreHeros();
+
+    etat.hidden = false;
+    etat.textContent = compteRenduOptimisation(changees, resultat.score, resultat.avant);
+  }, 20);
+}
+
+// Le compte rendu ne vaut que pour la configuration qu'il vient de poser : dès
+// qu'on change de héros, de critère, ou qu'on rétablit l'équipement réel, il
+// s'efface.
+function effacerEtatOptimisation() {
+  const etat = $('#etatOptimisation');
+  etat.hidden = true;
+  etat.textContent = '';
+}
+
+// Le menu des critères se remplit depuis les familles de l'écran « Stats » : une
+// statistique de plus dans le tableau apparaît ici sans qu'on y touche.
+$('#critereOptimisation').innerHTML =
+  `<option value="${CRITERE_PUISSANCE}">Puissance estimée</option>`
+  + FAMILLES_STATS.map((f) => `<optgroup label="${esc(f.titre)}">`
+    + f.stats.map((s) => `<option value="${s}">${esc(libelleStat(s))}${s.startsWith('charge_') ? ' (la plus courte)' : ''}</option>`).join('')
+    + '</optgroup>').join('');
+$('#critereOptimisation').value =
+  [...$('#critereOptimisation').options].some((o) => o.value === critereOptimisation)
+    ? critereOptimisation : CRITERE_PUISSANCE;
+
+$('#critereOptimisation').addEventListener('change', (e) => {
+  critereOptimisation = e.target.value;
+  try { localStorage.setItem('hoh.critere', critereOptimisation); } catch { /* navigation privée */ }
+  effacerEtatOptimisation();
+});
+
+$('#optimiser').addEventListener('click', optimiser);
+
 /* ------------------------------------------------------------- branchements */
 
 function toutRendre() {
@@ -1660,6 +1981,8 @@ function charger(nouvelles) {
   indexer();
   document.querySelector('main').classList.remove('vide');
   $('#reinitialiser').hidden = false;
+  document.querySelector('.barreOptimisation').hidden = false;
+  effacerEtatOptimisation();
   toutRendre();
 }
 
@@ -1670,6 +1993,8 @@ function etatVide(message) {
   $('#sousTitre').textContent = message || 'Aucun export chargé';
   $('#avertissement').hidden = true;
   $('#reinitialiser').hidden = true; // sans équipement chargé, il n'y a rien à rétablir
+  document.querySelector('.barreOptimisation').hidden = true; // ni rien à optimiser
+  effacerEtatOptimisation();
 }
 
 $('#listeHeros').addEventListener('click', (e) => {
@@ -1679,6 +2004,7 @@ $('#listeHeros').addEventListener('click', (e) => {
   // Changer de héros remet la projection sur son vrai niveau : garder celle du
   // héros précédent n'aurait aucun sens.
   niveauProjete = null;
+  effacerEtatOptimisation();
   rendreListeHeros();
   rendreHeros();
 });
@@ -1845,6 +2171,7 @@ $('#theme').addEventListener('click', () => {
 
 $('#reinitialiser').addEventListener('click', () => {
   equipe = JSON.parse(JSON.stringify(equipeInitial));
+  effacerEtatOptimisation();
   pantheonSimule = {};
   reconstruirePorteurs();
   rendreListeHeros();
