@@ -7,6 +7,44 @@
    relais, et tout le reste de la feuille suit sans être touché.
    =========================================================== */
 
+/* ===========================================================
+   CINZEL, la voix des titres.
+
+   Des capitales romaines relevées sur les inscriptions gravées dans la pierre —
+   celles des frontons et des colonnes. C'est la lettre de l'Antiquité, et donc
+   celle du jeu : un héros s'annonce en capitales.
+
+   ELLE EST LIVRÉE AVEC LE SITE, dans « polices/ », et non demandée à Google au
+   chargement. Ce n'est pas un détail de performance : le site promet que rien
+   ne sort du navigateur du joueur, et une page qui va chercher sa police
+   ailleurs signale à un tiers, à chaque visite, qui la consulte et d'où.
+   Deux fichiers, quarante kilo-octets en tout, et plus personne n'est prévenu.
+
+   Chaque fichier porte TOUTES les graisses de 400 à 900 : c'est une police
+   variable, une seule interpolation continue au lieu de six fichiers.
+   Le découpage latin / latin étendu est celui de Google : le second ne se charge
+   que si la page affiche un caractère qui l'exige (œ, ā, ...).
+
+   Sous licence SIL Open Font, recopiée dans polices/OFL.txt — c'est ce que
+   cette licence demande quand on redistribue la police.
+   =========================================================== */
+@font-face {
+  font-family: "Cinzel";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("polices/cinzel-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Cinzel";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("polices/cinzel-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
   /* Ce que le navigateur doit savoir pour peindre ce que la page ne peint pas :
      listes déroulantes des menus, barres de défilement, contrôles natifs. */
@@ -67,6 +105,30 @@
   --reflet-tuile: rgba(255, 255, 255, .16);
   /* Combien de couleur de rareté on verse dans le fond d'une ligne d'équipement. */
   --dose-rarete: 24%;
+
+  /* ---- LA MATIÈRE ----
+     Le site n'avait que des aplats. Trois couches lui donnent du grain, dans le
+     seul vocabulaire qu'il possède déjà : rien de neuf en couleur, rien qui
+     s'anime, rien qui se clique.
+
+     1. LE GRAIN. Un bruit fractal, dessiné par le navigateur lui-même (aucune
+        image à charger), posé en voile fixe par-dessus toute la page. Il ne se
+        voit pas : il s'aperçoit. C'est lui qui empêche les grands aplats sombres
+        de ressembler à du plastique.
+     2. LES VERGEURES. Les fines lignes horizontales d'une feuille de papier
+        vergé, tenue devant la lumière. Un pixel toutes les six, à deux pour cent
+        d'opacité — de quoi donner un sens de lecture à la surface, pas de quoi
+        la rayer.
+     3. LE RELIEF. Un filet clair sur l'arête haute du panneau, et une lueur
+        rasante juste en dessous : le panneau cesse d'être un rectangle plus
+        clair pour devenir un feuillet posé, éclairé par le haut. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-opacite: .055;
+  --vergeures: repeating-linear-gradient(0deg, rgba(255, 255, 255, .02) 0 1px, transparent 1px 6px);
+  --lumiere-panneau: linear-gradient(178deg, rgba(255, 255, 255, .045), transparent 38%);
+  --arete-panneau: inset 0 1px 0 rgba(255, 255, 255, .06);
+  --filigrane: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.1 4.1 5v6.5c0 5 3.3 9.2 7.9 10.4 4.6-1.2 7.9-5.4 7.9-10.4V5L12 2.1Z' fill='none' stroke='%23000' stroke-width='.5'/%3E%3Cpath d='M12 7.2v9.3M8.1 10.9h7.8' stroke='%23000' stroke-width='.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  --filigrane-opacite: .16;
 }
 
 :root[data-theme="clair"] {
@@ -121,6 +183,15 @@
   --reflet-tuile: rgba(255, 255, 255, .32);
   /* Sur fond blanc, la même dose serait criarde : elle est réduite. */
   --dose-rarete: 17%;
+
+  /* La matière s'inverse : sous le thème clair, les vergeures et le grain
+     creusent le papier au lieu de l'éclairer, et le grain se fait plus discret —
+     sur un fond lumineux, il se verrait deux fois plus pour la même valeur. */
+  --grain-opacite: .038;
+  --vergeures: repeating-linear-gradient(0deg, rgba(60, 40, 95, .035) 0 1px, transparent 1px 6px);
+  --lumiere-panneau: linear-gradient(178deg, rgba(255, 255, 255, .9), transparent 42%);
+  --arete-panneau: inset 0 1px 0 rgba(255, 255, 255, .9);
+  --filigrane-opacite: .085;
 }
 
 * { box-sizing: border-box; }
@@ -144,6 +215,22 @@ body {
    L'anneau est déclaré tôt dans la feuille exprès : les rares éléments qui
    dessinent eux-mêmes leur mise au point — les nœuds du panthéon — le
    redéfinissent plus bas et l'emportent, comme il se doit. */
+/* LE GRAIN passe par-dessus tout, modale comprise — une texture qui s'arrêterait
+   au bord d'une fenêtre trahirait aussitôt le procédé. Il ne prend aucun clic et
+   n'entre pas dans l'ordre de tabulation : c'est un voile, pas un calque. Les
+   yeux qui préfèrent le net peuvent le couper — « réduire la transparence »
+   dans le système l'éteint. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background-image: var(--grain);
+  opacity: var(--grain-opacite);
+  pointer-events: none;
+}
+@media (prefers-reduced-transparency: reduce) { body::after { display: none; } }
+
 ::selection { background: var(--accent-voile-fort); color: var(--texte); }
 html { scrollbar-width: thin; scrollbar-color: var(--accent-sombre) transparent; }
 input, select, textarea { caret-color: var(--accent); }
@@ -151,10 +238,12 @@ input, select, textarea { caret-color: var(--accent); }
 
 h1 {
   margin: 0 0 3px;
-  font-size: 27px;
-  font-weight: 800;
-  letter-spacing: -.025em;
-  line-height: 1;
+  /* Deux crans plus petit qu'avant : en capitales, le mot occupe la même place
+     tout en pesant davantage. */
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: .015em;
+  line-height: 1.1;
   /* Le dégradé s'applique au texte lui-même, d'où le fond découpé sur les lettres.
      « background-image » et non « background » : le raccourci remettrait le
      découpage sur la boîte, et l'on ne verrait qu'un rectangle de couleur. */
@@ -165,13 +254,21 @@ h1 {
   color: transparent;
 }
 h1 .leger {
-  font-weight: 300;
-  letter-spacing: .01em;
+  font-weight: 400;
+  letter-spacing: .015em;
   -webkit-text-fill-color: var(--texte);
   color: var(--texte);
 }
-/* Les titres passent au serif : c'est ce qui donne au site son air de grimoire. */
-h1, h2, h3, .cote h3, .modaleEntete h2 { font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; }
+/* CINZEL N'A PAS DE BAS-DE-CASSE : elle est dessinée en capitales, et ses
+   « minuscules » sont de petites capitales. Tout titre qui la porte s'écrit donc
+   en capitales — ce qui tombe bien, la quasi-totalité l'était déjà.
+   Et une capitale a besoin d'air : là où le site serrait ses titres pour les
+   rendre compacts, il les desserre maintenant. C'est la règle du plomb, pas une
+   préférence : des capitales chassent moins qu'un bas-de-casse et se collent. */
+h1, h2, h3, .cote h3, .modaleEntete h2 {
+  font-family: "Cinzel", "Palatino Linotype", Georgia, serif;
+  text-transform: uppercase;
+}
 h2 { margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--discret); }
 p { margin: 0 0 10px; }
 .discret { color: var(--discret); font-size: 13px; }
@@ -185,8 +282,11 @@ header {
   align-items: center;
   padding: 14px 20px;
   border-bottom: 1px solid var(--bordure);
-  /* Deux lueurs très discrètes, émeraude et améthyste, pour asseoir le titre. */
-  background: var(--halo-entete), var(--panneau);
+  /* Deux lueurs très discrètes, émeraude et améthyste, pour asseoir le titre —
+     et le même vergé que les panneaux, sans quoi le bandeau serait la seule
+     surface lisse d'une page qui ne l'est plus. */
+  background: var(--halo-entete), var(--vergeures), var(--panneau);
+  box-shadow: var(--arete-panneau);
 }
 header p { margin: 0; color: var(--discret); font-size: 13px; }
 .actions { grid-column: 3; display: flex; gap: 8px; align-items: center; justify-self: end; }
@@ -340,7 +440,77 @@ main:not(.vide) > #colonneHeros {
   letter-spacing: .06em;
   color: var(--discret);
 }
-.sousTitreCote { font-size: 11px; text-transform: none; letter-spacing: 0; opacity: .75; }
+/* L'aparté de chaque colonne (« celui de ton compte », « clique pour changer »)
+   n'est pas un titre : il redescend dans la sans-serif du texte courant et garde
+   son bas-de-casse. En capitales gravées, il disputait la vedette au titre
+   qu'il commente. */
+.sousTitreCote {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: .75;
+}
+/* La barre « Équiper au mieux », dans l'en-tête du héros. Elle se range à droite,
+   loin du nom, et sur deux lignes : le bouton et sa réserve d'abord, ce que le
+   calcul a trouvé en dessous. Elle ne peut PAS vivre dans la colonne simulée —
+   elle y décalerait le miroir d'une demi-tuile, et le comparateur ne compare plus
+   dès que ses deux moitiés ne sont plus à la même hauteur. */
+.barreOptimisation {
+  margin-left: auto;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: end;
+  justify-items: end;
+  gap: 5px 10px;
+  text-align: right;
+}
+/* Le bouton et son menu tiennent la première ligne ; ce qui suit — la réserve où
+   piocher, puis le compte rendu — prend les deux colonnes. */
+.barreOptimisation > .caseACocher,
+.barreOptimisation > .etatOptimisation { grid-column: 1 / -1; }
+
+/* « pour [ Puissance estimée ] » : le menu se lit comme la suite de la phrase du
+   bouton, pas comme un second bouton. */
+.critereOptimisation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--discret);
+}
+.critereOptimisation select {
+  max-width: 190px;
+  padding: 5px 8px;
+  color: var(--texte);
+  background: var(--panneau-clair);
+  border: 1px solid var(--bordure);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.critereOptimisation select:focus-visible { outline: 2px solid var(--accent-sombre); }
+.barreOptimisation .bouton { white-space: nowrap; }
+.barreOptimisation .caseACocher { line-height: 1.25; text-align: left; }
+.etatOptimisation { margin: 0; font-size: 12px; }
+
+/* Sur un écran étroit, l'en-tête passe à la ligne et la barre reprend toute la
+   largeur, alignée à gauche comme le reste. */
+@media (max-width: 700px) {
+  .enteteHeros { flex-wrap: wrap; }
+  .barreOptimisation {
+    margin-left: 0;
+    width: 100%;
+    grid-template-columns: 1fr;
+    justify-content: start;
+    justify-items: start;
+    text-align: left;
+  }
+}
+
 
 /* Sur un grand écran, les colonnes d'équipement s'étiraient sans limite : la
    ligne atteignait sept cents pixels pour deux cents pixels de texte, et la
@@ -416,12 +586,20 @@ main:not(.vide) > #colonneHeros {
 }
 .pied.sansIcone { display: none; }
 
+/* UN PANNEAU EST UN FEUILLET, pas une boîte : vergé sous la main, éclairé par
+   le haut, et posé sur la page plutôt que découpé dedans. Les trois couches se
+   superposent dans l'ordre où la lumière les rencontre — la lueur d'abord, les
+   vergeures ensuite, la teinte du panneau au fond. */
 .panneau {
+  position: relative;
   padding: 20px;
-  background: var(--panneau);
+  background:
+    var(--lumiere-panneau),
+    var(--vergeures),
+    var(--panneau);
   border: 1px solid var(--bordure);
   border-radius: 20px;
-  box-shadow: var(--ombre-panneau);
+  box-shadow: var(--ombre-panneau), var(--arete-panneau);
 }
 
 /* ---------- Écran d'accueil (aucun export chargé) ---------- */
@@ -439,13 +617,53 @@ main.vide {
   padding: 5vh 20px 60px;
   background: var(--halo-accueil);
 }
-main.vide > .panneau:not(.accueil) { display: none; }
+main.vide > .panneau:not(.accueil),
+main.vide > #basColonne { display: none; }
 main.vide #accueil {
   display: block;
   width: 100%;
   max-width: 680px;
   margin-top: 0;
   padding: 40px 44px 32px;
+  overflow: hidden; /* le filigrane déborde : la carte le recoupe */
+}
+
+/* LE FILIGRANE. Le blason du bandeau, agrandi, gravé au trait et débordant du
+   coin haut de la carte — la même figure que la marque, jamais une seconde.
+   Il est posé en MASQUE et non en image : la couleur reste donc une variable du
+   thème, et le violet du blason suit le thème clair comme le sombre.
+   Il ne se lit pas, il se sent : c'est ce qui distingue une page de titre d'un
+   rectangle de texte. */
+.accueil::after {
+  content: "";
+  position: absolute;
+  top: -48px;
+  right: -52px;
+  width: 224px;
+  height: 224px;
+  background-color: var(--blason-bas);
+  opacity: var(--filigrane-opacite);
+  -webkit-mask-image: var(--filigrane);
+  mask-image: var(--filigrane);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+}
+/* Le texte passe devant le filigrane, jamais dessous. */
+.accueil > * { position: relative; z-index: 1; }
+
+/* La rubrique du copiste : un trait court sous le titre, dans l'émeraude des
+   sous-titres. Il donne à « Bienvenue » un socle, et à la carte un début. */
+.accueil h2::after {
+  content: "";
+  display: block;
+  width: 54px;
+  height: 2px;
+  margin-top: 14px;
+  background: var(--degrade-principal);
+  border-radius: 2px;
 }
 
 /* « Bienvenue » n'est plus une étiquette en petites capitales posée au-dessus du
@@ -453,11 +671,12 @@ main.vide #accueil {
    chose qu'on lit en arrivant. Le reste de la page garde ses h2 discrets. */
 .accueil h2 {
   margin: 0 0 16px;
-  font-size: clamp(30px, 4.4vw, 42px);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -.02em;
-  text-transform: none;
+  /* En capitales gravées, le mot porte plus loin à taille égale : on redescend
+     d'un tiers, et l'on desserre au lieu de resserrer. */
+  font-size: clamp(26px, 3.4vw, 34px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: .03em;
   color: var(--texte);
   text-wrap: balance;
 }
@@ -811,19 +1030,20 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
   color: var(--texte);
   background: var(--panneau-clair);
   border: 1px solid var(--bordure);
-  border-left: 3px solid var(--bordure);
   border-radius: 14px;
   cursor: pointer;
+  /* La même arête de lumière que les panneaux : la ligne cesse d'être un
+     rectangle teinté pour devenir une plaque posée, éclairée par le haut. */
+  box-shadow: var(--arete-panneau), inset 0 -1px 0 rgba(0, 0, 0, .16);
 }
 .emplacement > .tuile { grid-area: tuile; }
 .emplacement > .corpsObjet, .emplacement > .vide { grid-area: corps; }
 .emplacement > .retirer, .emplacement > span:empty { grid-area: croix; justify-self: end; }
-.emplacement:hover { border-color: var(--accent); }
+.emplacement:not(.fige):hover { border-color: var(--accent); }
 /* La colonne de gauche montre l'équipement réel du compte : on ne la modifie pas. */
 /* La colonne de gauche n'est pas modifiable, mais elle doit rester aussi
    lisible que l'autre : c'est l'absence de croix qui dit la différence. */
 .emplacement.fige { cursor: default; opacity: .94; }
-.emplacement.fige:hover { border-color: var(--bordure); border-left-color: inherit; }
 .emplacement { min-height: 78px; }
 /* Aucune colonne ne doit imposer sa largeur : c'est ce qui faisait déborder la page. */
 .attr { min-width: 0; }
@@ -836,10 +1056,10 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
    coup d'œil, sans avoir à chercher le liseré de gauche. color-mix verse la
    couleur de rareté dans le fond du panneau, si bien que la même règle donne un
    violet sourd sur le thème sombre et un lilas pâle sur le thème clair. */
-.emplacement.r2 { border-left-color: var(--r2); background: color-mix(in srgb, var(--r2) var(--dose-rarete), var(--panneau-clair)); }
-.emplacement.r3 { border-left-color: var(--r3); background: color-mix(in srgb, var(--r3) var(--dose-rarete), var(--panneau-clair)); }
-.emplacement.r4 { border-left-color: var(--r4); background: color-mix(in srgb, var(--r4) var(--dose-rarete), var(--panneau-clair)); }
-.emplacement.r5 { border-left-color: var(--r5); background: color-mix(in srgb, var(--r5) var(--dose-rarete), var(--panneau-clair)); }
+.emplacement.r2 { border-color: var(--r2); background: color-mix(in srgb, var(--r2) var(--dose-rarete), var(--panneau-clair)); }
+.emplacement.r3 { border-color: var(--r3); background: color-mix(in srgb, var(--r3) var(--dose-rarete), var(--panneau-clair)); }
+.emplacement.r4 { border-color: var(--r4); background: color-mix(in srgb, var(--r4) var(--dose-rarete), var(--panneau-clair)); }
+.emplacement.r5 { border-color: var(--r5); background: color-mix(in srgb, var(--r5) var(--dose-rarete), var(--panneau-clair)); }
 .retirer {
   width: 24px;
   height: 24px;
@@ -1159,15 +1379,17 @@ td.principal { font-weight: 600; }
   margin-bottom: 6px;
   background: var(--panneau-clair);
   border: 1px solid var(--bordure);
-  border-left: 3px solid var(--bordure);
   border-radius: 14px;
   cursor: pointer;
+  box-shadow: var(--arete-panneau);
 }
+#listeObjets li.r2 { border-color: var(--r2); }
+#listeObjets li.r3 { border-color: var(--r3); }
+#listeObjets li.r4 { border-color: var(--r4); }
+#listeObjets li.r5 { border-color: var(--r5); }
+/* Écrit APRÈS les quatre raretés : à spécificité égale, c'est le dernier qui
+   gagne, et le survol doit l'emporter sur la teinte de rareté. */
 #listeObjets li:hover { border-color: var(--accent); }
-#listeObjets li.r2 { border-left-color: var(--r2); }
-#listeObjets li.r3 { border-left-color: var(--r3); }
-#listeObjets li.r4 { border-left-color: var(--r4); }
-#listeObjets li.r5 { border-left-color: var(--r5); }
 #listeObjets li.porte { opacity: .62; }
 #listeObjets .titre { font-weight: 600; }
 /* L'icône occupe toute la hauteur de la ligne, le texte se range à sa droite. */

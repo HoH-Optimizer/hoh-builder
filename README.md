@@ -39,6 +39,26 @@ navigateur où l'extension n'est pas installée.
 - Choix d'objet parmi tout l'inventaire, trié par rareté, avec les attributs détaillés
   et le nom du héros qui le porte déjà
 - **Échange automatique** : équiper un objet porté par un autre héros le lui retire
+- **« Équiper au mieux, pour… »** : le bouton remplit les cinq emplacements d'un
+  coup, avec ce que l'inventaire a de mieux **pour ce héros-là**.
+  - **Le critère se choisit**, dans le menu posé à côté du bouton. Par défaut la
+    **puissance estimée** — le seul critère qui pèse le héros entier, puisqu'il
+    mêle l'attaque, la défense, les points de vie, les crits et la vitesse. Mais
+    **n'importe quelle ligne de la feuille de statistiques** peut prendre sa
+    place : le plus de points de vie, le plus de soin prodigué, la charge la plus
+    courte. Viser une ligne coûte le reste — maximiser l'attaque seule fait
+    volontiers perdre de la puissance —, alors le compte rendu écrit toujours les
+    deux : « Points de vie 20 855 → 23 933 · puissance estimée +295 ».
+  - Les **bonus d'ensemble sont cherchés pour de bon** : un ensemble complet
+    demande deux ou trois pièces posées en même temps, qu'aucune amélioration
+    pièce par pièce ne trouverait jamais.
+  - Une case à cocher décide s'il n'a le droit de piocher que dans les objets
+    libres ou dans tout l'inventaire, quitte à déshabiller un autre héros — **en
+    simulation seulement**.
+  - C'est une proposition : elle se retouche ensuite pièce par pièce, et
+    « Rétablir mon équipement réel » la défait. Contrairement à l'arbre de
+    panthéon, qui ne conseille rien à dessein, l'équipement se remet en place d'un
+    clic et ne coûte aucune ressource : proposer y est sans risque.
 - Les **attributs verrouillés** sont grisés et non comptés, comme dans le jeu
 - **La feuille de statistiques complète**, rangée en quatre familles comme l'écran
   « Stats » du jeu, avec les valeurs absolues et non plus seulement l'apport de
@@ -77,6 +97,17 @@ navigateur où l'extension n'est pas installée.
   que le jeu leur donne
 - **Deux thèmes**, améthyste sombre et améthyste clair, au bouton du bandeau. Le
   choix reste dans ce navigateur d'une visite à l'autre.
+- **De la matière, pas des aplats.** Un grain fractal dessiné par le navigateur
+  lui-même — aucune image à charger — couvre la page ; les panneaux portent les
+  vergeures d'un papier vergé et une arête de lumière sur leur bord haut ; l'écran
+  d'accueil est filigrané du blason du bandeau, gravé au trait. Rien de tout cela
+  ne s'anime ni ne se clique : c'est la surface qui cesse d'être lisse.
+- **Les titres sont écrits en Cinzel**, des capitales romaines relevées sur les
+  inscriptions gravées dans la pierre. Elle est **livrée avec le site**
+  (`polices/`, deux fichiers, 40 Ko, licence SIL Open Font recopiée à côté) et non
+  demandée à Google : une page qui va chercher sa police ailleurs signale à un
+  tiers, à chaque visite, qui la consulte — ce que ce site promet justement de ne
+  jamais faire.
 
 ## D'où vient chaque chiffre
 
