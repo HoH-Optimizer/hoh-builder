@@ -280,10 +280,21 @@ main:not(.vide) > #colonneHeros {
   min-height: 0;
 }
 #colonneEquipement { grid-column: 2; grid-row: 1; }
-#colonneStats { grid-column: 2; grid-row: 2; }
+#basColonne { grid-column: 2; grid-row: 2; }
+
+/* CE QUI SE MANIPULE RESTE, CE QUI SE LIT DÉFILE.
+   L'encadré du héros est le plan de travail : on y change une pièce et on
+   regarde ce que ça donne. Il ne doit donc jamais quitter l'écran. L'arbre de
+   panthéon et le tableau de statistiques sont les cadrans : ils peuvent
+   descendre, mais ENSEMBLE et sous un seul ascenseur — avant, lire le tableau
+   demandait de faire défiler la page entière, ce qui emportait le héros avec.
+   Mesuré avant correction : 1 104 px de défilement de page, et le tableau qui
+   commençait 270 px sous la ligne de flottaison. */
+#basColonne { display: grid; gap: 16px; align-content: start; min-height: 0; }
+
 @media (max-width: 1000px) {
   main { grid-template-columns: 1fr; }
-  #colonneHeros, #colonneEquipement, #colonneStats { grid-column: 1; grid-row: auto; }
+  #colonneHeros, #colonneEquipement, #basColonne { grid-column: 1; grid-row: auto; }
   /* Sur une colonne unique, la liste est au-dessus du reste : lui laisser toute
      la hauteur mangerait l'écran. Elle redevient une section ordinaire. */
   #listeHeros { flex: none; max-height: 60vh; }
@@ -1368,23 +1379,73 @@ td.principal { font-weight: 600; }
    Les colonnes portent toutes un « main:not(.vide) > #… » : les règles de la
    mise en page qui défile placent ces mêmes panneaux et portent un identifiant.
    Sans un sélecteur d'égale force, elles l'emporteraient. */
-@media (min-width: 1800px) and (min-height: 880px) {
-  html, body { height: 100%; }
-  body { display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
+/* ===========================================================
+   LA COQUILLE : CE QUI SE MANIPULE RESTE, CE QUI SE LIT DÉFILE
+   -----------------------------------------------------------
+   Le seuil de 1 150 px de hauteur n'est pas arbitraire, il est
+   additionné : l'encadré du héros mesure 774 px une fois
+   resserré, il faut 16 px de gouttière, au moins 300 px pour
+   que l'arbre et le tableau soient lisibles, 32 px de marges et
+   79 px d'en-tête. En dessous, la coquille couperait l'encadré
+   au milieu d'une pièce d'équipement — vu à 1440x900 — et la
+   page redevient donc une page ordinaire qui défile.
 
+   DEUX CAS, une seule coquille. Au-delà de 1 800 px de large les
+   cadrans montent à côté du plan de travail au lieu d'être en
+   dessous : la hauteur cesse d'être disputée, et 800 px suffisent.
+   =========================================================== */
+@media (min-width: 1001px) and (min-height: 1150px),
+       (min-width: 1800px) and (min-height: 800px) {
+  /* L'« overflow: hidden » est posé sur les DEUX. Sur le body seul, la
+     propagation à la fenêtre n'a pas eu lieu ici et la page gardait 130 px de
+     course : on descendait de la valeur d'une demi-ligne, ce qui décalait tout
+     sans rien révéler. Le déclarer sur html ferme la question. */
+  html, body { height: 100%; overflow: hidden; }
+  body { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+  /* DEUX RANGÉES : le plan de travail, puis les cadrans.
+     « align-items: stretch » n'est pas cosmétique — la règle de base pose
+     « start », et les colonnes se dimensionnaient alors sur leur contenu au lieu
+     de remplir leur case. Elles débordaient (4 374 px pour la liste des héros) et
+     le « overflow: hidden » de la page coupait ce qui dépassait, sans ascenseur.
+
+     Le plancher de 340 px sur la seconde rangée est ce qui rend le bas lisible :
+     sans lui, l'encadré du héros prenait 903 px des 1 270 disponibles et il ne
+     restait que 241 px pour l'arbre ET le tableau. Avec, c'est l'encadré qui se
+     resserre — et le resserrement plus bas lui en donne largement les moyens. */
   main {
-    grid-template-columns: 280px minmax(0, 1fr) minmax(400px, 470px);
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: minmax(0, auto) minmax(340px, 1fr);
     align-items: stretch;
     min-height: 0;
     padding-bottom: 16px;
   }
-  main:not(.vide) > #colonneHeros,
-  main:not(.vide) > #colonneEquipement,
-  main:not(.vide) > #colonneStats { grid-row: 1; min-height: 0; }
-  main:not(.vide) > #colonneHeros { grid-column: 1; }
-  main:not(.vide) > #colonneEquipement { grid-column: 2; }
-  main:not(.vide) > #colonneStats { grid-column: 3; }
+  main:not(.vide) > #colonneHeros { grid-column: 1; grid-row: 1 / span 2; min-height: 0; }
+  main:not(.vide) > #colonneEquipement { grid-column: 2; grid-row: 1; min-height: 0; }
+  /* L'ASCENSEUR UNIQUE. C'est ici, et nulle part ailleurs, que la page descend :
+     l'arbre et le tableau défilent ensemble sous un seul curseur, pendant que
+     l'encadré du héros reste immobile au-dessus. « overscroll-behavior: contain »
+     empêche la molette de repartir sur la page une fois le bas atteint. */
+  main > #basColonne {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+  }
+
+  /* Passé cette largeur, les cadrans montent à côté du plan de travail plutôt
+     qu'en dessous : trois colonnes, et la hauteur cesse d'être disputée. */
+  @media (min-width: 1800px) {
+    main {
+      grid-template-columns: 280px minmax(0, 1fr) minmax(400px, 470px);
+      grid-template-rows: minmax(0, 1fr);
+    }
+    main:not(.vide) > #colonneHeros,
+    main:not(.vide) > #colonneEquipement,
+    main > #basColonne { grid-row: 1; }
+    main > #basColonne { grid-column: 3; }
+  }
 
   /* « main:not(.vide) > » est indispensable ici, pour la raison expliquée plus
      haut : un display porté par un identifiant l'emporte sur la règle qui masque
@@ -1392,8 +1453,7 @@ td.principal { font-weight: 600; }
      d'accueil s'affichait flanqué d'un panneau d'équipement et d'un tableau de
      statistiques vides. Le garde-fou était posé sur #colonneHeros et manquait
      sur ces deux-là. */
-  main:not(.vide) > #colonneEquipement,
-  main:not(.vide) > #colonneStats { display: flex; flex-direction: column; }
+  main:not(.vide) > #colonneEquipement { display: flex; flex-direction: column; }
   /* Le défilement reste déclaré comme filet de sécurité : si un héros portait un
      jour plus de pièces que prévu, mieux vaut pouvoir descendre que perdre une
      ligne. Le resserrement ci-dessous fait qu'en pratique il ne sert pas.
@@ -1403,7 +1463,7 @@ td.principal { font-weight: 600; }
      paliers seraient purement invisibles.
      C'est la vue entière qui défile, pas le tableau : depuis que les deux vues
      sont enveloppées pour l'onglet, ce sont elles les enfants de la colonne. */
-  .comparateur, #vueStats, .vuePantheon { min-height: 0; overflow-y: auto; }
+  .comparateur { min-height: 0; overflow-y: auto; }
 
   /* La colonne est trop étroite pour poser la relique à côté du tableau. */
   .grilleStats { grid-template-columns: minmax(0, 1fr); overflow-x: auto; }
@@ -1449,100 +1509,15 @@ td.principal { font-weight: 600; }
 }
 
 /* ===========================================================
-   PANTHÉON
-   L'arbre du héros, tel que le jeu le dessine : six paliers,
-   quatre nœuds chacun sauf le dernier. Chaque nœud dit ce
-   qu'il rapporterait À CE HÉROS, en points, et ce qu'il coûte.
+   PANTHÉON — l'emblème d'un nœud de combat
+   Le panneau qui décrivait l'arbre en toutes lettres a été
+   retiré le 22/08/2026 : il répétait ce que l'infobulle de
+   l'arbre dit déjà, mieux et au bon endroit. Quatre-vingt-quinze
+   lignes de feuille de style sont parties avec lui. Ne reste
+   que l'emblème des nœuds qui n'ont pas de statistique.
    =========================================================== */
 
-.ongletsVue { display: flex; gap: 4px; }
-.onglet {
-  padding: 5px 14px;
-  font: inherit;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--discret);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  cursor: pointer;
-}
-.onglet:hover { color: var(--texte); background: var(--panneau-clair); }
-.onglet.actif {
-  color: var(--accent);
-  background: var(--accent-voile);
-  border-color: var(--accent-sombre);
-}
-
-.vuePantheon { display: grid; gap: 14px; }
-.introPantheon { margin: 0; line-height: 1.5; }
-.videPantheon { margin: 0; line-height: 1.6; }
-
-.palierPantheon { display: grid; gap: 7px; }
-.palierPantheon h4 {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin: 0;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  color: var(--discret);
-}
-.palierPantheon h4 .discret { text-transform: none; letter-spacing: 0; font-size: 11px; }
-/* Un palier fermé reste lisible : on veut savoir ce qu'il y a derrière la porte. */
-.palierVerrouille { opacity: .55; }
-
-/* Le nombre de colonnes suit la largeur DE LA COLONNE, pas celle de la fenêtre :
-   sur grand écran, le panneau des statistiques ne fait que 470 px, où quatre
-   nœuds côte à côte deviennent illisibles — alors que la fenêtre, elle, est
-   large. Une requête média se serait trompée dans les deux sens. */
-/* Le « 23 % » plafonne discrètement à quatre colonnes — cinq en demanderaient
-   115 % de la largeur — tandis que le « 150px » en impose deux dès que la place
-   manque. Deux bornes, aucune requête média, et les six lignes gardent le même
-   nombre de colonnes, donc restent alignées. */
-.ligneNoeuds { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(max(150px, 23%), 1fr)); }
-
-.noeud {
-  display: grid;
-  gap: 6px;
-  align-content: start;
-  padding: 9px 11px;
-  background: var(--panneau-clair);
-  border: 1px solid var(--bordure);
-  border-radius: 10px;
-}
-/* Le nœud déjà pris se démarque, comme la pastille cyan du jeu. */
-.noeud.actif { background: var(--accent-voile); border-color: var(--accent-sombre); }
-.noeud.verrouille { border-style: dashed; }
-.noeud.absent { background: none; border: none; }
-
-.teteNoeud { display: flex; align-items: center; gap: 7px; }
-.teteNoeud .iconeStat { width: 20px; height: 20px; flex: none; }
-.nomNoeud { font-size: 12px; font-weight: 600; line-height: 1.25; }
 .emblemeCombat { width: 20px; text-align: center; flex: none; color: var(--discret); }
-
-.gainsNoeud { display: grid; gap: 2px; }
-.gainNoeud { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; }
-.gainNoeud .nomGain { color: var(--discret); }
-.gainNoeud b { color: var(--positif); white-space: nowrap; }
-/* Un nœud qui ne change aucune statistique de fiche : on montre sa phrase, en
-   clair, plutôt qu'un blanc qui laisserait croire à un oubli. */
-.gainNoeud.aucun { display: block; color: var(--discret); font-size: 11px; line-height: 1.4; }
-
-.piedNoeud {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--discret);
-}
-.noeud.actif .piedNoeud { color: var(--accent); }
-
-@media (max-width: 700px) {
-  .noeud { padding: 7px 9px; }
-  .onglet { padding: 4px 11px; font-size: 11px; }
-}
 
 /* ---------- La puissance, sous le héros ----------
    Le total est approché (voir formules.js) ; l'écart entre deux
@@ -1855,11 +1830,27 @@ td.principal { font-weight: 600; }
    Ce bloc est en toute fin de feuille et non dans le resserrement plus haut :
    la section PANTHÉON est écrite APRÈS lui, et à spécificité égale elle
    l'emporterait. */
-@media (min-width: 1800px) and (min-height: 880px) {
+@media (min-width: 1001px) and (min-height: 1150px), (min-width: 1800px) and (min-height: 800px) {
   .personnage { gap: 8px; }
   .blocPuissance { padding: 8px 20px 9px; }
   .valeurPuissance { font-size: 26px; }
-  .arbrePantheon { margin-top: 14px; padding: 14px 0 2px; }
+  /* L'arbre n'est plus collé sous le héros : il ouvre le bloc du bas, et c'est
+     un panneau à part entière. Sa marge du haut n'a plus lieu d'être. */
+  .arbrePantheon { margin-top: 0; padding: 14px 0 2px; }
   .enteteArbre { margin-bottom: 14px; }
   .enteteArbre h3 { font-size: 1.25rem; }
+}
+
+/* ---------- Le titre du panneau de statistiques ----------
+   Il remplace la paire d'onglets « Statistiques / Panthéon ». Le second onglet
+   décrivait l'arbre en toutes lettres ; l'infobulle de l'arbre le fait déjà,
+   avec les mêmes chiffres et sous le doigt. Restait un titre à donner au
+   panneau, puisqu'il n'a plus d'onglet pour se nommer. */
+.titreStats {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--discret);
 }
