@@ -13,7 +13,7 @@
        ce qui garantit au visiteur un jeu de fichiers cohérent. D'où la lettre qui
        suit la date : deux envois le même jour doivent porter deux jetons
        différents, sans quoi le correctif ne sert à rien. -->
-  <link rel="stylesheet" href="style.css?v=2026-08-22f">
+  <link rel="stylesheet" href="style.css?v=2026-08-23a">
   <script>
     // Le thème retenu s'applique avant le premier affichage. Sans cela, la page
     // apparaîtrait une fraction de seconde en sombre avant de passer au clair.
@@ -155,7 +155,7 @@
           Équiper au mieux
         </button>
         <label class="critereOptimisation"
-               title="Ce que la recherche maximise. « Puissance estimée » pèse le héros entier ; viser une ligne précise sert quand on sait ce qu'on veut faire du héros — et coûte souvent de la puissance, que le compte rendu affiche alors quand même.">
+               title="Ce que la recherche maximise. « Puissance » pèse le héros entier ; viser une ligne précise sert quand on sait ce qu'on veut faire du héros — et coûte souvent de la puissance, que le compte rendu affiche alors quand même.">
           pour
           <select id="critereOptimisation"></select>
         </label>
@@ -185,6 +185,12 @@
         <div id="sets" class="listeSets"></div>
       </div>
     </div>
+
+    <!-- LA CAPACITÉ DU HÉROS, sous les deux équipements : c'est elle qu'ils
+         servent. Le texte et les chiffres sortent du catalogue du jeu, au palier
+         de compétence atteint ; les deux charges, elles, suivent l'équipement
+         simulé — la carte bouge donc avec ce qu'on essaie. -->
+    <section id="capacite" class="capacite" hidden></section>
 
   </section>
 
@@ -235,52 +241,90 @@
 <div id="bulleNoeud" class="bulleNoeud" hidden></div>
 
 <div id="selecteur" class="modale" hidden>
-  <div class="modaleContenu">
+  <div class="modaleContenu banc">
     <header class="modaleEntete">
       <h2 id="selecteurTitre"></h2>
       <button id="fermerSelecteur" class="bouton">Fermer</button>
     </header>
-    <div class="filtresObjet">
-      <label class="champFiltre">
-        <span>Ensemble</span>
-        <input type="search" id="rechercheObjet" placeholder="Tous les ensembles" autocomplete="off">
-      </label>
 
-      <label class="champFiltre">
-        <span>Attribut principal</span>
-        <select id="filtrePrincipal"><option value="">Peu importe</option></select>
-      </label>
+    <!-- LE BANC D'ESSAI, comme l'écran de comparaison du jeu : l'inventaire à
+         gauche, deux pièces posées côte à côte au milieu, et ce qu'elles font aux
+         statistiques à droite.
 
-      <fieldset class="champFiltre secondaires">
-        <legend>Doit aussi porter</legend>
-        <div id="filtreSecondaires" class="pastilles"></div>
-      </fieldset>
+         DEUX PIÈCES, ET NON UNE CONTRE CELLE QU'ON PORTE : les deux côtés se
+         changent, on compare donc aussi bien deux pièces qu'on ne porte pas. La
+         colonne « Porté » du tableau, elle, ne bouge pas — c'est le repère. -->
+    <div class="bancEssai">
+      <div class="colonneInventaire">
+        <div class="filtresObjet">
+          <label class="champFiltre">
+            <span>Ensemble</span>
+            <input type="search" id="rechercheObjet" placeholder="Tous les ensembles" autocomplete="off">
+          </label>
 
-      <div class="optionsFiltre">
-        <label class="caseACocher"><input type="checkbox" id="seulementLibres"> Masquer ceux portés par un autre héros</label>
-        <button type="button" id="viderFiltres" class="lienDiscret">Tout effacer</button>
-        <span id="compteObjets" class="discret"></span>
+          <label class="champFiltre">
+            <span>Attribut principal</span>
+            <select id="filtrePrincipal"><option value="">Peu importe</option></select>
+          </label>
+
+          <fieldset class="champFiltre secondaires">
+            <legend>Doit aussi porter</legend>
+            <div id="filtreSecondaires" class="pastilles"></div>
+          </fieldset>
+
+          <div class="optionsFiltre">
+            <label class="caseACocher"><input type="checkbox" id="seulementLibres"> Masquer ceux portés par un autre héros</label>
+            <button type="button" id="viderFiltres" class="lienDiscret">Tout effacer</button>
+            <span id="compteObjets" class="discret"></span>
+          </div>
+        </div>
+        <ul id="listeObjets"></ul>
+      </div>
+
+      <div class="colonneEssai">
+        <div id="cartesEssai" class="cartesEssai"></div>
+        <div id="statsEssai" class="statsEssai"></div>
       </div>
     </div>
-    <ul id="listeObjets"></ul>
+  </div>
+</div>
+
+<!-- Essayer une autre relique, comme on essaie une autre pièce d'équipement.
+     L'ère du joueur est rangée ici : elle commande la valeur de TOUTES les
+     reliques, ne se règle qu'une fois, et n'avait rien à faire au milieu du
+     tableau de statistiques. -->
+<div id="selecteurRelique" class="modale" hidden>
+  <div class="modaleContenu">
+    <header class="modaleEntete">
+      <h2 id="selecteurReliqueTitre"></h2>
+      <button id="fermerSelecteurRelique" class="bouton">Fermer</button>
+    </header>
+    <div class="filtresObjet">
+      <label class="champFiltre">
+        <span>Ton ère — elle met toutes les reliques à son échelle</span>
+        <select id="ereJoueur"></select>
+      </label>
+    </div>
+    <ul id="listeReliques" class="listeReliques"></ul>
   </div>
 </div>
 
 <!-- donnees.js est facultatif : il n'existe que sur une copie locale où l'on a lancé
      l'extraction. app.js le charge lui-même et se passe très bien de son absence. -->
-<script src="decodeur.js?v=2026-08-22f"></script>
+<script src="decodeur.js?v=2026-08-23a"></script>
 <!-- Catalogue du jeu : héros, ensembles d'équipement, paliers d'éveil et noms
      français. Ces données appartiennent au jeu et non au compte : elles sont
      livrées avec le site, et régénérées par `node tools/catalogue.js`. -->
-<script src="heros-jeu.js?v=2026-08-22f"></script>
-<script src="sets-jeu.js?v=2026-08-22f"></script>
-<script src="eveil-jeu.js?v=2026-08-22f"></script>
-<script src="casernes-jeu.js?v=2026-08-22f"></script>
-<script src="reliques-jeu.js?v=2026-08-22f"></script>
-<script src="ages-jeu.js?v=2026-08-22f"></script>
-<script src="pantheon-jeu.js?v=2026-08-22f"></script>
-<script src="noms-fr.js?v=2026-08-22f"></script>
-<script src="formules.js?v=2026-08-22f"></script>
-<script src="app.js?v=2026-08-22f"></script>
+<script src="heros-jeu.js?v=2026-08-23a"></script>
+<script src="sets-jeu.js?v=2026-08-23a"></script>
+<script src="eveil-jeu.js?v=2026-08-23a"></script>
+<script src="casernes-jeu.js?v=2026-08-23a"></script>
+<script src="reliques-jeu.js?v=2026-08-23a"></script>
+<script src="ages-jeu.js?v=2026-08-23a"></script>
+<script src="pantheon-jeu.js?v=2026-08-23a"></script>
+<script src="capacites-jeu.js?v=2026-08-23a"></script>
+<script src="noms-fr.js?v=2026-08-23a"></script>
+<script src="formules.js?v=2026-08-23a"></script>
+<script src="app.js?v=2026-08-23a"></script>
 </body>
 </html>

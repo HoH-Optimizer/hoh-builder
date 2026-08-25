@@ -198,10 +198,25 @@ const multiplicateur = (v) => Number(v).toFixed(3).replace(/.?0+$/, '').replace(
 // affichent une vitesse ne puissent plus diverger.
 const coupsMin = (v) => nombre(Math.round(FORMULES.coupsParMinute(v)));
 
+// UNE DURÉE GARDE SES CENTIÈMES. « nombre » n'écrit qu'une décimale — c'est ce
+// qu'il faut pour des points de vie, jamais pour une seconde : l'infobulle du jeu
+// écrit « -0,36 s » là où le site arrondissait à « -0,4 s ». Relevé par Thomas le
+// 23/08/2026, sur plusieurs héros.
+const secondes = (v) => Number(v).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+
 function valeurAttribut(stat, valeur, type) {
-  if (stat === 'InitialFocusInSecondsBonus') return `${signe(-valeur, (v) => nombre(v))} s`;
+  if (stat === 'InitialFocusInSecondsBonus') return `${signe(-valeur, secondes)} s`;
   if (stat === 'AttackSpeed') return `${signe(valeur, coupsMin)} coups/min`;
-  return type === 'pourcentage' ? signe(valeur, pourcent) : signe(valeur, nombre);
+  if (type === 'pourcentage') return signe(valeur, pourcent);
+  // UN APPORT SUR UNE STATISTIQUE ENTIÈRE S'ÉCRIT ENTIER, ET LE JEU PLAFONNE.
+  // C'est la règle du §22 (voir RECHERCHE-PUISSANCE.md), déjà appliquée aux lignes
+  // du tableau : l'attaque, la défense, les points de vie et les dégâts de base ne
+  // portent pas de décimale à l'écran. Le collier de Voyageur d'Achille donne 4,5
+  // dans les données ; le jeu écrit « +5 », et le site écrivait « +4,5 ».
+  //
+  // C'EST UN DÉTAIL D'AFFICHAGE : le calcul, lui, garde la valeur exacte — sans
+  // quoi cinq pièces arrondies feraient dériver le total de plusieurs points.
+  return signe(valeur, (v) => nombre(FORMULES.ENTIERES.has(stat) ? Math.ceil(v) : v));
 }
 const pourcent = (v) => `${(v * 100).toFixed(2).replace(/\.?0+$/, '').replace('.', ',')} %`;
 const signe = (v, f) => (v > 0 ? '+' : v < 0 ? '−' : '') + f(Math.abs(v));
@@ -532,11 +547,36 @@ const escorteDuHeros = (h) => casernePortee(h).unite || null;
 // multiplicateur vaut 1, au Haut Moyen Âge 2,854 — d'où un Gant de Fauconnerie
 // niveau 15 qui donne +45 attaque de référence, mais +129 en jeu.
 // Vérifié ligne à ligne contre le tableau du wiki, aux deux bouts de l'échelle.
-function apportRelique(h) {
-  const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
+/* LA RELIQUE SE SIMULE, comme l'équipement et le panthéon.
+
+   On garde donc deux états : celle que le compte porte, qui ne bouge pas, et
+   celle qu'on essaie. La colonne « équipement actuel » reste sur la première —
+   c'est ce qui fait que la colonne ÉCART montre aussi ce qu'une autre relique
+   ferait gagner.
+
+   LE NIVEAU, LUI, A DEUX SENS. Sur la relique réellement portée, le changer
+   corrige l'export — le compte ne donne pas toujours le bon palier, et les deux
+   colonnes doivent alors bouger ensemble. Sur une relique qu'on essaie, il fait
+   partie de l'essai. D'où la règle : tant qu'on n'a rien changé, le niveau est
+   une correction (il est retenu dans ce navigateur) ; dès qu'on a choisi une
+   autre relique, il n'appartient plus qu'à la simulation.                     */
+let reliqueSimulee = {};   // id du héros -> { relique, niveau, id } ou null
+
+// L'exemplaire que le compte pose sur ce héros, avec le niveau qu'on lui connaît.
+const reliqueReelle = (heroId) => {
+  const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === heroId);
+  return portee ? { relique: portee.relique, niveau: niveauRelique(portee), id: portee.id } : null;
+};
+
+// LES DEUX SE DÉSIGNENT PAR L'IDENTIFIANT DU HÉROS, et non par sa fiche de
+// compte : on simule aussi sur un héros qu'on ne possède pas, et celui-là n'a
+// pas de fiche.
+const reliqueDuHeros = (heroId) => (heroId in reliqueSimulee ? reliqueSimulee[heroId] : reliqueReelle(heroId));
+
+function apportRelique(portee) {
   if (!portee) return {};
   const fiche = (window.RELIQUES_JEU || {})[portee.relique];
-  const palier = fiche?.paliers?.filter((p) => p.niveau <= niveauRelique(portee)).pop();
+  const palier = fiche?.paliers?.filter((p) => p.niveau <= portee.niveau).pop();
   if (!palier) return {};
   // LE MODIFICATEUR D'ÈRE NE VAUT QUE POUR LES STATISTIQUES EN POINTS. Une
   // relique qui donne « +50 d'attaque » en donne 143 chez un joueur du Haut Moyen
@@ -582,12 +622,69 @@ function effetsPantheon(h, noeuds) {
 
   const effets = [];
   let inconnus = 0;
+  // Ce que les nœuds pèsent dans la FORMULE DE PUISSANCE, en plus de ce qu'ils
+  // donnent aux statistiques : depuis le 25/08/2026 le jeu les y compte à part
+  // (voir pantheon-jeu.js et le §30 du journal).
+  let puissance = 0;
   for (const noeud of actifs) {
     const fiche = arbre.noeuds[numeroNoeud(noeud)];
     if (!fiche) { inconnus++; continue; }
     effets.push(...fiche.effets);
+    puissance += fiche.puissance || 0;
   }
-  return { effets, inconnus, classe: arbre.nom };
+  return { effets, inconnus, puissance, classe: arbre.nom };
+}
+
+/* ---------------------------------------------------------- la calibration
+
+   Le site calcule la puissance avec la formule du jeu, et il tombe à quelques
+   points près — cinq en moyenne sur douze mille. Ces points-là ne viennent pas
+   de la formule mais de l'épaisseur du trait : le jeu n'affiche que des entiers
+   plafonnés, et calcule sur des valeurs qu'il ne montre pas.
+
+   Alors on demande au joueur. Il lit la puissance sous son héros, il la donne,
+   et le site retient l'écart. À partir de là, ce héros tombe PILE — et il
+   continue de tomber juste quand on change son équipement, parce que l'écart ne
+   dépend presque pas de l'équipement (voir formules.js et le §35 du journal).
+
+   CE QUI PÉRIME UNE CALIBRATION : tout ce qui n'est pas de l'équipement. Un
+   niveau, une ascension, un niveau de capacité, une relique améliorée, un nœud
+   de panthéon — tout cela déplace la base du calcul, donc l'écart. On enregistre
+   donc l'état du héros au moment de la mesure, et on prévient dès qu'il bouge.  */
+
+const CLE_CALIBRATION = 'hoh.calibration';
+
+const lireCalibrations = () => {
+  try { return JSON.parse(localStorage.getItem(CLE_CALIBRATION)) || {}; }
+  catch { return {}; }
+};
+let calibrations = lireCalibrations();
+
+const ecrireCalibrations = () => {
+  try { localStorage.setItem(CLE_CALIBRATION, JSON.stringify(calibrations)); }
+  catch { /* navigation privée : la calibration ne survivra pas, tant pis */ }
+};
+
+// L'état du héros hors équipement. Deux signatures différentes, et la mesure ne
+// vaut plus.
+function signatureHeros(h) {
+  // La relique RÉELLE, pas celle qu'on essaie : la mesure a été prise sur le
+  // compte, pas sur une simulation.
+  const relique = reliqueReelle(h?.id);
+  return [
+    h?.niveau, h?.ascensions, h?.competence,
+    h?.eveil ?? 0,   // le palier d'éveil est un simple compteur dans l'export
+    relique ? `${relique.relique}:${relique.niveau}` : '—',
+    (h?.pantheon || []).length,
+  ].join('/');
+}
+
+// L'écart retenu pour ce héros, s'il est encore valable. On ne l'applique JAMAIS
+// à une projection à un autre niveau : la mesure a été prise au vrai niveau.
+function calibrationDe(h) {
+  const c = calibrations[h?.id];
+  if (!c || niveauProjete != null) return null;
+  return { ...c, perimee: c.signature !== signatureHeros(h) };
 }
 
 // Le niveau auquel on regarde le héros. C'est son vrai niveau par défaut, mais
@@ -598,9 +695,13 @@ const niveauAffiche = (h) => niveauProjete ?? h?.niveau ?? 1;
 // Tout ce dont formules.js a besoin pour situer un héros, hors équipement.
 // « noeuds » permet de demander le contexte avec le panthéon RÉEL du compte
 // plutôt qu'avec celui qu'on simule : c'est ce dont la colonne de gauche a besoin.
-function contexteHeros(heroId, noeuds) {
+function contexteHeros(heroId, noeuds, relique) {
   const h = herosParId.get(heroId);
   const details = ficheDuHeros(h) || fiche(heroId);
+  // Sans précision, on prend la relique qu'on essaie. La colonne du compte, elle,
+  // passe la vraie — comme elle passe les vrais nœuds de panthéon.
+  const portee = relique === undefined ? reliqueDuHeros(heroId) : relique;
+  const apportPantheon = effetsPantheon(h, noeuds);
   return {
     hero: h,
     details,
@@ -614,22 +715,29 @@ function contexteHeros(heroId, noeuds) {
     // L'escouade de sa caserne : elle n'entre dans aucune statistique, elle
     // s'ajoute à la PUISSANCE.
     escorte: escorteDuHeros(h),
-    relique: apportRelique(h),
+    relique: apportRelique(portee),
     // La relique elle-même, pas seulement ce qu'elle apporte : la formule de
     // puissance a besoin de sa RARETÉ et de son NIVEAU, qui n'entrent dans
     // aucune statistique mais multiplient la puissance (voir formules.js).
     //
     // La rareté ne vient PAS du compte — il ne la donne pas — mais du catalogue :
     // c'est une propriété du type de relique, pas de l'exemplaire.
-    reliquePortee: (() => {
-      const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
-      if (!portee) return null;
-      return {
-        rarete: (window.RELIQUES_JEU || {})[portee.relique]?.rarete ?? null,
-        niveau: niveauRelique(portee),
-      };
+    reliquePortee: portee ? {
+      rarete: (window.RELIQUES_JEU || {})[portee.relique]?.rarete ?? null,
+      niveau: portee.niveau,
+    } : null,
+    pantheon: apportPantheon.effets,
+    // L'écart mesuré par le joueur sur l'écran du jeu, s'il en a donné un et
+    // qu'il vaut encore. Une calibration périmée n'est pas appliquée : mieux
+    // vaut un chiffre estimé qu'un chiffre faussement sûr.
+    calibration: (() => {
+      const c = calibrationDe(h);
+      return c && !c.perimee ? c.ecart : 0;
     })(),
-    pantheon: effetsPantheon(h, noeuds).effets,
+    // Le panthéon entre DEUX FOIS dans le nombre affiché sous le héros : par les
+    // statistiques qu'il gonfle, et par ce facteur-là, que la formule du jeu
+    // porte depuis le 25/08/2026.
+    puissancePantheon: apportPantheon.puissance,
   };
 }
 
@@ -939,7 +1047,7 @@ function rendreStats() {
   // reprend donc les nœuds réellement activés, pas ceux qu'on essaie dans
   // l'arbre. Sans ça, activer un nœud ferait bouger les deux colonnes ensemble
   // et la colonne ÉCART resterait obstinément à zéro.
-  const contexteReel = contexteHeros(selection, noeudsReels(herosParId.get(selection)));
+  const contexteReel = contexteHeros(selection, noeudsReels(herosParId.get(selection)), reliqueReelle(selection));
   const simule = feuille(contexte, agreger(objetsEquipes(selection)));
   const actuel = feuille(contexteReel, agreger(Object.values(equipeInitial[selection] || {}).map((id) => objets.get(id)).filter(Boolean)));
 
@@ -972,6 +1080,7 @@ function rendreStats() {
   $('#aucuneStat').hidden = true;
   $('#tableStats').hidden = false;
   rendreRelique(contexte);
+  rendreCapacite(contexte, simule);
   rendrePuissance(contexte, simule, actuel, contexteReel);
   rendreArbrePantheon(contexte);
 }
@@ -998,23 +1107,91 @@ function rendrePuissance(contexte, simule, actuel, contexteReel = contexte) {
   // escouade. Les deux s'additionnent — c'est la formule du jeu, plus rien n'est
   // ajusté depuis qu'on a compris d'où venait le second terme.
   const escorte = FORMULES.puissanceEscorte(contexte?.escorte);
-  const infobulle = "Puissance calculée avec la formule du jeu, retrouvée dans ses données. "
-    + (escorte
-      ? `Elle additionne le héros (${nombre(Math.round(affiche - escorte))}) et l'escouade que lui donne `
-        + `ta caserne (${nombre(Math.round(escorte))}) : le jeu compte les deux sous son nom. `
-      : "La caserne du compte n'est pas connue : la part de l'escouade est approchée. ")
-    + "Elle tombe à 0,05 % en moyenne sur 16 des 19 héros dont la puissance est relevée, et à 0,02 % sur le seul héros "
-    + "relevé d'un second compte. Reste un écart de quelques points, dû aux arrondis. "
-    + "L'écart entre deux configurations est plus fiable encore que le total.";
+  const cal = calibrationDe(contexte?.hero);
+  const calibree = cal && !cal.perimee;
 
-  bloc.innerHTML = `<span class="blocPuissance" title="${esc(infobulle)}">
-    <span class="titrePuissance">Puissance <em>estimée</em></span>
+  const infobulle = calibree
+    ? `Puissance CALIBRÉE : tu as relevé ${nombre(cal.puissanceJeu)} dans le jeu le ${cal.date}, `
+      + `et le site en tenait ${cal.ecart > 0 ? '' : '−'}${nombre(Math.abs(Math.round(cal.ecart)))} `
+      + "de trop. L'écart est retranché de tous les calculs de ce héros. Il reste valable quand tu "
+      + "changes son équipement — c'est mesuré — mais plus s'il monte de niveau, ascensionne, "
+      + "améliore sa relique ou débloque un nœud de panthéon."
+    : "Puissance calculée avec la formule du jeu, retrouvée dans ses données. "
+      + (escorte
+        ? `Elle additionne le héros (${nombre(Math.round(affiche - escorte))}) et l'escouade que lui donne `
+          + `ta caserne (${nombre(Math.round(escorte))}) : le jeu compte les deux sous son nom. `
+        : "La caserne du compte n'est pas connue : la part de l'escouade est approchée. ")
+      + "Elle tombe à 0,04 % en moyenne sur les dix héros relevés, soit cinq points sur douze mille. "
+      + "Ce qui reste vient des arrondis du jeu, pas de la formule. "
+      + "L'écart entre deux configurations est plus fiable encore que le total.";
+
+  // LE RELEVÉ. On ne le propose que sur l'équipement réel : demander au joueur de
+  // recopier un chiffre du jeu n'a de sens que si le site regarde la même chose
+  // que lui. Sur une simulation ou une projection de niveau, le champ disparaît.
+  const relevable = ecart === 0 && niveauProjete == null && contexte?.hero?.id;
+  const saisie = !relevable ? '' : `<span class="calibrage">
+    ${calibree || cal ? `<button type="button" class="lienCalibrage" data-calibrer="rouvrir">${cal.perimee ? 'Calibration périmée — refaire' : 'recalibrer'}</button>` : ''}
+    <span class="formCalibrage" ${calibrations[contexte.hero.id] ? 'hidden' : ''}>
+      <label for="champCalibrage">Puissance affichée par le jeu</label>
+      <input type="number" id="champCalibrage" inputmode="numeric" min="1" step="1"
+             placeholder="${nombre(affiche).replace(/\s/g, '')}" value="${cal ? cal.puissanceJeu : ''}">
+      <button type="button" data-calibrer="valider">Caler</button>
+      ${cal ? '<button type="button" class="lienCalibrage" data-calibrer="oublier">oublier</button>' : ''}
+    </span>
+  </span>`;
+
+  bloc.innerHTML = `<span class="blocPuissance ${calibree ? 'calibree' : ''}" title="${esc(infobulle)}">
+    <span class="titrePuissance">Puissance <em>${calibree ? 'calibrée' : 'estimée'}</em></span>
     <span class="valeurPuissance">${nombre(affiche)}</span>
     ${ecart !== 0
       ? `<span class="ecartPuissance ${signe}">${ecart > 0 ? '+' : '−'}${nombre(Math.abs(ecart))}</span>`
       : '<span class="ecartPuissance">équipement réel</span>'}
-  </span>`;
+  </span>${saisie}`;
+
+  if (cal && cal.perimee) {
+    bloc.insertAdjacentHTML('beforeend',
+      `<span class="avertCalibrage">Ce héros a changé depuis ta mesure du ${esc(cal.date)} : `
+      + "l'écart n'est plus appliqué.</span>");
+  }
 }
+
+/* La calibration se pilote depuis le bloc de puissance : un champ, un bouton.
+   On enregistre l'écart ET l'état du héros au moment de la mesure. */
+$('#resumePuissance').addEventListener('click', (e) => {
+  const action = e.target.dataset?.calibrer;
+  if (!action) return;
+  const h = herosParId.get(selection);
+  if (!h) return;
+
+  if (action === 'rouvrir') {
+    $('#resumePuissance').querySelector('.formCalibrage')?.removeAttribute('hidden');
+    $('#champCalibrage')?.focus();
+    return;
+  }
+  if (action === 'oublier') {
+    delete calibrations[h.id];
+    ecrireCalibrations();
+    rendreHeros();
+    return;
+  }
+  // « Caler » : on relit la puissance BRUTE, celle d'avant toute calibration,
+  // pour que recalibrer deux fois de suite ne cumule pas les écarts.
+  const saisi = Number($('#champCalibrage')?.value);
+  if (!Number.isFinite(saisi) || saisi <= 0) return;
+  const contexteNu = { ...contexteHeros(h.id, noeudsReels(h), reliqueReelle(h.id)), calibration: 0 };
+  const porte = Object.values(equipeInitial[h.id] || {}).map((id) => objets.get(id)).filter(Boolean);
+  const brute = FORMULES.puissance(feuille(contexteNu, agreger(porte)), contexteNu);
+  if (brute == null) return;
+
+  calibrations[h.id] = {
+    puissanceJeu: Math.round(saisi),
+    ecart: brute - saisi,
+    date: new Date().toLocaleDateString('fr-FR'),
+    signature: signatureHeros(h),
+  };
+  ecrireCalibrations();
+  rendreHeros();
+});
 
 /* ----------------------------------------------------------------- panthéon
 
@@ -1296,6 +1473,36 @@ function valeurStat(stat, feuilleStats) {
   }
 }
 
+// L'ÉCART D'UNE STATISTIQUE, écrit dans son unité — et une seule fois pour tout le
+// site : le tableau s'en sert, le banc d'essai aussi, et les deux ne peuvent plus
+// diverger.
+//
+// L'ÉCART D'UNE STATISTIQUE ENTIÈRE EST LA DIFFÉRENCE DES DEUX NOMBRES AFFICHÉS.
+// Le jeu n'écrit jamais de décimale sur l'attaque ou les points de vie, et un
+// « +128,3 » ne correspondait à rien de visible. Mais arrondir l'écart ne suffit
+// pas : arrondi à l'unité supérieure il donnait +49 là où les colonnes montrent
+// 8 432 et 8 480, soit 48 — la ligne ne s'additionnait plus. On prend donc
+// littéralement la différence de ce qui est écrit, et tout se recoupe.
+function ecartHtml(stat, s, a, vide = '<span class="discret">=</span>') {
+  const delta = s.brut - a.brut;
+  // Sur la charge, gagner du temps c'est descendre : la couleur suit le bénéfice.
+  const bon = s.inverse ? delta < 0 : delta > 0;
+  const pourAffichage = FORMAT_STAT[stat] === 'entier' ? Math.round(s.brut) - Math.round(a.brut) : delta;
+  if (Math.abs(pourAffichage) < 1e-9) return vide;
+
+  // Chaque unité s'écrit comme la colonne l'écrit : « +3 coups/min » et non le
+  // « +0,1 » de la donnée brute, « −0,36 s » et non « −0,4 ».
+  const ecrire = (x) => {
+    switch (FORMAT_STAT[stat]) {
+      case 'entier': case 'decimal': case 'portee': case 'vitesse': return nombre(x);
+      case 'coups': return `${coupsMin(x)} coups/min`;
+      case 'secondes': return `${secondes(x)} s`;
+      default: return pourcent(x);
+    }
+  };
+  return `<span class="${bon ? 'hausse' : 'baisse'}">${signe(pourAffichage, ecrire)}</span>`;
+}
+
 function ligneStat(stat, simule, actuel, incomplete = false) {
   const s = valeurStat(stat, simule);
   const a = valeurStat(stat, actuel);
@@ -1308,11 +1515,7 @@ function ligneStat(stat, simule, actuel, incomplete = false) {
   // pas : arrondi à l'unité supérieure il donnait +49 là où les colonnes montrent
   // 8 432 et 8 480, soit 48 — la ligne ne s'additionnait plus. On prend donc
   // littéralement la différence de ce qui est écrit, et tout se recoupe.
-  const entier = FORMAT_STAT[stat] === 'entier';
-  const pourAffichage = entier ? Math.round(s.brut) - Math.round(a.brut) : delta;
-  const ecart = Math.abs(pourAffichage) < 1e-9
-    ? '<span class="discret">=</span>'
-    : `<span class="${bon ? 'hausse' : 'baisse'}">${signe(pourAffichage, (x) => (FORMAT_STAT[stat] || 'pct') === 'pct' || !FORMAT_STAT[stat] ? pourcent(x) : nombre(x))}</span>`;
+  const ecart = ecartHtml(stat, s, a);
 
   const majeure = STATS_DE_BASE.includes(stat);
   const ouverte = statOuverte === stat;
@@ -1473,53 +1676,203 @@ function rendreProjection(contexte) {
 }
 
 
+/* ------------------------------------------------ la capacité du héros
+
+   LA CARTE DE CAPACITÉ, écrite comme le jeu l'écrit. Elle n'invente rien : le
+   texte est celui du fichier de traduction, les chiffres sont ceux du palier de
+   compétence atteint, et les deux se rejoignent dans capacites-jeu.js.
+
+   Les deux charges, elles, ne viennent pas de là : ce sont des statistiques
+   comme les autres, et elles bougent avec l'équipement. On les prend donc dans
+   la feuille simulée — la carte suit ce qu'on essaie, comme le reste. */
+
+// Les icônes du jeu, telles que la phrase les appelle, dans nos propres fichiers.
+const ICONE_CAPACITE = {
+  atk: 'Attack', atkspd: 'AttackSpeed', hp: 'MaxHitPoints', def: 'Defense',
+  basedmg: 'BaseDamage', dmg: 'BasicAttackDamageAmp', singledmg: 'SingleTargetDamageAmp',
+  areadmg: 'AoeDamageAmp', critchance: 'CritChance', critdmg: 'CritDamage',
+  movespd: 'MoveSpeed', evasion: 'Evasion', burndmg: 'BurnDamageAmp',
+  lightningdmg: 'LightningDamageAmp', charge: 'Focus',
+};
+
+// Un trou de la phrase, écrit comme le jeu l'écrit : « 1115 % », « 8 s », « 3 ».
+const valeurCapacite = (valeur, format) => (
+  format === 'pourcentage' ? pourcent(valeur)
+    : format === 'secondes' ? `${secondes(valeur)} s`
+      : nombre(valeur));
+
+// Ce que dit la capacité d'un héros AU PALIER QU'IL A ATTEINT. Un héros qu'on ne
+// possède pas est lu au premier palier : c'est ce que le jeu montre aussi.
+function capaciteDuHeros(heroId, competence) {
+  const fiche = (window.CAPACITES_JEU || {})[heroId];
+  if (!fiche) return null;
+  const modeles = window.MODELES_CAPACITE || {};
+  const palier = Math.min(Math.max(competence || 1, 1), fiche.volets[0].paliers.length);
+
+  const volets = fiche.volets.map((volet) => {
+    const [rang, valeurs] = volet.paliers[palier - 1] || volet.paliers[0];
+    const modele = modeles[volet.modeles[rang]];
+    if (!modele) return null;
+    const trous = { ...volet.communs, ...valeurs };
+    const lignes = modele.lignes.map((ligne) => esc(ligne)
+      .replace(/\{([a-z0-9_]+)\}/g, (tout, nom) => (trous[nom] === undefined ? tout
+        : `<b class="chiffreCapacite">${valeurCapacite(trous[nom], volet.formats[nom])}</b>`))
+      .replace(/\[\[([a-z0-9]+)\]\]/g, (tout, icone) => (ICONE_CAPACITE[icone] ? imgStat(ICONE_CAPACITE[icone]) : '')));
+    return { etiquettes: modele.etiquettes, lignes };
+  }).filter(Boolean);
+
+  return { nom: fiche.nom, palier, volets };
+}
+
+function rendreCapacite(contexte, simule) {
+  const bloc = $('#capacite');
+  const capacite = capaciteDuHeros(selection, contexte.hero?.competence);
+  if (!capacite) { bloc.hidden = true; bloc.innerHTML = ''; return; }
+
+  const charge = (stat) => valeurStat(stat, simule).texte;
+  const volets = capacite.volets.map((volet) => `
+    <div class="voletCapacite">
+      ${volet.etiquettes.length
+    ? `<p class="etiquettesCapacite">${volet.etiquettes.map((e) => `<span>${esc(e)}</span>`).join('')}</p>`
+    : ''}
+      <ul class="effetsCapacite">${volet.lignes.map((l) => `<li>${l}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  bloc.hidden = false;
+  bloc.innerHTML = `
+    <header class="enteteCapacite">
+      <img class="portraitCapacite" src="${portraitsDe(selection)[0]}" alt=""
+        data-repli="${portraitsDe(selection).slice(1).join(',')}" onerror="repliIcone(this)">
+      <div>
+        <h3>${esc(capacite.nom)}</h3>
+        <p class="palierCapacite">Niv. ${capacite.palier}</p>
+      </div>
+      <dl class="chargesCapacite">
+        <div><dt>Charge initiale</dt><dd>${charge('charge_initiale')}</dd></div>
+        <div><dt>Charge normale</dt><dd>${charge('charge_normale')}</dd></div>
+      </dl>
+    </header>
+    ${volets}`;
+}
+
+
 // La relique portée, avec ses deux réglages : son niveau et l'ère du joueur.
 // Les deux commandent directement les chiffres, et aucun des deux n'est fiable
 // à 100 % dans l'export — autant les rendre modifiables.
+// Ce qu'une relique apporte, écrit comme le tableau l'écrit : en points quand
+// c'est un nombre de points, en pourcentage quand c'en est un. Écrire « +0,1 »
+// pour dix pour cent de dégâts de zone ne voulait rien dire.
+const texteApportRelique = (stat, v) =>
+  `${FORMULES.ABSOLUES.has(stat) ? signe(v, nombre) : signe(v, pourcent)} ${libelleStat(stat).toLowerCase()}`;
+
 function rendreRelique(contexte) {
-  const h = contexte.hero;
-  const portee = (donnees?.compte?.reliques || []).find((r) => r.porteParHero === h?.id);
+  const portee = reliqueDuHeros(selection);
+  const reelle = reliqueReelle(selection);
+  const bloc = $('#relique');
+
+  // Le bouton d'échange est proposé même sans relique : c'est justement là qu'on
+  // veut savoir ce qu'une relique apporterait.
+  const choisir = (etiquette) => `<button type="button" id="changerRelique" class="lienDiscret">${etiquette}</button>`;
 
   if (!portee) {
-    $('#relique').innerHTML = '<p class="discret">Aucune relique sur ce héros.</p>';
+    bloc.innerHTML = `<p class="discret">Aucune relique sur ce héros. ${choisir('En essayer une')}</p>`;
     return;
   }
 
   const ficheRelique = (window.RELIQUES_JEU || {})[portee.relique];
   const paliers = ficheRelique?.paliers || [];
-  const niveau = niveauRelique(portee);
+  const dernier = paliers.length ? paliers[paliers.length - 1].niveau : portee.niveau;
   const apports = Object.entries(contexte.relique).filter(([stat]) => !stat.startsWith('stat_'));
+  const essayee = reelle?.relique !== portee.relique || reelle?.niveau !== portee.niveau;
 
-  const ere = ereDuJoueur();
-  const eres = Object.entries(window.AGES_JEU || {})
-    .filter(([nom]) => NOM_ERE[nom])
-    .sort((a, b) => a[1].rang - b[1].rang);
-
-  $('#relique').innerHTML = `
-    <div class="carteRelique">
+  bloc.innerHTML = `
+    <div class="carteRelique ${essayee ? 'essayee' : ''}">
       ${imgRelique(portee.relique)}
       <div class="texteRelique">
         <span class="nomRelique">${esc(ficheRelique?.nom || joliNom(portee.relique))}</span>
         <span class="apportRelique">${apports.length
-          ? apports.map(([stat, v]) => `${signe(v, nombre)} ${libelleStat(stat).toLowerCase()}`).join(' · ')
-          : '<span class="discret">effet non chiffré</span>'}</span>
+    ? apports.map(([stat, v]) => texteApportRelique(stat, v)).join(' · ')
+    : '<span class="discret">effet non chiffré</span>'}</span>
       </div>
     </div>
     <div class="reglagesRelique">
-      <label>Niveau
-        <select id="niveauRelique">
-          ${paliers.map((p) => `<option value="${p.niveau}" ${p.niveau === niveau ? 'selected' : ''}>${p.niveau}</option>`).join('')}
-        </select>
-      </label>
-      <label>Ère
-        <select id="ereJoueur">
-          ${eres.map(([nom, a]) => `<option value="${nom}" ${nom === ere ? 'selected' : ''}>${esc(NOM_ERE[nom])} (x${multiplicateur(a.modificateur)})</option>`).join('')}
-        </select>
-      </label>
+      <span class="reglageNiveau">
+        <span class="etiquetteNiveau">Niveau</span>
+        <button type="button" class="pasNiveau" data-pas-relique="-1" ${portee.niveau <= 1 ? 'disabled' : ''}
+          title="Un niveau de moins" aria-label="Un niveau de moins">−</button>
+        <b class="valeurNiveauRelique">${portee.niveau}</b>
+        <button type="button" class="pasNiveau" data-pas-relique="1" ${portee.niveau >= dernier ? 'disabled' : ''}
+          title="Un niveau de plus" aria-label="Un niveau de plus">+</button>
+      </span>
+      ${choisir(essayee ? 'Changer' : 'En essayer une autre')}
     </div>
-    <p class="discret noteRelique">Le jeu met les reliques à l'échelle de ton ère : c'est elle qui
-    fait passer ce palier de ${paliers.find((p) => p.niveau === niveau)?.apports.Attack ?? '?'} à
-    ${contexte.relique.Attack ?? '?'} d'attaque.</p>`;
+    ${essayee
+    ? `<p class="discret noteRelique">Relique essayée — ${reelle
+      ? `la colonne de gauche garde ${esc(nomRelique(reelle.relique))}`
+      : "sur ton compte, ce héros n'en porte aucune"}.
+        <button type="button" id="rendreRelique" class="lienDiscret">annuler l'essai</button></p>`
+    : `<p class="discret noteRelique">Le jeu met les reliques à l'échelle de ton ère
+        (${esc(NOM_ERE[ereDuJoueur()] || 'inconnue')}) : c'est elle qui fait passer ce palier de
+        ${paliers.find((p) => p.niveau === portee.niveau)?.apports.Attack ?? '?'} à
+        ${contexte.relique.Attack ?? '?'} d'attaque.</p>`}`;
+}
+
+// Le nom d'une relique tel que le jeu l'écrit.
+const nomRelique = (id) => (window.RELIQUES_JEU || {})[id]?.nom || joliNom(id);
+
+/* ------------------------------------------------ essayer une autre relique
+
+   MÊME PRINCIPE QUE L'ÉQUIPEMENT : on pioche dans ce que le compte possède, on
+   voit le résultat tout de suite, et rien n'est envoyé nulle part. Une relique
+   déjà posée sur un autre héros reste proposée — la lui retirer ne coûte, ici,
+   qu'un clic — et la ligne le dit.
+
+   L'ÈRE EST RANGÉE ICI, et non dans le panneau de statistiques : elle ne décrit
+   pas ce héros mais TON COMPTE, elle ne se règle qu'une fois, et sa liste de
+   vingt-trois âges n'avait rien à faire au milieu des chiffres.                */
+function ouvrirSelecteurRelique() {
+  $('#selecteurReliqueTitre').textContent = `Relique pour ${nomHeros(selection)}`;
+  $('#selecteurRelique').hidden = false;
+  rendreSelecteurRelique();
+}
+
+function rendreSelecteurRelique() {
+  const posee = reliqueDuHeros(selection);
+  const modificateur = modificateurDEre();
+
+  const lignes = (donnees?.compte?.reliques || [])
+    .map((r) => ({ ...r, fiche: (window.RELIQUES_JEU || {})[r.relique] }))
+    .sort((a, b) => (b.fiche?.rarete ?? 0) - (a.fiche?.rarete ?? 0) || (b.niveau ?? 0) - (a.niveau ?? 0))
+    .map((r) => {
+      const niveau = r.porteParHero === selection ? niveauRelique(r) : (r.niveau ?? 0);
+      const palier = r.fiche?.paliers?.filter((p) => p.niveau <= niveau).pop();
+      const apports = Object.entries(palier?.apports || {})
+        .filter(([stat]) => !stat.startsWith('stat_'))
+        .map(([stat, v]) => texteApportRelique(stat, FORMULES.ABSOLUES.has(stat) ? Math.ceil(v * modificateur) : v))
+        .join(' · ');
+      const marque = r.porteParHero === selection ? 'portée ici'
+        : r.porteParHero ? `portée par ${nomHeros(r.porteParHero)}`
+          : 'en réserve';
+      return `<li class="r${r.fiche?.rarete ?? 4} ${posee?.relique === r.relique ? 'choisie' : ''}"
+          data-relique="${esc(r.relique)}" data-niveau="${niveau}">
+        ${imgRelique(r.relique)}
+        <span class="corpsObjet">
+          <span class="titre">${esc(nomRelique(r.relique))} <span class="discret">niv. ${niveau}</span></span>
+          <span class="attributsObjet">${esc(apports) || '<span class="discret">effet non chiffré</span>'}</span>
+        </span>
+        <span class="marque">${esc(marque)}</span>
+      </li>`;
+    }).join('');
+
+  const eres = Object.entries(window.AGES_JEU || {})
+    .filter(([nom]) => NOM_ERE[nom])
+    .sort((a, b) => a[1].rang - b[1].rang);
+  $('#ereJoueur').innerHTML = eres.map(([nom, a]) =>
+    `<option value="${nom}" ${nom === ereDuJoueur() ? 'selected' : ''}>${esc(NOM_ERE[nom])} (x${multiplicateur(a.modificateur)})</option>`).join('');
+
+  $('#listeReliques').innerHTML =
+    '<li data-relique="" class="titre">Aucune — retirer la relique</li>'
+    + (lignes || '<li class="discret">Ton compte ne porte aucune relique.</li>');
 }
 
 /* -------------------------------------------------- fenêtre de choix d'objet */
@@ -1578,9 +1931,13 @@ function ouvrirSelecteur(slot) {
   $('#rechercheObjet').value = '';
   filtrePrincipal = '';
   filtreSecondaires = new Set();
+  // Le banc s'ouvre comme celui du jeu : à droite ce que le héros porte, à
+  // gauche la place où poser ce qu'on veut essayer contre.
+  essai = { a: null, b: (equipe[selection] || {})[slot] ?? null, actif: 'a' };
   $('#selecteur').hidden = false;
   rendreFiltresObjet();
   rendreSelecteur();
+  rendreBanc();
 }
 
 // Les choix proposés ne sont pas une liste figée : ce sont les attributs qui
@@ -1631,7 +1988,10 @@ function rendreSelecteur() {
   const lignes = candidats.map((o) => {
     const p = porteur.get(o.id);
     const marque = p === selection ? 'équipé ici' : p ? `porté par ${nomHeros(p)}` : 'en réserve';
-    return `<li class="r${o.rarete} ${p && p !== selection ? 'porte' : ''}" data-objet="${o.id}">
+    // Ce qui est déjà sur le banc se voit dans la liste : on ne repose pas deux
+    // fois la même pièce sans s'en apercevoir.
+    const surLeBanc = essai.a === o.id ? 'surBancGauche' : essai.b === o.id ? 'surBancDroit' : '';
+    return `<li class="r${o.rarete} ${p && p !== selection ? 'porte' : ''} ${surLeBanc}" data-objet="${o.id}">
       ${tuileObjet(o)}
       <span class="corpsObjet">
         <span class="titre">${esc(nomObjet(o))}</span>
@@ -1645,6 +2005,135 @@ function rendreSelecteur() {
   $('#listeObjets').innerHTML =
     `<li data-objet="" class="titre">Aucun — laisser l'emplacement vide</li>`
     + (lignes || '<li class="discret">Aucune pièce ne réunit ces conditions.</li>');
+}
+
+/* ------------------------------------------------ le banc d'essai
+
+   L'ÉCRAN DE COMPARAISON DU JEU, repris ici : l'inventaire à gauche, deux pièces
+   posées côte à côte, et ce qu'elles font aux statistiques à droite.
+
+   UNE DIFFÉRENCE, ET ELLE COMPTE : le jeu compare toujours une pièce à CELLE
+   QU'ON PORTE. Ici les deux côtés se changent. On compare donc aussi bien deux
+   pièces qu'on ne porte pas — « laquelle de ces deux-là vaut-il mieux viser ? » —
+   sans rien poser sur le héros.
+
+   Et le repère ne bouge pas pour autant : la colonne PORTÉ du tableau reste ce
+   que le héros porte dans la simulation, et les deux colonnes suivantes disent ce
+   que chaque côté y changerait. */
+
+// La pièce posée de chaque côté : un identifiant, ou null pour « emplacement
+// vide ». « actif » désigne le côté que le prochain clic dans la liste remplira.
+let essai = { a: null, b: null, actif: 'a' };
+
+const pieceEssai = (cote) => (essai[cote] == null ? null : objets.get(essai[cote]));
+const pieceEnPlace = () => (equipe[selection] || {})[slotEnCours] ?? null;
+
+function rendreBanc() {
+  rendreCartesEssai();
+  rendreStatsEssai();
+}
+
+function carteEssaiHtml(cote) {
+  const o = pieceEssai(cote);
+  const enPlace = (essai[cote] ?? null) === pieceEnPlace();
+  const actif = essai.actif === cote;
+  const p = o ? porteur.get(o.id) : null;
+  const def = o ? defSet(o.set) : null;
+
+  const corps = o
+    ? `<div class="corpsCarteEssai">
+        ${tuileObjet(o)}
+        <div class="texteCarteEssai">
+          <span class="titre">${esc(nomObjet(o))}</span>
+          <span class="discret">${p === selection ? 'équipé ici' : p ? `porté par ${esc(nomHeros(p))}` : 'en réserve'}</span>
+        </div>
+      </div>
+      ${attributsObjetHtml(o)}
+      ${def ? `<p class="ensembleCarteEssai">${imgSet(o.set)}<span>${esc(nomSet(o.set))} ${def.pieces}/${def.pieces}
+        <span class="discret">${esc(texteBonusSet(def))}</span></span></p>` : ''}`
+    : `<div class="corpsCarteEssai vide">
+        ${SILHOUETTE[slotEnCours] || ''}
+        <span class="discret">Emplacement vide${actif ? ' — choisis une pièce à gauche' : ''}</span>
+      </div>`;
+
+  // Un seul bouton par côté : ce côté-là est déjà sur le héros, on le retire ;
+  // il ne l'est pas, on le pose. Le reste — remplir la carte — se fait dans la
+  // liste, sur le côté choisi.
+  const action = enPlace
+    ? (o ? `<button type="button" class="bouton" data-deposer="${cote}">Déséquiper</button>`
+      : '<span class="discret">rien dans cet emplacement</span>')
+    : `<button type="button" class="bouton principal" data-poser="${cote}">${o ? 'Équiper' : "Laisser l'emplacement vide"}</button>`;
+
+  return `<article class="carteEssai ${actif ? 'actif' : ''} ${o ? `r${o.rarete}` : ''}" data-cote="${cote}">
+    <header>
+      <span class="roleEssai">${enPlace ? 'Ce que tu portes' : 'À l’essai'}</span>
+      ${actif ? '<span class="cibleEssai">reçoit ton choix</span>' : ''}
+    </header>
+    ${corps}
+    <footer>${action}</footer>
+  </article>`;
+}
+
+function rendreCartesEssai() {
+  $('#cartesEssai').innerHTML = ['a', 'b'].map(carteEssaiHtml).join('');
+}
+
+// Ce que chaque côté ferait aux statistiques, contre ce que le héros porte.
+// Le calcul passe par la même chaîne que le grand tableau — même feuille, même
+// agrégation, mêmes bonus d'ensemble : les deux ne peuvent pas se contredire.
+function rendreStatsEssai() {
+  const contexte = contexteHeros(selection);
+  const base = { ...(equipe[selection] || {}) };
+  const avec = (piece) => {
+    const config = { ...base };
+    if (piece == null) delete config[slotEnCours];
+    else config[slotEnCours] = piece;
+    return feuille(contexte, agreger(Object.values(config).map((id) => objets.get(id)).filter(Boolean)));
+  };
+
+  const porte = avec(pieceEnPlace());
+  const cotes = { a: avec(essai.a), b: avec(essai.b) };
+
+  // On ne montre pas les cinquante lignes du tableau : les quatre principales,
+  // et tout ce que l'un des deux côtés fait bouger.
+  const bouge = (stat) => ['a', 'b'].some((c) => Math.abs((cotes[c][stat]?.total ?? 0) - (porte[stat]?.total ?? 0)) > 1e-9)
+    || ['a', 'b'].some((c) => Math.abs(valeurStat(stat, cotes[c]).brut - valeurStat(stat, porte).brut) > 1e-9);
+  const lignes = FAMILLES_STATS.flatMap((f) => f.stats)
+    .filter((stat, i, tout) => tout.indexOf(stat) === i)
+    .filter((stat) => STATS_PRINCIPALES.includes(stat) || bouge(stat));
+
+  const cellule = (stat, f) => {
+    const v = valeurStat(stat, f);
+    return `<td><span class="valeurEssai">${v.texte}</span>${ecartHtml(stat, v, valeurStat(stat, porte), '')}</td>`;
+  };
+
+  const puissance = (f) => FORMULES.puissance(f, contexte);
+  const p0 = puissance(porte);
+  const cellulePuissance = (f) => {
+    const p = puissance(f);
+    if (p == null || p0 == null) return '<td class="discret">—</td>';
+    const ecart = Math.round(p) - Math.round(p0);
+    return `<td><span class="valeurEssai">${nombre(Math.round(p))}</span>${ecart
+      ? `<span class="${ecart > 0 ? 'hausse' : 'baisse'}">${signe(ecart, nombre)}</span>` : ''}</td>`;
+  };
+
+  $('#statsEssai').innerHTML = `<table>
+    <thead><tr>
+      <th>Statistique</th><th>Porté</th><th>Côté gauche</th><th>Côté droit</th>
+    </tr></thead>
+    <tbody>
+      <tr class="lignePuissance">
+        <th>Puissance</th>
+        <td><span class="valeurEssai">${p0 == null ? '—' : nombre(Math.round(p0))}</span></td>
+        ${cellulePuissance(cotes.a)}${cellulePuissance(cotes.b)}
+      </tr>
+      ${lignes.map((stat) => `<tr>
+        <th>${imgStat(stat)}${esc(libelleStat(stat))}</th>
+        <td><span class="valeurEssai">${valeurStat(stat, porte).texte}</span></td>
+        ${cellule(stat, cotes.a)}${cellule(stat, cotes.b)}
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
 }
 
 /* ------------------------------------------------- équiper au mieux
@@ -1952,7 +2441,7 @@ function effacerEtatOptimisation() {
 // Le menu des critères se remplit depuis les familles de l'écran « Stats » : une
 // statistique de plus dans le tableau apparaît ici sans qu'on y touche.
 $('#critereOptimisation').innerHTML =
-  `<option value="${CRITERE_PUISSANCE}">Puissance estimée</option>`
+  `<option value="${CRITERE_PUISSANCE}">Puissance</option>`
   + FAMILLES_STATS.map((f) => `<optgroup label="${esc(f.titre)}">`
     + f.stats.map((s) => `<option value="${s}">${esc(libelleStat(s))}${s.startsWith('charge_') ? ' (la plus courte)' : ''}</option>`).join('')
     + '</optgroup>').join('');
@@ -2036,14 +2525,59 @@ $('#projection').addEventListener('input', (e) => {
   curseurEnCours = false;
 });
 
-// Les deux réglages de la relique : son niveau et l'ère du joueur.
-$('#relique').addEventListener('change', (e) => {
-  if (e.target.id === 'niveauRelique') {
-    ecrireReglage(`hoh:relique:${selection}`, Number(e.target.value));
-  } else if (e.target.id === 'ereJoueur') {
-    ecrireReglage('hoh:ere', e.target.value);
-  } else return;
+/* Le bloc de la relique : un niveau qui monte d'un cran à la fois, et la porte
+   vers l'inventaire de reliques.
+
+   LE NIVEAU A DEUX SENS, et c'est ici que le partage se fait. Tant qu'on n'a pas
+   changé de relique, il corrige l'export — le compte ne donne pas toujours le bon
+   palier — et la correction est retenue dans ce navigateur, pour les deux
+   colonnes à la fois. Dès qu'on essaie une autre relique, il n'appartient plus
+   qu'à l'essai, et la colonne de gauche garde ce que le compte porte. */
+$('#relique').addEventListener('click', (e) => {
+  if (e.target.closest('#changerRelique')) { ouvrirSelecteurRelique(); return; }
+  if (e.target.closest('#rendreRelique')) {
+    delete reliqueSimulee[selection];
+    rendreHeros();
+    return;
+  }
+
+  const pas = e.target.closest('[data-pas-relique]');
+  if (!pas) return;
+  const portee = reliqueDuHeros(selection);
+  if (!portee) return;
+  const paliers = (window.RELIQUES_JEU || {})[portee.relique]?.paliers || [];
+  const vise = portee.niveau + Number(pas.dataset.pasRelique);
+  if (vise < 1 || (paliers.length && vise > paliers[paliers.length - 1].niveau)) return;
+
+  const reelle = reliqueReelle(selection);
+  if (!(selection in reliqueSimulee) && reelle && reelle.relique === portee.relique) {
+    ecrireReglage(`hoh:relique:${selection}`, vise);
+  } else {
+    reliqueSimulee[selection] = { ...portee, niveau: vise };
+  }
   rendreHeros();
+});
+
+$('#listeReliques').addEventListener('click', (e) => {
+  const li = e.target.closest('[data-relique]');
+  if (!li) return;
+  const id = li.dataset.relique;
+  reliqueSimulee[selection] = id ? { relique: id, niveau: Number(li.dataset.niveau) || 1 } : null;
+  $('#selecteurRelique').hidden = true;
+  rendreListeHeros();
+  rendreHeros();
+});
+
+// L'ère vaut pour tout le compte : la changer redessine tout, pas seulement ce héros.
+$('#ereJoueur').addEventListener('change', (e) => {
+  ecrireReglage('hoh:ere', e.target.value);
+  rendreListeHeros();
+  rendreHeros();
+});
+
+$('#fermerSelecteurRelique').addEventListener('click', () => { $('#selecteurRelique').hidden = true; });
+$('#selecteurRelique').addEventListener('click', (e) => {
+  if (e.target.id === 'selecteurRelique') $('#selecteurRelique').hidden = true;
 });
 
 $('#projection').addEventListener('click', (e) => {
@@ -2121,15 +2655,53 @@ $('#emplacements').addEventListener('click', (e) => {
   if (emplacement) ouvrirSelecteur(emplacement.dataset.slot);
 });
 
+/* LE CLIC DANS LA LISTE NE POSE PLUS RIEN SUR LE HÉROS : il remplit le côté
+   choisi du banc, et l'on voit aussitôt ce que la pièce ferait. C'est le bouton
+   « Équiper » de la carte qui décide, comme le « REMPLACER » du jeu.
+
+   Le clic de plus est le prix de la comparaison : avant, on posait à l'aveugle
+   et l'on jugeait après coup, dans le grand tableau. */
 $('#listeObjets').addEventListener('click', (e) => {
   const li = e.target.closest('[data-objet]');
   if (!li) return;
-  const id = li.dataset.objet;
-  if (id === '') retirer(selection, slotEnCours);
-  else equiper(selection, slotEnCours, Number(id));
-  $('#selecteur').hidden = true;
-  rendreListeHeros();
-  rendreHeros();
+  essai[essai.actif] = li.dataset.objet === '' ? null : Number(li.dataset.objet);
+  rendreSelecteur();
+  rendreBanc();
+});
+
+// Le banc : on choisit le côté qu'on remplit, on pose, on retire.
+$('#cartesEssai').addEventListener('click', (e) => {
+  const appliquer = () => {
+    rendreSelecteur();
+    rendreBanc();
+    rendreListeHeros();
+    rendreHeros();
+  };
+
+  const poser = e.target.closest('[data-poser]');
+  if (poser) {
+    const piece = essai[poser.dataset.poser];
+    if (piece == null) retirer(selection, slotEnCours);
+    else equiper(selection, slotEnCours, piece);
+    appliquer();
+    return;
+  }
+
+  // « Déséquiper » vide l'emplacement sur le héros ET la carte : les deux
+  // disaient la même chose, elles doivent tomber ensemble.
+  const deposer = e.target.closest('[data-deposer]');
+  if (deposer) {
+    retirer(selection, slotEnCours);
+    essai[deposer.dataset.deposer] = null;
+    appliquer();
+    return;
+  }
+
+  const carte = e.target.closest('[data-cote]');
+  if (carte && essai.actif !== carte.dataset.cote) {
+    essai.actif = carte.dataset.cote;
+    rendreBanc();
+  }
 });
 
 $('#rechercheObjet').addEventListener('input', rendreSelecteur);
@@ -2158,7 +2730,11 @@ $('#viderFiltres').addEventListener('click', () => {
 });
 $('#fermerSelecteur').addEventListener('click', () => { $('#selecteur').hidden = true; });
 $('#selecteur').addEventListener('click', (e) => { if (e.target.id === 'selecteur') $('#selecteur').hidden = true; });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#selecteur').hidden = true; });
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  $('#selecteur').hidden = true;
+  $('#selecteurRelique').hidden = true;
+});
 
 // Deux thèmes améthyste, l'un sombre et l'autre clair. Le choix reste dans ce
 // navigateur, et c'est le petit script d'index.html qui le repose au chargement
@@ -2173,6 +2749,7 @@ $('#reinitialiser').addEventListener('click', () => {
   equipe = JSON.parse(JSON.stringify(equipeInitial));
   effacerEtatOptimisation();
   pantheonSimule = {};
+  reliqueSimulee = {};
   reconstruirePorteurs();
   rendreListeHeros();
   rendreHeros();

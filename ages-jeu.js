@@ -2,19 +2,20 @@
    -----------------------------------------------------------------------------
    FICHIER GÉNÉRÉ — ne pas modifier à la main.
    Régénéré par « node tools/catalogue.js » depuis le catalogue du jeu.
-   Version du catalogue : 2026-08-09_07-19-28
+   Version du catalogue : 2026-08-20_15-08-50
    Le rang de chaque âge (pour savoir lequel est le plus avancé) et le
    multiplicateur qu'il applique aux reliques.
    ========================================================================== */
 
 window.AGES_JEU = {
   "DawnAge": {"rang":1,"modificateur":1},
+  "LateGothicEra": {"rang":15,"modificateur":3.302000045776367},
   "Arabia": {"rang":1004,"modificateur":1},
   "Mayas": {"rang":1003,"modificateur":1},
   "MinoanEra": {"rang":4,"modificateur":1},
   "IberianEra": {"rang":11,"modificateur":2.178999900817871},
   "ByzantineEra": {"rang":8,"modificateur":1.340000033378601},
-  "ComingSoon": {"rang":15,"modificateur":1},
+  "ComingSoon": {"rang":16,"modificateur":1},
   "FeudalAge": {"rang":10,"modificateur":1.9019999504089355},
   "StoneAge": {"rang":2,"modificateur":1},
   "Vikings": {"rang":1002,"modificateur":1},

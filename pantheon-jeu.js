@@ -58,6 +58,18 @@
    (« Ascension de fer »). Elle ne compte que deux nœuds, qui suivent l'ordre
    visuel.
 
+   « PUISSANCE » : CE QUE LE NŒUD VAUT DANS LA FORMULE DE PUISSANCE.
+   Depuis la mise à jour du 25/08/2026, la formule du jeu porte un facteur de
+   plus : « × (1 + puissance du panthéon) », et cette puissance est la SOMME des
+   nombres ci-dessous, sur les nœuds débloqués. Ils ne sont pas relevés à
+   l’écran : ils sont écrits dans le fichier de game design, un par nœud, et
+   extraits par « node tools/formule.js --pantheon ». Voir le §30 du journal.
+
+   Un nœud sans « puissance » ne vaut rien dans ce facteur — et ce sont
+   exactement ceux dont l’effet nourrit déjà une statistique de la formule
+   (crit, vitesse, esquive, les amplificateurs, les ascensions). Le jeu ne
+   compte pas deux fois.
+
    TROIS NATURES D'EFFET :
      - "plat"        : +3 coups/min de vitesse d'attaque
      - "pourcentage" : +5 % de chances de crit
@@ -78,28 +90,28 @@ window.PANTHEON_JEU = {
     "noeuds": {
       "layer1_node1": { "nom": "Précision mortelle", "effets": [{ "stat": "CritChance", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node2": { "nom": "Tranchant létal", "effets": [{ "stat": "CritDamage", "valeur": 0.20, "type": "pourcentage" }] },
-      "layer1_node3": { "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node3": { "puissance": 0.013, "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node4": { "nom": "Assaut éclair", "effets": [{ "stat": "AttackSpeed", "valeur": 0.05, "type": "plat" }] },
 
-      "layer2_node1": { "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node2": { "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node3": { "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
+      "layer2_node1": { "puissance": 0.038, "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node2": { "puissance": 0.038, "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node3": { "puissance": 0.02, "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
       "layer2_node4": { "nom": "Pas fantôme", "effets": [{ "stat": "Evasion", "valeur": 0.05, "type": "pourcentage" }] },
 
-      "layer3_node1": { "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
-      "layer3_node2": { "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
-      "layer3_node3": { "nom": "Tranchant de l'exécuteur", "effets": [{ "stat": "SingleTargetDamageAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer3_node4": { "nom": "Impulsion du vainqueur", "effets": [{ "type": "combat", "texte": "Tuer un ennemi accélère la prochaine charge de capacité de 0,50 s, toutes les 10 s" }] },
+      "layer3_node1": { "puissance": 0.02, "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
+      "layer3_node2": { "puissance": 0.05, "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
+      "layer3_node3": { "puissance": 0.04, "nom": "Tranchant de l'exécuteur", "effets": [{ "stat": "SingleTargetDamageAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer3_node4": { "puissance": 0.035, "nom": "Impulsion du vainqueur", "effets": [{ "type": "combat", "texte": "Tuer un ennemi accélère la prochaine charge de capacité de 0,50 s, toutes les 10 s" }] },
 
       "layer4_node1": { "nom": "Équipement affûté", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node2": { "nom": "Équipement renforcé", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Defense", "valeur": 0.50 }] },
       "layer4_node3": { "nom": "Fureur de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node4": { "nom": "Rempart de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Defense", "valeur": 0.50 }] },
 
-      "layer5_node1": { "nom": "Triomphe prédateur", "effets": [{ "type": "combat", "texte": "Tuer un héros ennemi augmente l'attaque de 15 % pendant 5 s" }] },
-      "layer5_node2": { "nom": "Frappe frénétique", "effets": [{ "type": "combat", "texte": "Tuer un ennemi augmente la vitesse d'attaque de 10 % pendant 5 s" }] },
-      "layer5_node3": { "nom": "Coups massifs", "effets": [{ "type": "combat", "texte": "Au début du combat, +10 % de dégâts de base pendant 20 s" }] },
-      "layer5_node4": { "nom": "Visée mortelle", "effets": [{ "type": "combat", "texte": "Au début du combat, +10 % de chances de coup critique pendant 20 s" }] },
+      "layer5_node1": { "puissance": 0.05, "nom": "Triomphe prédateur", "effets": [{ "type": "combat", "texte": "Tuer un héros ennemi augmente l'attaque de 15 % pendant 5 s" }] },
+      "layer5_node2": { "puissance": 0.05, "nom": "Frappe frénétique", "effets": [{ "type": "combat", "texte": "Tuer un ennemi augmente la vitesse d'attaque de 10 % pendant 5 s" }] },
+      "layer5_node3": { "puissance": 0.05, "nom": "Coups massifs", "effets": [{ "type": "combat", "texte": "Au début du combat, +10 % de dégâts de base pendant 20 s" }] },
+      "layer5_node4": { "puissance": 0.05, "nom": "Visée mortelle", "effets": [{ "type": "combat", "texte": "Au début du combat, +10 % de chances de coup critique pendant 20 s" }] },
 
       // Les deux derniers se montent de 1 à 10, et chaque niveau vaut 1 %.
       "layer6_node1": { "nom": "Ascension de force", "parNiveau": true, "effets": [{ "stat": "Attack", "valeur": 0.01, "type": "proportionnel" }] },
@@ -121,31 +133,31 @@ window.PANTHEON_JEU = {
     "noeuds": {
       "layer1_node1": { "nom": "Précision mortelle", "effets": [{ "stat": "CritChance", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node2": { "nom": "Tranchant létal", "effets": [{ "stat": "CritDamage", "valeur": 0.20, "type": "pourcentage" }] },
-      "layer1_node3": { "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node3": { "puissance": 0.013, "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node4": { "nom": "Assaut éclair", "effets": [{ "stat": "AttackSpeed", "valeur": 0.05, "type": "plat" }] },
 
-      "layer2_node1": { "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node2": { "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node3": { "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
+      "layer2_node1": { "puissance": 0.038, "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node2": { "puissance": 0.038, "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node3": { "puissance": 0.02, "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
       "layer2_node4": { "nom": "Pas fantôme", "effets": [{ "stat": "Evasion", "valeur": 0.05, "type": "pourcentage" }] },
 
-      "layer3_node1": { "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
-      "layer3_node2": { "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
+      "layer3_node1": { "puissance": 0.02, "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
+      "layer3_node2": { "puissance": 0.05, "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
       // Le pendant, pour cette classe, du « Tranchant de l'exécuteur » des
       // attaquants individuels : même emplacement, même 10 %, mais sur les
       // dégâts de ZONE au lieu des dégâts uniques.
-      "layer3_node3": { "nom": "Ruine généralisée", "effets": [{ "stat": "AoeDamageAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer3_node4": { "nom": "Poussée d'élan", "effets": [{ "type": "combat", "texte": "Lorsque la capacité du héros affecte un ennemi, accélère sa prochaine charge de 0,05 s, jusqu'à 10 ennemis" }] },
+      "layer3_node3": { "puissance": 0.04, "nom": "Ruine généralisée", "effets": [{ "stat": "AoeDamageAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer3_node4": { "puissance": 0.035, "nom": "Poussée d'élan", "effets": [{ "type": "combat", "texte": "Lorsque la capacité du héros affecte un ennemi, accélère sa prochaine charge de 0,05 s, jusqu'à 10 ennemis" }] },
 
       "layer4_node1": { "nom": "Équipement affûté", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node2": { "nom": "Équipement renforcé", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Defense", "valeur": 0.50 }] },
       "layer4_node3": { "nom": "Fureur de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node4": { "nom": "Rempart de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Defense", "valeur": 0.50 }] },
 
-      "layer5_node1": { "nom": "Soif de sang", "effets": [{ "type": "combat", "texte": "Réduire les PV d'un ennemi à 0 augmente l'attaque de 5 % pendant 5 s, cumulable jusqu'à 3 fois" }] },
-      "layer5_node2": { "nom": "Frappe scindée", "effets": [{ "type": "combat", "texte": "Une attaque de base a 10 % de chances d'infliger 100 % des dégâts de base aux ennemis dans un rayon de 1 autour de la cible" }] },
-      "layer5_node3": { "nom": "Coups massifs", "effets": [{ "type": "combat", "texte": "Au début du combat, +10 % de dégâts de base pendant 20 s" }] },
-      "layer5_node4": { "nom": "Visée mortelle", "effets": [{ "type": "combat", "texte": "Au début du combat, +10 % de chances de coup critique pendant 20 s" }] },
+      "layer5_node1": { "puissance": 0.05, "nom": "Soif de sang", "effets": [{ "type": "combat", "texte": "Réduire les PV d'un ennemi à 0 augmente l'attaque de 5 % pendant 5 s, cumulable jusqu'à 3 fois" }] },
+      "layer5_node2": { "puissance": 0.035, "nom": "Frappe scindée", "effets": [{ "type": "combat", "texte": "Une attaque de base a 10 % de chances d'infliger 100 % des dégâts de base aux ennemis dans un rayon de 1 autour de la cible" }] },
+      "layer5_node3": { "puissance": 0.05, "nom": "Coups massifs", "effets": [{ "type": "combat", "texte": "Au début du combat, +10 % de dégâts de base pendant 20 s" }] },
+      "layer5_node4": { "puissance": 0.05, "nom": "Visée mortelle", "effets": [{ "type": "combat", "texte": "Au début du combat, +10 % de chances de coup critique pendant 20 s" }] },
 
       "layer6_node1": { "nom": "Ascension de force", "parNiveau": true, "effets": [{ "stat": "Attack", "valeur": 0.01, "type": "proportionnel" }] },
       "layer6_node2": { "nom": "Ascension de vitalité", "parNiveau": true, "effets": [{ "stat": "MaxHitPoints", "valeur": 0.01, "type": "proportionnel" }] },
@@ -168,28 +180,28 @@ window.PANTHEON_JEU = {
     "noeuds": {
       "layer1_node1": { "nom": "Précision mortelle", "effets": [{ "stat": "CritChance", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node2": { "nom": "Tranchant létal", "effets": [{ "stat": "CritDamage", "valeur": 0.20, "type": "pourcentage" }] },
-      "layer1_node3": { "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node3": { "puissance": 0.013, "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node4": { "nom": "Assaut éclair", "effets": [{ "stat": "AttackSpeed", "valeur": 0.05, "type": "plat" }] },
 
-      "layer2_node1": { "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node2": { "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node3": { "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
+      "layer2_node1": { "puissance": 0.038, "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node2": { "puissance": 0.038, "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node3": { "puissance": 0.02, "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
       "layer2_node4": { "nom": "Pas fantôme", "effets": [{ "stat": "Evasion", "valeur": 0.05, "type": "pourcentage" }] },
 
-      "layer3_node1": { "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
-      "layer3_node2": { "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
-      "layer3_node3": { "nom": "Mains bénies", "effets": [{ "type": "combat", "texte": "Au début du combat, augmente de 8 % les soins et boucliers prodigués par le héros" }] },
-      "layer3_node4": { "nom": "Barrière de débordement", "effets": [{ "type": "combat", "texte": "Soigner un allié au-delà de ses PV max lui confère un bouclier valant 50 % des soins excédentaires, pendant 5 s" }] },
+      "layer3_node1": { "puissance": 0.02, "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
+      "layer3_node2": { "puissance": 0.05, "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
+      "layer3_node3": { "puissance": 0.035, "nom": "Mains bénies", "effets": [{ "type": "combat", "texte": "Au début du combat, augmente de 8 % les soins et boucliers prodigués par le héros" }] },
+      "layer3_node4": { "puissance": 0.035, "nom": "Barrière de débordement", "effets": [{ "type": "combat", "texte": "Soigner un allié au-delà de ses PV max lui confère un bouclier valant 50 % des soins excédentaires, pendant 5 s" }] },
 
       "layer4_node1": { "nom": "Équipement affûté", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node2": { "nom": "Équipement renforcé", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Defense", "valeur": 0.50 }] },
       "layer4_node3": { "nom": "Fureur de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node4": { "nom": "Rempart de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Defense", "valeur": 0.50 }] },
 
-      "layer5_node1": { "nom": "Prière gardienne", "effets": [{ "type": "combat", "texte": "Lorsqu'un héros allié est vaincu, augmente la défense de tous les alliés de 10 % de celle du héros pendant 5 s" }] },
-      "layer5_node2": { "nom": "Secours prompt", "effets": [{ "type": "combat", "texte": "Lorsqu'un allié est vaincu, soigne un allié au hasard de 5 % des PV max du héros" }] },
-      "layer5_node3": { "nom": "Instinct de survie", "effets": [{ "type": "combat", "texte": "Tant que les PV du héros sont sous 20 %, les soins qu'il reçoit augmentent de 50 %" }] },
-      "layer5_node4": { "nom": "Intervention divine", "effets": [{ "type": "combat", "texte": "La première fois que ses PV passent sous 20 %, le héros se soigne de 20 % de ses PV max" }] },
+      "layer5_node1": { "puissance": 0.035, "nom": "Prière gardienne", "effets": [{ "type": "combat", "texte": "Lorsqu'un héros allié est vaincu, augmente la défense de tous les alliés de 10 % de celle du héros pendant 5 s" }] },
+      "layer5_node2": { "puissance": 0.035, "nom": "Secours prompt", "effets": [{ "type": "combat", "texte": "Lorsqu'un allié est vaincu, soigne un allié au hasard de 5 % des PV max du héros" }] },
+      "layer5_node3": { "puissance": 0.035, "nom": "Instinct de survie", "effets": [{ "type": "combat", "texte": "Tant que les PV du héros sont sous 20 %, les soins qu'il reçoit augmentent de 50 %" }] },
+      "layer5_node4": { "puissance": 0.035, "nom": "Intervention divine", "effets": [{ "type": "combat", "texte": "La première fois que ses PV passent sous 20 %, le héros se soigne de 20 % de ses PV max" }] },
 
       // La sixième ligne change d'une classe à l'autre : les soigneurs montent
       // la DÉFENSE là où les attaquants montent l'attaque.
@@ -210,28 +222,28 @@ window.PANTHEON_JEU = {
     "noeuds": {
       "layer1_node1": { "nom": "Précision mortelle", "effets": [{ "stat": "CritChance", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node2": { "nom": "Tranchant létal", "effets": [{ "stat": "CritDamage", "valeur": 0.20, "type": "pourcentage" }] },
-      "layer1_node3": { "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node3": { "puissance": 0.013, "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node4": { "nom": "Assaut éclair", "effets": [{ "stat": "AttackSpeed", "valeur": 0.05, "type": "plat" }] },
 
-      "layer2_node1": { "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node2": { "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node3": { "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
+      "layer2_node1": { "puissance": 0.038, "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node2": { "puissance": 0.038, "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node3": { "puissance": 0.02, "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
       "layer2_node4": { "nom": "Pas fantôme", "effets": [{ "stat": "Evasion", "valeur": 0.05, "type": "pourcentage" }] },
 
-      "layer3_node1": { "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
-      "layer3_node2": { "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
-      "layer3_node3": { "nom": "Commandement de choc", "effets": [{ "type": "combat", "texte": "Utiliser sa capacité étourdit un ennemi au hasard pendant 1 s" }] },
-      "layer3_node4": { "nom": "Volonté de fer", "effets": [{ "type": "combat", "texte": "Utiliser sa capacité augmente la défense du héros de 10 % pendant 5 s" }] },
+      "layer3_node1": { "puissance": 0.02, "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
+      "layer3_node2": { "puissance": 0.05, "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
+      "layer3_node3": { "puissance": 0.035, "nom": "Commandement de choc", "effets": [{ "type": "combat", "texte": "Utiliser sa capacité étourdit un ennemi au hasard pendant 1 s" }] },
+      "layer3_node4": { "puissance": 0.035, "nom": "Volonté de fer", "effets": [{ "type": "combat", "texte": "Utiliser sa capacité augmente la défense du héros de 10 % pendant 5 s" }] },
 
       "layer4_node1": { "nom": "Équipement affûté", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node2": { "nom": "Équipement renforcé", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Defense", "valeur": 0.50 }] },
       "layer4_node3": { "nom": "Fureur de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node4": { "nom": "Rempart de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Defense", "valeur": 0.50 }] },
 
-      "layer5_node1": { "nom": "Mur inflexible", "effets": [{ "type": "combat", "texte": "Au début du combat, +1 % de défense par ennemi, jusqu'à 15 %, pendant 20 s" }] },
-      "layer5_node2": { "nom": "Buveur de vie", "effets": [{ "type": "combat", "texte": "Réduire les PV d'un ennemi à 0 soigne le héros de 10 % de ses PV max, une fois toutes les 15 s" }] },
-      "layer5_node3": { "nom": "Derniers sacrements", "effets": [{ "type": "combat", "texte": "À sa mort, le héros soigne les alliés dans un rayon de 5 de 20 % de ses PV max" }] },
-      "layer5_node4": { "nom": "Sursauts d'agonie", "effets": [{ "type": "combat", "texte": "À sa mort, le héros inflige 20 % de ses PV max en dégâts aux ennemis dans un rayon de 2,5" }] },
+      "layer5_node1": { "puissance": 0.05, "nom": "Mur inflexible", "effets": [{ "type": "combat", "texte": "Au début du combat, +1 % de défense par ennemi, jusqu'à 15 %, pendant 20 s" }] },
+      "layer5_node2": { "puissance": 0.05, "nom": "Buveur de vie", "effets": [{ "type": "combat", "texte": "Réduire les PV d'un ennemi à 0 soigne le héros de 10 % de ses PV max, une fois toutes les 15 s" }] },
+      "layer5_node3": { "puissance": 0.035, "nom": "Derniers sacrements", "effets": [{ "type": "combat", "texte": "À sa mort, le héros soigne les alliés dans un rayon de 5 de 20 % de ses PV max" }] },
+      "layer5_node4": { "puissance": 0.035, "nom": "Sursauts d'agonie", "effets": [{ "type": "combat", "texte": "À sa mort, le héros inflige 20 % de ses PV max en dégâts aux ennemis dans un rayon de 2,5" }] },
 
       // Comme les soigneurs, les défenseurs montent la DÉFENSE et non l'attaque.
       "layer6_node1": { "nom": "Ascension de fer", "parNiveau": true, "effets": [{ "stat": "Defense", "valeur": 0.01, "type": "proportionnel" }] },
@@ -243,28 +255,28 @@ window.PANTHEON_JEU = {
     "noeuds": {
       "layer1_node1": { "nom": "Précision mortelle", "effets": [{ "stat": "CritChance", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node2": { "nom": "Tranchant létal", "effets": [{ "stat": "CritDamage", "valeur": 0.20, "type": "pourcentage" }] },
-      "layer1_node3": { "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node3": { "puissance": 0.013, "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node4": { "nom": "Assaut éclair", "effets": [{ "stat": "AttackSpeed", "valeur": 0.05, "type": "plat" }] },
 
-      "layer2_node1": { "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node2": { "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node3": { "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
+      "layer2_node1": { "puissance": 0.038, "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node2": { "puissance": 0.038, "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node3": { "puissance": 0.02, "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
       "layer2_node4": { "nom": "Pas fantôme", "effets": [{ "stat": "Evasion", "valeur": 0.05, "type": "pourcentage" }] },
 
-      "layer3_node1": { "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
-      "layer3_node2": { "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
-      "layer3_node3": { "nom": "Purge opportune", "effets": [{ "type": "combat", "texte": "Lorsque le héros utilise sa capacité, retire 1 effet négatif de tous les alliés" }] },
-      "layer3_node4": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer3_node1": { "puissance": 0.02, "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
+      "layer3_node2": { "puissance": 0.05, "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
+      "layer3_node3": { "puissance": 0.035, "nom": "Purge opportune", "effets": [{ "type": "combat", "texte": "Lorsque le héros utilise sa capacité, retire 1 effet négatif de tous les alliés" }] },
+      "layer3_node4": { "puissance": 0.035, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
 
       "layer4_node1": { "nom": "Équipement affûté", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node2": { "nom": "Équipement renforcé", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Defense", "valeur": 0.50 }] },
       "layer4_node3": { "nom": "Fureur de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node4": { "nom": "Rempart de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Defense", "valeur": 0.50 }] },
 
-      "layer5_node1": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
-      "layer5_node2": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
-      "layer5_node3": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
-      "layer5_node4": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node1": { "puissance": 0.035, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node2": { "puissance": 0.035, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node3": { "puissance": 0.035, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node4": { "puissance": 0.035, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
 
       // Comme les soigneurs et les défenseurs, les soutiens montent la DÉFENSE.
       "layer6_node1": { "nom": "Ascension de fer", "parNiveau": true, "effets": [{ "stat": "Defense", "valeur": 0.01, "type": "proportionnel" }] },
@@ -276,28 +288,28 @@ window.PANTHEON_JEU = {
     "noeuds": {
       "layer1_node1": { "nom": "Précision mortelle", "effets": [{ "stat": "CritChance", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node2": { "nom": "Tranchant létal", "effets": [{ "stat": "CritDamage", "valeur": 0.20, "type": "pourcentage" }] },
-      "layer1_node3": { "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
+      "layer1_node3": { "puissance": 0.013, "nom": "Force sauvage", "effets": [{ "stat": "BasicAttackDamageAmp", "valeur": 0.05, "type": "pourcentage" }] },
       "layer1_node4": { "nom": "Assaut éclair", "effets": [{ "stat": "AttackSpeed", "valeur": 0.05, "type": "plat" }] },
 
-      "layer2_node1": { "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node2": { "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
-      "layer2_node3": { "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
+      "layer2_node1": { "puissance": 0.038, "nom": "Grâce réparatrice", "effets": [{ "stat": "HealTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node2": { "puissance": 0.038, "nom": "Garde-bouclier", "effets": [{ "stat": "ShieldTakenAmp", "valeur": 0.10, "type": "pourcentage" }] },
+      "layer2_node3": { "puissance": 0.02, "nom": "Marche rapide", "effets": [{ "stat": "MoveSpeed", "valeur": 0.10, "type": "proportionnel" }] },
       "layer2_node4": { "nom": "Pas fantôme", "effets": [{ "stat": "Evasion", "valeur": 0.05, "type": "pourcentage" }] },
 
-      "layer3_node1": { "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
-      "layer3_node2": { "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
-      "layer3_node3": { "nom": "Dissipation d'enchantement", "effets": [{ "type": "combat", "texte": "Lorsque le héros utilise sa capacité, retire 1 effet positif de tous les ennemis" }] },
-      "layer3_node4": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer3_node1": { "puissance": 0.02, "nom": "Esprit vif", "effets": [{ "stat": "InitialFocusInSecondsBonus", "valeur": 1, "type": "plat" }] },
+      "layer3_node2": { "puissance": 0.05, "nom": "Puissance brute", "effets": [{ "stat": "BaseDamage", "valeur": 0.05, "type": "proportionnel" }] },
+      "layer3_node3": { "puissance": 0.035, "nom": "Dissipation d'enchantement", "effets": [{ "type": "combat", "texte": "Lorsque le héros utilise sa capacité, retire 1 effet positif de tous les ennemis" }] },
+      "layer3_node4": { "puissance": 0.035, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
 
       "layer4_node1": { "nom": "Équipement affûté", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node2": { "nom": "Équipement renforcé", "effets": [{ "type": "amplifie", "source": "equipement", "stat": "Defense", "valeur": 0.50 }] },
       "layer4_node3": { "nom": "Fureur de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Attack", "valeur": 0.50 }] },
       "layer4_node4": { "nom": "Rempart de Reliques", "effets": [{ "type": "amplifie", "source": "relique", "stat": "Defense", "valeur": 0.50 }] },
 
-      "layer5_node1": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
-      "layer5_node2": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
-      "layer5_node3": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
-      "layer5_node4": { "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node1": { "puissance": 0.05, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node2": { "puissance": 0.05, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node3": { "puissance": 0.035, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
+      "layer5_node4": { "puissance": 0.05, "nom": "Effet de combat", "aRelever": true, "effets": [{ "type": "combat", "texte": "Effet de combat propre à cette classe — nom et texte pas encore relevés." }] },
 
       // Comme les attaquants, les manipulateurs montent l'ATTAQUE.
       "layer6_node1": { "nom": "Ascension de force", "parNiveau": true, "effets": [{ "stat": "Attack", "valeur": 0.01, "type": "proportionnel" }] },

@@ -2,7 +2,7 @@
    -----------------------------------------------------------------------------
    FICHIER GÉNÉRÉ — ne pas modifier à la main.
    Régénéré par « node tools/catalogue.js » depuis le catalogue du jeu.
-   Version du catalogue : 2026-08-09_07-19-28
+   Version du catalogue : 2026-08-20_15-08-50
    Les cinq paliers d'éveil de chaque héros, dans l'ordre. Un héros éveillé au
    niveau III cumule les trois premiers. Les statistiques encore non identifiées
    sont nommées « stat_<numéro> » : elles sont affichées mais non comptées.
@@ -43,6 +43,7 @@ window.EVEIL_JEU = {
   "HowardCarter": [{"stat":"Defense","valeur":0.05999999865889549,"type":"pourcentage"},{"stat":"MaxHitPoints","valeur":0.11999999731779099,"type":"pourcentage"},{"stat":"Defense","valeur":0.11999999731779099,"type":"pourcentage"},{"stat":"Defense","valeur":0.20000000298023224,"type":"pourcentage"},{"stat":"Focus","valeur":25,"type":"plat"}],
   "Nostradamus": [{"stat":"Attack","valeur":0.25,"type":"pourcentage"},{"stat":"Focus","valeur":20,"type":"plat"},{"stat":"MaxHitPoints","valeur":0.15000000596046448,"type":"pourcentage"},{"stat":"Defense","valeur":0.07500000298023224,"type":"pourcentage"},{"stat":"Attack","valeur":0.20000000298023224,"type":"pourcentage"}],
   "Inanna": [{"stat":"Attack","valeur":25,"type":"plat"},{"stat":"Attack","valeur":55,"type":"plat"},{"stat":"AttackSpeed","valeur":0.10000000149011612,"type":"plat"},{"stat":"MaxHitPoints","valeur":600,"type":"plat"},{"stat":"Attack","valeur":110,"type":"plat"}],
+  "Gilgamesh": [{"stat":"Defense","valeur":0.07500000298023224,"type":"pourcentage"},{"stat":"Defense","valeur":0.15000000596046448,"type":"pourcentage"},{"stat":"Attack","valeur":0.15000000596046448,"type":"pourcentage"},{"stat":"Attack","valeur":0.25,"type":"pourcentage"},{"stat":"Defense","valeur":0.25,"type":"pourcentage"}],
   "WuZetian": [{"stat":"Attack","valeur":0.07500000298023224,"type":"pourcentage"},{"stat":"CritChance","valeur":0.30000001192092896,"type":"plat"},{"stat":"Attack","valeur":0.15000000596046448,"type":"pourcentage"},{"stat":"CritDamage","valeur":1,"type":"plat"},{"stat":"Attack","valeur":0.25,"type":"pourcentage"}],
   "GeorgeWashington": [{"stat":"Defense","valeur":0.07500000298023224,"type":"pourcentage"},{"stat":"Attack","valeur":0.15000000596046448,"type":"pourcentage"},{"stat":"Defense","valeur":0.15000000596046448,"type":"pourcentage"},{"stat":"Focus","valeur":30,"type":"plat"},{"stat":"Defense","valeur":0.25,"type":"pourcentage"}],
   "AshokaTheGreat": [{"stat":"MaxHitPoints","valeur":300,"type":"plat"},{"stat":"MaxHitPoints","valeur":600,"type":"plat"},{"stat":"Focus","valeur":15,"type":"plat"},{"stat":"FocusRegen","valeur":1,"type":"plat"},{"stat":"MaxHitPoints","valeur":1200,"type":"plat"}],

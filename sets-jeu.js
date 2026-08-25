@@ -2,7 +2,7 @@
    -----------------------------------------------------------------------------
    FICHIER GÉNÉRÉ — ne pas modifier à la main.
    Régénéré par « node tools/catalogue.js » depuis le catalogue du jeu.
-   Version du catalogue : 2026-08-09_07-19-28
+   Version du catalogue : 2026-08-20_15-08-50
    Nombre de pièces et effet de chaque ensemble. L'effet n'existe dans le jeu
    que sous forme de phrase : « bonus » en est la relecture chiffrée, vide
    quand la phrase ne se laisse pas relire — « effet » reste alors affichable.
@@ -24,7 +24,7 @@ window.SETS_JEU = {
   "Enchantress": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Défense +5 % et Charge initiale -1 s","bonus":[{"stat":"Defense","valeur":0.05,"type":"pourcentage"},{"stat":"InitialFocusInSecondsBonus","valeur":1,"type":"plat"}]},
   "Hunter": {"pieces":2,"emplacements":["Garment","Hand"],"effet":"Attaque+15","bonus":[{"stat":"Attack","valeur":15,"type":"plat"}]},
   "Maori": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Vitesse d’attaque +4,5 coups/minute","bonus":[{"stat":"AttackSpeed","valeur":0.075,"type":"plat"}]},
-  "Countess": {"pieces":2,"emplacements":["Garment","Hand"],"effet":"Burn Damage dealt +7.5% and Attack +5%","bonus":[{"stat":"BurnDamageAmp","valeur":0.075,"type":"pourcentage"},{"stat":"Attack","valeur":0.05,"type":"pourcentage"}]},
+  "Countess": {"pieces":2,"emplacements":["Garment","Hand"],"effet":"Dégâts de brûlure infligés +7,5 % et Attaque +5 %","bonus":[{"stat":"BurnDamageAmp","valeur":0.075,"type":"pourcentage"},{"stat":"Attack","valeur":0.05,"type":"pourcentage"}]},
   "Reveler": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Dégâts de zone infligés +7,5 % et Charge initiale -1 s","bonus":[{"stat":"AoeDamageAmp","valeur":0.075,"type":"pourcentage"},{"stat":"InitialFocusInSecondsBonus","valeur":1,"type":"plat"}]},
   "HornedKing": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"DÉG d'attaque de base subis -7,5 % et Défense +5 %","bonus":[{"stat":"BasicAttackDamageTakenAmp","valeur":-0.075,"type":"pourcentage"},{"stat":"Defense","valeur":0.05,"type":"pourcentage"}]},
   "Jester": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Dégâts de zone infligés +7,5 %","bonus":[{"stat":"AoeDamageAmp","valeur":0.075,"type":"pourcentage"}]},

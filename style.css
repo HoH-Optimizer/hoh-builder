@@ -880,25 +880,25 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 
 /* Les deux listes qui défilent portent une barre à la couleur du thème, fine et
    arrondie, au lieu de celle du système qui jurait avec le reste. */
-#listeHeros, #listeObjets {
+#listeHeros, #listeObjets, #listeReliques {
   scrollbar-width: thin;
   scrollbar-color: var(--accent-sombre) transparent;
 }
 #listeHeros::-webkit-scrollbar,
-#listeObjets::-webkit-scrollbar { width: 11px; }
+#listeObjets::-webkit-scrollbar, #listeReliques::-webkit-scrollbar { width: 11px; }
 #listeHeros::-webkit-scrollbar-track,
-#listeObjets::-webkit-scrollbar-track { background: transparent; }
+#listeObjets::-webkit-scrollbar-track, #listeReliques::-webkit-scrollbar-track { background: transparent; }
 /* La bordure transparente et le découpage sur le contenu affinent le curseur
    sans le coller au bord. */
 #listeHeros::-webkit-scrollbar-thumb,
-#listeObjets::-webkit-scrollbar-thumb {
+#listeObjets::-webkit-scrollbar-thumb, #listeReliques::-webkit-scrollbar-thumb {
   background: var(--accent-sombre);
   background-clip: content-box;
   border: 3px solid transparent;
   border-radius: 999px;
 }
 #listeHeros::-webkit-scrollbar-thumb:hover,
-#listeObjets::-webkit-scrollbar-thumb:hover { background: var(--accent); background-clip: content-box; }
+#listeObjets::-webkit-scrollbar-thumb:hover, #listeReliques::-webkit-scrollbar-thumb:hover { background: var(--accent); background-clip: content-box; }
 
 .carteHeros {
   /* Pas davantage : au-delà, le coin arrondi entame le fanion, qui pend du bord
@@ -1369,8 +1369,8 @@ td.principal { font-weight: 600; }
 .caseACocher { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--discret); cursor: pointer; }
 .caseACocher input { accent-color: var(--accent); }
 
-#listeObjets { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-#listeObjets li {
+#listeObjets, #listeReliques { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+#listeObjets li, #listeReliques li {
   display: grid;
   grid-template-columns: 40px 1fr auto;
   align-items: center;
@@ -1383,21 +1383,21 @@ td.principal { font-weight: 600; }
   cursor: pointer;
   box-shadow: var(--arete-panneau);
 }
-#listeObjets li.r2 { border-color: var(--r2); }
-#listeObjets li.r3 { border-color: var(--r3); }
-#listeObjets li.r4 { border-color: var(--r4); }
-#listeObjets li.r5 { border-color: var(--r5); }
+#listeObjets li.r2, #listeReliques li.r2 { border-color: var(--r2); }
+#listeObjets li.r3, #listeReliques li.r3 { border-color: var(--r3); }
+#listeObjets li.r4, #listeReliques li.r4 { border-color: var(--r4); }
+#listeObjets li.r5, #listeReliques li.r5 { border-color: var(--r5); }
 /* Écrit APRÈS les quatre raretés : à spécificité égale, c'est le dernier qui
    gagne, et le survol doit l'emporter sur la teinte de rareté. */
-#listeObjets li:hover { border-color: var(--accent); }
+#listeObjets li:hover, #listeReliques li:hover { border-color: var(--accent); }
 #listeObjets li.porte { opacity: .62; }
-#listeObjets .titre { font-weight: 600; }
+#listeObjets .titre, #listeReliques .titre { font-weight: 600; }
 /* L'icône occupe toute la hauteur de la ligne, le texte se range à sa droite. */
 #listeObjets .icone { grid-row: 1 / -1; align-self: center; }
 #listeObjets .detail { grid-column: 2 / -1; }
 #listeObjets .attributs { grid-column: 2 / -1; font-size: 12px; color: var(--discret); }
 #listeObjets .verrouille { opacity: .62; }
-#listeObjets .marque { font-size: 11px; color: var(--accent); text-align: right; }
+#listeObjets .marque, #listeReliques .marque { font-size: 11px; color: var(--accent); text-align: right; }
 
 /* ---------- Tuiles d'objet, dans l'esprit du jeu ---------- */
 
@@ -1504,12 +1504,12 @@ td.principal { font-weight: 600; }
    désormais côte à côte, et la gouttière suffit à les distinguer. */
 
 /* Le sélecteur d'inventaire reprend exactement la même présentation. */
-#listeObjets li { grid-template-columns: 54px minmax(0, 1fr) auto; align-items: center; }
-#listeObjets .corpsObjet { grid-column: 2; }
-#listeObjets .marque { align-self: start; }
+#listeObjets li, #listeReliques li { grid-template-columns: 54px minmax(0, 1fr) auto; align-items: center; }
+#listeObjets .corpsObjet, #listeReliques .corpsObjet { grid-column: 2; }
+#listeObjets .marque, #listeReliques .marque { align-self: start; }
 
 /* L'option « aucun » n'a pas de tuile : elle occupe toute la largeur. */
-#listeObjets li[data-objet=""] { grid-template-columns: 1fr; }
+#listeObjets li[data-objet=""], #listeReliques li[data-relique=""] { grid-template-columns: 1fr; }
 
 /* ---------- Recherche d'un équipement ---------- */
 
@@ -1702,9 +1702,15 @@ td.principal { font-weight: 600; }
 
   /* Passé cette largeur, les cadrans montent à côté du plan de travail plutôt
      qu'en dessous : trois colonnes, et la hauteur cesse d'être disputée. */
+  /* LA COLONNE DES HÉROS PAIE POUR LE TABLEAU. Une vignette de héros se lit à
+     240 px comme à 280 : ce sont trois portraits par ligne dans les deux cas, et
+     le nom n'y est pas écrit. Le tableau de statistiques, lui, avait quatre
+     colonnes de chiffres à faire tenir dans 470 px — la dernière, l'ÉCART,
+     passait sous l'ascenseur. Les quarante pixels rendus par la gauche, plus
+     l'élasticité donnée à droite, la ramènent en pleine page. */
   @media (min-width: 1800px) {
     main {
-      grid-template-columns: 280px minmax(0, 1fr) minmax(400px, 470px);
+      grid-template-columns: 240px minmax(0, 1fr) minmax(470px, 560px);
       grid-template-rows: minmax(0, 1fr);
     }
     main:not(.vide) > #colonneHeros,
@@ -1761,11 +1767,14 @@ td.principal { font-weight: 600; }
   .pastilleSet { width: 28px; height: 28px; margin-right: 6px; vertical-align: -9px; }
   .bonusSet { font-size: 10px; }
 
+  /* Le resserrement s'arrête au tableau. C'est LUI qu'on vient lire : ses lignes
+     gardent l'air qu'il faut pour suivre une ligne des yeux d'un bout à l'autre,
+     et la place se prend ailleurs — la colonne des héros s'est resserrée pour ça. */
   .enteteStats { margin-bottom: 2px; }
-  table { font-size: 13px; }
-  th { padding: 2px 9px; }
-  td { padding: 1px 9px; }
-  tr.famille th { padding: 16px 0 4px; }
+  table { font-size: 13.5px; }
+  th { padding: 2px 8px; }
+  td { padding: 4px 8px; }
+  tr.famille th { padding: 15px 0 4px; }
   .blocRelique { padding: 9px 11px; }
   .blocRelique h3 { margin-bottom: 5px; }
   .iconeRelique { width: 42px; height: 42px; }
@@ -1829,6 +1838,67 @@ td.principal { font-weight: 600; }
 .ecartPuissance.positif { color: var(--positif); }
 .ecartPuissance.negatif { color: var(--negatif); }
 
+/* CALIBRÉE : le héros a été relevé sur l'écran du jeu, son chiffre n'est plus
+   une estimation. Le socle le dit sans crier — une bordure qui prend la couleur
+   du positif, et c'est tout : le nombre reste la vedette. */
+.blocPuissance.calibree {
+  border-color: color-mix(in srgb, var(--positif) 45%, var(--bordure));
+}
+.blocPuissance.calibree .titrePuissance em { color: var(--positif); opacity: 1; }
+
+/* Le relevé se demande à voix basse, sous le chiffre : c'est une option, pas
+   une corvée. */
+.calibrage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 11.5px;
+}
+.calibrage label { color: var(--discret); }
+.calibrage input {
+  width: 7ch;
+  padding: 3px 6px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--texte);
+  background: var(--panneau);
+  border: 1px solid var(--bordure);
+  border-radius: 7px;
+}
+.calibrage button {
+  padding: 3px 9px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--texte);
+  background: var(--panneau-clair);
+  border: 1px solid var(--bordure);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.calibrage button:hover { border-color: var(--accent); }
+.calibrage .lienCalibrage {
+  padding: 0;
+  font-weight: 500;
+  color: var(--discret);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.calibrage .lienCalibrage:hover { color: var(--texte); }
+.formCalibrage { display: inline-flex; align-items: center; gap: 6px; }
+.formCalibrage[hidden] { display: none; }
+.avertCalibrage {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--negatif);
+}
+
 @media (max-width: 700px) {
   .blocPuissance { padding: 8px 16px 9px; }
   .valeurPuissance { font-size: 25px; }
@@ -1853,22 +1923,24 @@ td.principal { font-weight: 600; }
   background: radial-gradient(64% 46% at 50% 0%, var(--accent-voile), transparent 70%);
 }
 
-/* L'en-tête est CENTRÉ sur l'arbre qu'il annonce, et écrit comme une phrase.
-   En capitales et rejeté à gauche, il ressemblait à un onglet de plus. */
+/* L'en-tête est une ÉTIQUETTE DE PANNEAU, comme « Statistiques » juste en
+   dessous : même corps, mêmes capitales, même gris, même bord gauche. Écrit en
+   grand et centré, il annonçait une scène là où il ne nomme qu'un panneau — et
+   les deux panneaux du bas ne se ressemblaient plus. */
 .enteteArbre {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 2px;
-  margin-bottom: 26px;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 
 .enteteArbre h3 {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -.01em;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--discret);
 }
 
 .grilleArbre {
@@ -2103,8 +2175,7 @@ td.principal { font-weight: 600; }
   /* L'arbre n'est plus collé sous le héros : il ouvre le bloc du bas, et c'est
      un panneau à part entière. Sa marge du haut n'a plus lieu d'être. */
   .arbrePantheon { margin-top: 0; padding: 14px 0 2px; }
-  .enteteArbre { margin-bottom: 14px; }
-  .enteteArbre h3 { font-size: 1.25rem; }
+  .enteteArbre { margin-bottom: 12px; }
 }
 
 /* ---------- Le titre du panneau de statistiques ----------
@@ -2119,4 +2190,232 @@ td.principal { font-weight: 600; }
   text-transform: uppercase;
   letter-spacing: .06em;
   color: var(--discret);
+}
+
+/* ===========================================================
+   LA CAPACITÉ DU HÉROS
+
+   La carte que le jeu montre quand on touche l'icône de capacité, reprise ici
+   sous les deux équipements — c'est elle qu'ils servent, et le tableau de
+   statistiques n'en dit rien.
+
+   Elle ne réécrit pas le jeu : la phrase vient de son fichier de traduction,
+   les chiffres du palier de compétence atteint, les icônes de nos propres
+   images de statistiques. Seules les deux CHARGES sont calculées ici — ce sont
+   des statistiques comme les autres, et elles bougent avec l'équipement simulé.
+   =========================================================== */
+.capacite {
+  margin-top: 14px;
+  padding: 14px 18px 4px;
+  background: var(--panneau-clair);
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+}
+
+.enteteCapacite {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--filet);
+}
+.portraitCapacite {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--bordure);
+}
+.enteteCapacite h3 { margin: 0; font-size: 15px; letter-spacing: .04em; }
+.palierCapacite { margin: 2px 0 0; font-size: 11px; letter-spacing: .06em; color: var(--discret); }
+
+/* Les deux charges se lisent comme dans le jeu : le nom au-dessus, la durée en
+   dessous, et un filet entre les deux. */
+.chargesCapacite { display: flex; gap: 18px; margin: 0; text-align: right; }
+.chargesCapacite > div + div { padding-left: 18px; border-left: 1px solid var(--filet); }
+.chargesCapacite dt { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--discret); }
+.chargesCapacite dd { margin: 2px 0 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.voletCapacite { padding: 10px 0; }
+.voletCapacite + .voletCapacite { border-top: 1px solid var(--filet); }
+
+/* Les étiquettes du jeu (« Mêlée », « DÉG uniques ») : ce qu'est la capacité,
+   avant ce qu'elle fait. Elles ne se cliquent pas — d'où la pastille sourde,
+   qui ne se donne pas pour un bouton. */
+.etiquettesCapacite { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.etiquettesCapacite span {
+  padding: 2px 8px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--discret);
+  background: var(--panneau);
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+}
+
+.effetsCapacite { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.effetsCapacite li {
+  position: relative;
+  padding-left: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.effetsCapacite li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: .62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-sombre);
+}
+/* Le chiffre est la seule chose qui bouge quand la compétence monte : c'est lui
+   qu'on vient chercher, et c'est donc lui qui porte l'accent. */
+.chiffreCapacite { color: var(--accent); font-variant-numeric: tabular-nums; }
+.effetsCapacite .iconeStat { vertical-align: -3px; }
+
+@media (max-width: 620px) {
+  .enteteCapacite { grid-template-columns: auto minmax(0, 1fr); }
+  .chargesCapacite { grid-column: 1 / -1; justify-content: flex-start; text-align: left; }
+}
+
+/* ---------- L'inventaire de reliques ----------
+   Il emprunte tout à la liste d'équipement — même ligne, même tuile, même
+   marque à droite. Ne restent ici que les deux écarts : l'icône d'une relique
+   est plus grande que celle d'un objet, et celle qu'on porte déjà se signale. */
+#listeReliques .iconeRelique { width: 46px; height: 46px; grid-row: 1 / -1; }
+#listeReliques li.choisie { border-color: var(--accent); background: var(--accent-voile); }
+#listeReliques .attributsObjet { font-size: 12px; color: var(--discret); }
+
+/* La relique du panneau de statistiques : elle s'échange maintenant, et la carte
+   le dit — le liseré d'accent marque celle qu'on essaie, comme sur une pièce
+   d'équipement changée. */
+.carteRelique.essayee {
+  padding-left: 8px;
+  border-left: 2px solid var(--accent);
+}
+.reglagesRelique {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.etiquetteNiveau { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--discret); }
+.valeurNiveauRelique { min-width: 22px; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* ===========================================================
+   LE BANC D'ESSAI
+
+   L'écran de comparaison du jeu, repris ici : l'inventaire à gauche, deux pièces
+   côte à côte, et sous elles ce qu'elles feraient aux statistiques.
+
+   Le côté ACTIF est celui que le prochain clic dans la liste remplira. C'est le
+   seul état à comprendre, et il se voit à son liseré d'accent — la rareté de la
+   pièce garde le sien tant que la carte n'est pas choisie.
+   =========================================================== */
+.modaleContenu.banc { width: min(1280px, 100%); }
+
+.bancEssai {
+  display: grid;
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  gap: 18px;
+  min-height: 0;
+}
+.colonneInventaire { display: flex; flex-direction: column; min-height: 0; }
+.colonneInventaire .filtresObjet { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 10px; }
+.colonneEssai { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; min-height: 0; }
+
+.cartesEssai { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.carteEssai {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--panneau-clair);
+  border: 1px solid var(--bordure);
+  border-radius: 16px;
+  cursor: pointer;
+}
+.carteEssai.r2 { border-color: var(--r2); }
+.carteEssai.r3 { border-color: var(--r3); }
+.carteEssai.r4 { border-color: var(--r4); }
+.carteEssai.r5 { border-color: var(--r5); }
+/* Écrit après les raretés : à spécificité égale, le côté choisi l'emporte. */
+.carteEssai.actif { border-color: var(--accent); background: var(--accent-voile); }
+.carteEssai > header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.roleEssai { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--discret); }
+.cibleEssai { font-size: 10.5px; color: var(--accent); }
+.carteEssai > footer { margin-top: auto; }
+.carteEssai > footer .bouton { width: 100%; justify-content: center; }
+
+.corpsCarteEssai { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.corpsCarteEssai.vide {
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0;
+  text-align: center;
+  color: var(--discret);
+}
+.corpsCarteEssai.vide .silhouette { width: 40px; height: 40px; opacity: .5; }
+.texteCarteEssai { display: grid; gap: 2px; min-width: 0; }
+.texteCarteEssai .titre { font-weight: 600; }
+.ensembleCarteEssai { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 11.5px; }
+.ensembleCarteEssai .discret { display: block; }
+
+/* Le tableau du banc ne redit pas tout le grand tableau : les quatre lignes
+   principales, et tout ce que l'un des deux côtés fait bouger. Chaque cellule
+   porte la valeur ET l'écart avec ce que le héros porte — c'est cet écart qu'on
+   vient lire, et le repère ne change pas quand on change les deux côtés. */
+.statsEssai { overflow-y: auto; min-height: 0; }
+.statsEssai table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.statsEssai thead th {
+  position: sticky;
+  top: 0;
+  padding: 4px 8px;
+  text-align: right;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--discret);
+  background: var(--panneau);
+}
+.statsEssai thead th:first-child { text-align: left; }
+.statsEssai tbody th {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-weight: 500;
+  text-align: left;
+}
+.statsEssai td { padding: 4px 8px; text-align: right; white-space: nowrap; }
+.statsEssai .valeurEssai { font-variant-numeric: tabular-nums; }
+.statsEssai td .hausse, .statsEssai td .baisse { margin-left: 8px; font-size: 11.5px; }
+.statsEssai tbody tr + tr { border-top: 1px solid var(--filet); }
+.lignePuissance { font-weight: 700; }
+
+/* La pièce déjà posée sur le banc se repère dans la liste. */
+#listeObjets li.surBancGauche, #listeObjets li.surBancDroit { border-color: var(--accent); }
+#listeObjets li.surBancGauche::after,
+#listeObjets li.surBancDroit::after {
+  content: "sur le banc";
+  grid-column: 3;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--accent);
+}
+
+@media (max-width: 1000px) {
+  .bancEssai { grid-template-columns: minmax(0, 1fr); }
+  .colonneEssai { grid-template-rows: auto auto; }
+}
+@media (max-width: 620px) {
+  .cartesEssai { grid-template-columns: 1fr; }
 }

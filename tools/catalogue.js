@@ -47,6 +47,8 @@ const RUBRIQUE = {
   PROGRESSION: 8,  // vitesse de montée des statistiques par niveau
   EVEIL: 13,       // bonus accordés par chaque palier d'éveil
   RELIQUES: 21,    // paliers de chaque relique et ce qu'ils apportent
+  CAPACITES: 10,   // une entrée par palier de capacité : son gabarit et ses valeurs
+  PALIERS_CAP: 11, // la suite des paliers de capacité d'un héros, dans l'ordre
   HEROS_BIS: 24,   // même contenu que HEROS, pour les derniers héros ajoutés
   UNITES_BIS: 25,  // idem pour UNITES
 };
@@ -248,6 +250,45 @@ function lireBonusDEnsemble(phrase, libellesStats) {
   return { texte, bonus };
 }
 
+/* --------------------------------------------------- capacités de combat
+
+   LA PHRASE DE CAPACITÉ EST UN GABARIT À TROUS. Le fichier de traduction porte
+   le texte, avec des trous nommés — « Inflige {dmg_percentage} DÉG uniques… » —
+   et le catalogue porte, palier par palier, ce qu'il faut mettre dedans. Un
+   héros compte 40 paliers de capacité ; le gabarit, lui, ne change qu'aux
+   paliers où la capacité gagne un effet (1, 10, 30 chez Achille).
+
+   Le jeu balise ses phrases pour les mettre en couleur et y glisser ses icônes.
+   On garde ce qui a du sens hors du jeu — les trous, les icônes de statistique —
+   et l'on jette le reste :
+
+     <style=ability_label>Mêlée | DÉG uniques</style>   → la ligne d'étiquettes
+     <style=ability_desc>…</style>                       → une ligne d'effet
+     <sprite name=unit_stat_atkspd>                      → [[atkspd]]
+     <link="Tooltip:ATKSPD">VIT d'ATQ</link>             → VIT d'ATQ            */
+
+// Les trois façons dont le jeu écrit une valeur de capacité, telles qu'on les
+// lit dans le catalogue : 1 = une durée en secondes, 2 = un pourcentage rangé
+// en fraction (11,15 s'affiche « 1115 % »), 3 = un nombre tout court.
+const FORMAT_CAPACITE = { 1: 'secondes', 2: 'pourcentage', 3: 'nombre' };
+
+function decouperCapacite(texte) {
+  const t = String(texte || '');
+  const etiquettes = /<style=ability_label>([\s\S]*?)<\/style>/.exec(t);
+  const nettoyer = (s) => s
+    .replace(/<sprite name=unit_stat_([a-z0-9]+)>/g, '[[$1]]')
+    .replace(/<sprite[^>]*>/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return {
+    etiquettes: etiquettes ? etiquettes[1].split('|').map((s) => s.trim()).filter(Boolean) : [],
+    lignes: [...t.matchAll(/<style=ability_desc>([\s\S]*?)<\/style>(?=<style=ability_desc>|$)/g)]
+      .map((m) => nettoyer(m[1]))
+      .filter(Boolean),
+  };
+}
+
 /* ------------------------------------------------------------------ écriture */
 
 const entete = (titre, version, lignes) => `/* ${titre}
@@ -435,6 +476,103 @@ async function principal() {
     };
   }
 
+  /* --- capacités de combat -------------------------------------------------- */
+
+  // Chaque palier de capacité (« ability.Achilles_40 ») dit de quel gabarit il
+  // relève et quelles valeurs y entrent.
+  const paliersCapacite = new Map();
+  for (const bloc of lire(RUBRIQUE.CAPACITES)) {
+    if (typeof bloc.f3 !== 'string' || typeof bloc.f2 !== 'string') continue;
+    const valeurs = {};
+    for (const trou of tableau(bloc.f1)) {
+      if (trou && typeof trou.f1 === 'string') {
+        valeurs[trou.f1] = { format: FORMAT_CAPACITE[trou.f2?.f1 ?? 0] || 'nombre', valeur: trou.f2?.f2 ?? 0 };
+      }
+    }
+    paliersCapacite.set(sansPrefixe(bloc.f3, 'ability.'), {
+      modele: sansPrefixe(bloc.f2, 'hero_battle_ability_description.'),
+      valeurs,
+    });
+  }
+
+  // La suite ordonnée des paliers d'un héros : le rang dans cette liste EST le
+  // niveau de compétence affiché par le jeu.
+  // UN PALIER PEUT PORTER PLUSIEURS CAPACITÉS. Chez Achille il n'y en a qu'une,
+  // mais Pénélope ou Marie Laveau ont un second volet qui monte avec le premier,
+  // et le jeu range les deux dans le même palier. On garde donc la liste, dans
+  // son ordre : le volet actif d'abord, ses passifs ensuite.
+  const suiteCapacite = new Map();
+  for (const bloc of lire(RUBRIQUE.PALIERS_CAP)) {
+    const id = sansPrefixe(bloc.f1, 'hero_battle_ability.');
+    if (id) {
+      suiteCapacite.set(id, tableau(bloc.f2).map(
+        (p) => tableau(p.f1).map((a) => sansPrefixe(String(a), 'ability.')),
+      ));
+    }
+  }
+
+  const modelesCapacite = {};
+  const capacites = {};
+  let sansCapacite = 0;
+  for (const h of lire(RUBRIQUE.HEROS, RUBRIQUE.HEROS_BIS)) {
+    const cle = sansPrefixe(h.f6, 'hero_battle_ability.');
+    const suite = cle ? suiteCapacite.get(cle) : null;
+    if (!heros[h.f1] || !suite?.length) { if (heros[h.f1]) sansCapacite++; continue; }
+
+    // Tous les volets d'un palier ne sont pas décrits : le jeu garde certains
+    // passifs pour lui. On ne retient que ceux qui portent un gabarit, et l'on
+    // exige qu'ils soient les mêmes d'un palier à l'autre — sinon la position
+    // d'un volet ne voudrait plus rien dire.
+    const decrits = suite.map((palier) => palier.map((a) => paliersCapacite.get(a)).filter(Boolean));
+    const nbVolets = decrits[0]?.length || 0;
+    if (!nbVolets || decrits.some((p) => p.length !== nbVolets)) { sansCapacite++; continue; }
+
+    const volets = [];
+    for (let i = 0; i < nbVolets; i++) {
+      const paliers = decrits.map((p) => p[i]);
+
+      for (const p of paliers) {
+        if (modelesCapacite[p.modele]) continue;
+        modelesCapacite[p.modele] = decouperCapacite(
+          fr[`Base.AbilityDescriptions.hero_battle_ability_description.${p.modele}_Name`],
+        );
+      }
+
+      // UN TROU QUI NE BOUGE JAMAIS N'EST ÉCRIT QU'UNE FOIS. La durée d'un bonus
+      // est la même aux quarante paliers ; seul le pourcentage monte. Sans ce tri,
+      // le fichier pesait le double pour dire quarante fois la même chose.
+      const noms = new Set(paliers.flatMap((p) => Object.keys(p.valeurs)));
+      const communs = {};
+      const formats = {};
+      const change = new Set();
+      for (const nom of noms) {
+        const vus = paliers.map((p) => p.valeurs[nom]);
+        formats[nom] = vus.find(Boolean)?.format || 'nombre';
+        const distinctes = new Set(vus.map((v) => (v ? v.valeur : null)));
+        if (distinctes.size === 1 && vus.every(Boolean)) communs[nom] = vus[0].valeur;
+        else change.add(nom);
+      }
+
+      // Le gabarit ne change qu'à quelques paliers : on note son rang plutôt que
+      // de réécrire son nom quarante fois.
+      const listeModeles = [...new Set(paliers.map((p) => p.modele))];
+      volets.push({
+        modeles: listeModeles,
+        formats,
+        communs,
+        paliers: paliers.map((p) => [
+          listeModeles.indexOf(p.modele),
+          Object.fromEntries([...change].filter((n) => p.valeurs[n]).map((n) => [n, p.valeurs[n].valeur])),
+        ]),
+      });
+    }
+
+    capacites[h.f1] = {
+      nom: fr[`Base.Abilities.hero_battle_ability.${cle}_Name`] || cle,
+      volets,
+    };
+  }
+
   /* --- ensembles d'équipement ---------------------------------------------- */
 
   // Le nom français de chaque statistique, pour relire les phrases d'effet.
@@ -544,6 +682,23 @@ async function principal() {
   );
 
   fs.writeFileSync(
+    path.join(RACINE, 'capacites-jeu.js'),
+    entete('CAPACITÉS DE COMBAT', version, [
+      'La capacité de chaque héros, telle que le jeu la décrit, palier par palier.',
+      '',
+      '  volets  : la capacité active, puis les passifs qui montent avec elle ;',
+      '  modeles : les gabarits dont relèvent ses paliers, dans « MODELES » ;',
+      '  formats : comment écrire chaque trou (durée, pourcentage, nombre) ;',
+      '  communs : les trous qui valent la même chose aux quarante paliers ;',
+      '  paliers : pour chaque niveau de compétence, son gabarit et ses valeurs.',
+      '',
+      'Un pourcentage est rangé en fraction, comme partout ailleurs ici : le 11,15',
+      "d'Achille s'affiche « 1115 % ». Les icônes du jeu sont notées [[atkspd]].",
+    ]) + `window.MODELES_CAPACITE = ${objetParLigne(modelesCapacite)};\n\n`
+      + `window.CAPACITES_JEU = ${objetParLigne(capacites)};\n`,
+  );
+
+  fs.writeFileSync(
     path.join(RACINE, 'ages-jeu.js'),
     entete('ÂGES', version, [
       "Le rang de chaque âge (pour savoir lequel est le plus avancé) et le",
@@ -563,6 +718,7 @@ async function principal() {
   console.log(`eveil-jeu.js  : ${Object.keys(eveil).length} héros (${Object.keys(tables).length} tables, ${sansEveil} héros sans éveil)`);
   console.log(`casernes-jeu.js : ${Object.keys(casernes).length} paliers de caserne`);
   console.log(`reliques-jeu.js : ${Object.keys(reliques).length} reliques`);
+  console.log(`capacites-jeu.js : ${Object.keys(capacites).length} capacités, ${Object.keys(modelesCapacite).length} gabarits${sansCapacite ? `, ${sansCapacite} héros sans capacité` : ''}`);
   console.log(`ages-jeu.js   : ${Object.keys(ages).length} âges`);
   console.log(`noms-fr.js    : ${Object.keys(noms.heros).length} héros, ${Object.keys(nomsSets).length} ensembles, ${Object.keys(nomsObjets).length} objets`);
 }

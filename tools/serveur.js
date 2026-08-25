@@ -15,7 +15,13 @@ http.createServer((requete, reponse) => {
   if (!cible.startsWith(RACINE)) { reponse.writeHead(403).end('Interdit'); return; }
   fs.readFile(cible, (erreur, contenu) => {
     if (erreur) { reponse.writeHead(404).end('Introuvable'); return; }
-    reponse.writeHead(200, { 'content-type': TYPES[path.extname(cible)] || 'application/octet-stream' });
+    // Ce serveur ne sert qu'à VOIR SES MODIFICATIONS. Sans en-tête de cache, le
+    // navigateur décide tout seul de garder l'ancien fichier — et on croit que
+    // le changement n'a pas pris. On lui interdit donc de garder quoi que ce soit.
+    reponse.writeHead(200, {
+      'content-type': TYPES[path.extname(cible)] || 'application/octet-stream',
+      'cache-control': 'no-store',
+    });
     reponse.end(contenu);
   });
 }).listen(PORT, () => console.log(`Site disponible sur http://localhost:${PORT}`));

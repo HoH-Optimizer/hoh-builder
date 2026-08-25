@@ -33,11 +33,23 @@ navigateur où l'extension n'est pas installée.
 
 ## Ce que fait le simulateur
 
-- Les **144 héros du jeu**, avec filtres (possédés / tous / équipés) et recherche
+- Les **145 héros du jeu**, avec filtres (possédés / tous / équipés) et recherche
 - Les **5 emplacements** de chaque héros, pré-remplis avec l'équipement réel du compte,
   rangés comme le jeu les range : l'armement d'un côté, la parure de l'autre
-- Choix d'objet parmi tout l'inventaire, trié par rareté, avec les attributs détaillés
-  et le nom du héros qui le porte déjà
+- **Un banc d'essai à la place d'une simple liste**, repris de l'écran de
+  comparaison du jeu : cliquer un emplacement ouvre l'inventaire à gauche, deux
+  pièces posées côte à côte au milieu, et sous elles ce que chacune ferait aux
+  statistiques — puissance comprise.
+  - **Les DEUX côtés se changent**, là où le jeu compare toujours à la pièce
+    portée. On compare donc aussi bien deux pièces qu'on ne porte pas : « laquelle
+    de ces deux-là vaut-il mieux viser ? », sans rien poser sur le héros.
+  - **Le repère ne bouge pas** : la colonne PORTÉ garde ce que le héros a sur lui,
+    et les deux colonnes suivantes disent ce que chaque côté y changerait. Le grand
+    tableau, lui, garde toujours ton **équipement réel** dans sa colonne de gauche.
+  - Le clic dans la liste **ne pose plus rien sur le héros** : il remplit le côté
+    choisi. C'est « Équiper » qui décide, et « Déséquiper » qui vide l'emplacement.
+  - L'inventaire garde ses filtres — ensemble, attribut principal, attributs à
+    trouver en plus, masquer ce qu'un autre héros porte — et dit qui porte quoi.
 - **Échange automatique** : équiper un objet porté par un autre héros le lui retire
 - **« Équiper au mieux, pour… »** : le bouton remplit les cinq emplacements d'un
   coup, avec ce que l'inventaire a de mieux **pour ce héros-là**.
@@ -80,11 +92,17 @@ navigateur où l'extension n'est pas installée.
   signaux à lire — la COULEUR dit ce qui est pris, le HALO dit ce que la souris
   désigne. Illustré pour les **attaquants individuels** ; les autres classes
   s'affichent avec l'icône de la statistique touchée.
-- Un onglet **Panthéon** à côté des statistiques, qui EXPLIQUE le même arbre en toutes
-  lettres : ce que chaque nœud rapporterait — « +32 de dégâts de base », « +126
-  d'attaque » — calculé par la même chaîne que le tableau de statistiques, avec le coût
-  et la règle d'ouverture des paliers. Le site ne conseille aucun chemin : voir plus
-  bas pourquoi.
+- **La relique s'essaie comme une pièce d'équipement.** La carte du panneau de
+  statistiques ouvre l'inventaire de reliques du compte — celles qui dorment en
+  réserve comme celles qu'un autre héros porte —, et les chiffres suivent aussitôt :
+  la colonne de gauche garde ce que le compte porte, la colonne ÉCART dit ce que
+  l'échange vaudrait. Le niveau se règle cran par cran ; l'ère du joueur, qui met
+  TOUTES les reliques à son échelle, est rangée dans cette même fenêtre.
+- **La capacité du héros, écrite comme le jeu l'écrit**, sous les deux équipements :
+  son nom, son palier de compétence, ses étiquettes et ses effets chiffrés au palier
+  atteint. Rien n'y est réécrit — la phrase vient du fichier de traduction du jeu et
+  les nombres de son catalogue (`capacites-jeu.js`). Les deux **charges**, elles, sont
+  calculées comme le reste et **bougent avec l'équipement simulé**.
 - Chaque ligne se déplie sur **l'addition complète**, source par source, avec le
   cumul qui monte : base, niveau, éveil, caserne, relique, équipement
 - **Les héros immortalisés sont montrés tels que tu les as.** Sept héros existent
@@ -157,8 +175,10 @@ Deux règles ont été tirées de cette comparaison, et elles comptent :
 | Icônes de 7 pièces d'équipement | Le wiki ne les héberge pas et aucune capture ne les montre. Le site affiche à la place l'icône de l'ensemble. Il manque Warden (chapeau, cou, anneau), Berserker et Countess (main, vêtement). |
 
 Deux réglages restent à la main du joueur, parce que l'export ne les donne pas de
-façon sûre et qu'ils commandent directement les chiffres : le **niveau de la relique**
-et l'**ère**. Ils sont sous la relique, et mémorisés dans le navigateur.
+façon sûre et qu'ils commandent directement les chiffres : le **niveau de la relique**,
+réglé cran par cran sous la relique, et l'**ère**, rangée dans la fenêtre de choix
+d'une relique — elle vaut pour tout le compte, pas pour un héros. Les deux sont
+mémorisés dans le navigateur.
 
 ## Pour les curieux : comment ça marche
 
@@ -183,8 +203,8 @@ manquait quatorze — dont Thomas Jefferson, que le filtre « Tous » ne montrai
 Le site communautaire [Forge of Games](https://forgeofgames.com) rediffuse ce catalogue
 tel quel. [`tools/catalogue.js`](tools/catalogue.js) le récupère, le décode avec notre
 propre décodeur, et en tire sept fichiers livrés avec le site : `heros-jeu.js`,
-`sets-jeu.js`, `eveil-jeu.js`, `casernes-jeu.js`, `reliques-jeu.js`, `ages-jeu.js`
-et `noms-fr.js`. Un huitième, [`pantheon-jeu.js`](pantheon-jeu.js), ne vient pas
+`sets-jeu.js`, `eveil-jeu.js`, `casernes-jeu.js`, `reliques-jeu.js`, `capacites-jeu.js`,
+`ages-jeu.js` et `noms-fr.js`. Un neuvième, [`pantheon-jeu.js`](pantheon-jeu.js), ne vient pas
 de là : le panthéon n'existe dans aucune donnée, il a été relevé à l'écran.
 
 ### La montée en niveau
@@ -334,12 +354,13 @@ place de la découpe.
 node tools/catalogue.js
 ```
 
-Régénère les sept fichiers de catalogue depuis le jeu : `heros-jeu.js` (144 héros —
+Régénère les huit fichiers de catalogue depuis le jeu : `heros-jeu.js` (145 héros —
 nom français, rareté, type, couleur, classe, statistiques de base), `sets-jeu.js`
 (48 ensembles et leurs effets), `eveil-jeu.js` (paliers d'éveil), `casernes-jeu.js`
-(183 paliers de caserne), `reliques-jeu.js` (39 reliques), `ages-jeu.js` (le
-multiplicateur de chaque ère) et `noms-fr.js` (noms des héros, des ensembles et des
-objets). À relancer à chaque mise à jour du jeu.
+(198 paliers de caserne), `reliques-jeu.js` (42 reliques), `capacites-jeu.js` (la
+capacité de chaque héros, palier par palier), `ages-jeu.js` (le multiplicateur de
+chaque ère) et `noms-fr.js` (noms des héros, des ensembles et des objets). À relancer
+à chaque mise à jour du jeu.
 
 **Après toute modification de l'extension ou du décodeur**, régénérer l'archive proposée
 au téléchargement sur la page d'accueil :

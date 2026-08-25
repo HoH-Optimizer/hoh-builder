@@ -77,6 +77,27 @@ window.FORMULES = {
   // les points de vie et les dégâts de base. Vérifié sur la caserne d'infanterie
   // de Thomas : son unité de niveau 130 affiche 917 / 1223 / 2330 en jeu, et la
   // règle donne 917,7 / 1223,6 / 2330,5.
+  //
+  // LE JEU NE CALCULE PAS AVEC 0,04, MAIS AVEC 0,0399932861328125.
+  // -------------------------------------------------------------
+  // Ses nombres sont rangés en VIRGULE FIXE 16.16 : un entier divisé par 65 536.
+  // Le fichier de game design le montre à découvert — à côté de chaque
+  // statistique de base, il répète la même valeur multipliée par 65 536
+  // (Achille : 1 900 et 124 518 400). Un taux de 0,04 s'y écrit donc 2 621, et
+  // 2 621 ÷ 65 536 = 0,0399932861328125 : un cheveu SOUS 0,04.
+  //
+  // Sur un héros de bas niveau ça ne se voit pas. Au niveau 160, ça vaut deux
+  // points de vie — et c'est exactement le biais que le journal traînait depuis
+  // le §24 sans savoir le nommer. La colonne « stats de base » que la mise à
+  // jour du 25/08/2026 a remplie l'a rendu mesurable : sur cinq héros de
+  // niveaux 70 à 160, les VINGT valeurs tombent avec les taux en virgule fixe,
+  // là où les taux ronds en manquaient cinq. Voir le §32 du journal.
+  //
+  // On garde donc les taux ronds ci-dessous — ils sont lisibles, et ce sont eux
+  // que le catalogue déclare — mais on les fait passer par `fixe()` au moment de
+  // s'en servir.
+  fixe: (valeur) => Math.round(valeur * 65536) / 65536,
+
   MONTEE: {
     MaxHitPoints: { parNiveau: 0.04, parAscension: 0.06, parNiveauUnite: 0.0465 },
     Attack: { parNiveau: 0.045, parAscension: 0.20, parNiveauUnite: 0.06 },
@@ -228,7 +249,7 @@ window.FORMULES = {
     // minimum qu'il faudrait pour atteindre ce niveau.
     const ascensions = contexte.ascensions ?? Math.max(0, Math.ceil(niveau / 10) - 1);
     const auNiveau = montee
-      ? base * (1 + montee.parNiveau * (niveau - 1) + montee.parAscension * ascensions)
+      ? base * (1 + this.fixe(montee.parNiveau) * (niveau - 1) + this.fixe(montee.parAscension) * ascensions)
       : base;
 
     // L'éveil s'applique à la valeur montée en niveau, avant tout le reste.
@@ -555,7 +576,7 @@ window.FORMULES = {
     const P = this.PUISSANCE;
     const auNiveau = (nom) => {
       const taux = this.MONTEE[nom]?.parNiveauUnite;
-      const brut = (stats[nom] || 0) * (taux ? 1 + taux * (unite.niveau - 1) : 1);
+      const brut = (stats[nom] || 0) * (taux ? 1 + this.fixe(taux) * (unite.niveau - 1) : 1);
       // Les quatre grandes statistiques s'écrivent en entier, ici comme ailleurs.
       return this.ENTIERES.has(nom) ? Math.trunc(brut) : brut;
     };
@@ -645,13 +666,34 @@ window.FORMULES = {
       * (1 + v('CritChance') * (v('CritDamage') - 1))
       * (0.5 + 0.5 / escouadeAttendue)
       * combat
-      * (1 + (relique ? (P.rareteRelique[relique.rarete] || 0) * relique.niveau : 0));
+      * (1 + (relique ? (P.rareteRelique[relique.rarete] || 0) * relique.niveau : 0))
+      // LE PANTHÉON, depuis la mise à jour du 25/08/2026. Le jeu a ajouté ce
+      // facteur à sa formule — un nœud `PantheonCombatPowerFormulaTermDTO` qui
+      // n'existait pas dans le fichier du 19/08 — et il pèse lourd : +16 % sur
+      // Achille. Chaque nœud porte son poids dans les données du jeu, et ils
+      // s'additionnent ; pantheon-jeu.js les transporte. Vérifié sur cinq héros
+      // relevés à l'écran le 25/08 — Achille au point près. Voir le §30.
+      * (1 + (contexte?.puissancePantheon || 0));
 
     if (!(noyau > 0)) return null;
     // Le héros, PLUS son escouade. Faute de caserne connue, on retombe sur
     // l'ancien ajustement — mieux vaut un ordre de grandeur qu'un héros nu.
     const escorte = this.puissanceEscorte(contexte?.escorte);
-    return P.coefficient * escouade * Math.sqrt(noyau) + (escorte ?? P.constante);
+    const brute = P.coefficient * escouade * Math.sqrt(noyau) + (escorte ?? P.constante);
+
+    // LA CALIBRATION. Le joueur peut dire au site la puissance que le jeu affiche
+    // pour CE héros ; on retient l'écart et on le retranche partout ensuite. Ce
+    // n'est pas un ajustement de la formule — la formule ne bouge pas, et rien
+    // n'est déduit d'un héros pour un autre.
+    //
+    // POURQUOI ÇA TIENT QUAND L'ÉQUIPEMENT CHANGE. Une bonne part de l'écart
+    // vient de l'escouade, qui s'ADDITIONNE et ne dépend pas de l'équipement —
+    // Jules César et le Roi Minos partagent une caserne et ratent de +9,47 et
+    // +8,99. Cette part-là, la calibration l'efface pour de bon. Le reste évolue
+    // proportionnellement, et la racine carrée l'écrase : sur les dix héros
+    // relevés, changer TOUTE la panoplie ne fait dériver la calibration que de
+    // 0,05 à 2,6 points. Mesuré, pas supposé — voir le §35 du journal.
+    return brute - (contexte?.calibration || 0);
   },
 
   // Un attribut verrouillé est connu du jeu mais sa valeur n'a pas encore été

@@ -2804,3 +2804,546 @@ dernière fois que son ancien +141 venait du seul niveau de relique.
   La table de rareté, elle, est bonne : passer les 5★ de 0,01 à 0,005 détruit les
   cinq porteurs de 5★ du compte (−120 à −173 points).
 - **Le bruit de 0,05 %**, qui est plus petit que la résolution de l'écran (§26).
+
+---
+
+## 29. LA FORMULE A CHANGÉ — le panthéon est entré dedans
+
+25/08/2026. Thomas : « la formule du jeu a changé suite à une mise à jour, tu peux
+check ? » Les notes de patch ne disent rien. Les données, si.
+
+### La comparaison, et comment la refaire
+
+La formule ne vit que dans le fichier de game design du jeu. Deux outils sont nés
+pour cette question, et resteront utiles à chaque mise à jour :
+
+- `tools/extraire-gamedesign.js` — à coller dans la console du navigateur, jeu
+  ouvert : il reconnaît le fichier à sa signature (`formula.unit_power_hero`) et le
+  télécharge ;
+- `tools/formule.js` — en tire une empreinte lisible, et met deux versions côte à
+  côte :
+
+```
+node tools/formule.js data/GameDesignResponse.bin data/GameDesignResponse-2026-08-25.bin
+```
+
+Les deux fichiers sont conservés : celui du 19/08 (26 437 782 octets) et celui du
+25/08 (26 550 526).
+
+### Ce qui a changé, exactement
+
+**Un type de nœud qui n'existait pas apparaît dans le fichier :**
+
+```
+PantheonCombatPowerFormulaTermDTO
+```
+
+Zéro occurrence le 19/08. **Une** le 25/08 — dans `formula.unit_power_hero`, et
+nulle part ailleurs. Le §14 avait pourtant relevé son nom dans les métadonnées du
+moteur dès le 19 : le moteur savait déjà le lire, le game design ne s'en servait
+pas encore.
+
+Il est posé **juste après le facteur de relique**, comme un multiplicande de plus
+sous la racine :
+
+```
+   … × (1 + raretéRelique × niveauRelique)
+     × (1 + PuissanceDeCombatDuPanthéon)      ← NOUVEAU
+```
+
+Le déroulé terme à terme le montre sans ambiguïté — un `FormulaAdditionDTO` dont
+les deux opérandes sont `FormulaConstantDTO 1.0` et le terme de panthéon.
+
+**Tout le reste est identique, au bit près** : les douze statistiques, l'arrondi
+unique en haut, l'exposant 0,5, et les constantes `0,0168 · 1,25 · 1,35 · 0,9 ·
+2,03 · 1,75 · 0,025 · 0,005 · 0,01 · 1,218`. Et la formule jumelle,
+`expected_unit_power`, celle de l'escouade, **n'a pas bougé** : une unité de
+caserne n'a pas de panthéon.
+
+### Ce que ça dit du §25 — et ce que ça n'en dit pas
+
+Le §25 déclarait le panthéon **hors de cause**, par trois chemins, et il avait
+raison : le fichier du 19/08 ne contenait aucun terme de panthéon dans sa formule,
+et l'écran de Marie Curie affichait bien « 19 620 +1 518 », deux nombres séparés.
+Ce n'était pas une erreur de lecture, c'était l'état du jeu à cette date. **C'est
+le jeu qui a changé d'avis, pas nous.**
+
+### Ce qui manque pour l'implanter
+
+Une seule chose, et elle ne se lit pas dans le fichier : **combien vaut le terme.**
+Le nœud ne porte aucun coefficient — son corps est vide (`12 02 12 00`), là où tous
+les termes de statistique portent un multiplicateur. Sa valeur est donc calculée
+par le moteur, et l'ordre de grandeur décide de tout : le panthéon de Marie Curie
+pesait 1 518 points de puissance, et `√(1 + 1518)` multiplierait sa puissance par
+39. Le terme est donc forcément une **fraction**, pas une puissance brute.
+
+Une seule mesure la donne. Pour un héros à panthéon, en négligeant l'escouade qui
+s'ajoute en dehors de la racine :
+
+```
+puissance affichée aujourd'hui / puissance d'avant ≈ √(1 + terme)
+```
+
+**Tant que ce nombre n'est pas mesuré, `formules.js` n'est pas touché** — c'est la
+règle du dossier : rien n'entre dans le calcul qui ne tombe au point près sur
+plusieurs héros indépendants.
+
+---
+
+## 30. LE POIDS DU PANTHÉON ÉTAIT DANS LE FICHIER, NŒUD PAR NŒUD
+
+Le §29 laissait une seule inconnue : le nouveau facteur `× (1 + panthéon)` est
+dans la formule, mais **combien vaut le terme ?** Il n'a pas fallu le mesurer.
+Il était écrit, comme le reste.
+
+### Le fichier a grossi, exactement là où il fallait
+
+La zone des définitions de nœuds compte **132 nœuds dans les deux versions**, mais
+elle pèse **866 octets de plus** dans celle du 25/08. Le diff nœud par nœud le
+dit sans détour : **72 nœuds ont reçu douze octets de plus**, les soixante autres
+n'ont pas bougé d'un bit.
+
+Sur `layer3_node3_SingleStriker`, l'insertion se lit à l'œil nu :
+
+```
+21 7b 14 ae 47 e1 7a a4 3f      champ 4, flottant 64 bits = 0,04
+```
+
+C'est le poids du nœud dans la formule de puissance.
+
+### La règle, et elle est simple
+
+**Le facteur vaut 1 plus la somme des poids des nœuds débloqués.**
+
+`node tools/formule.js --pantheon` sort la table complète. Elle est cohérente
+d'un bout à l'autre :
+
+| | poids |
+|---|---|
+| layer1_node3 (amplification de dégâts) | 0,013 |
+| layer2_node1 · layer2_node2 (soins et boucliers reçus) | 0,038 |
+| layer2_node3 (vitesse de déplacement) · layer3_node1 (focus) | 0,020 |
+| layer3_node2 (dégâts de base) | 0,050 |
+| layer3_node3 · layer3_node4 (effets de classe) | 0,035 à 0,040 |
+| palier 5 (effets de combat) | 0,035 à 0,050 |
+| **layer1 n°1, 2, 4 · layer2_node4 · tout le palier 4 · le palier 6** | **rien** |
+
+**Les nœuds qui ne pèsent rien sont exactement ceux dont l'effet nourrit déjà une
+statistique de la formule** : chances de crit, dégâts de crit, vitesse d'attaque,
+esquive, les quatre amplificateurs d'équipement et de relique, les deux
+ascensions. Le jeu ne les compte pas deux fois. Ce qui pèse, c'est ce que la
+formule ne voyait pas : les effets de combat, la vitesse de déplacement, les
+soins reçus, le focus, les amplifications de dégâts.
+
+### Les cinq héros relevés le 25/08, sans rien ajuster
+
+| Héros | Nœuds | Facteur lu | Le jeu | Le site | Écart |
+|---|---|---|---|---|---|
+| Achille | 9 | 1,1630 | 30 236 | **30 236** | **0** |
+| Marie Curie | 8 | 1,1410 | 23 770 | 23 786 | +16 |
+| Ulysse | 6 | 1,1610 | 14 758 | 14 764 | +6 |
+| Jules César | 6 | 1,1080 | 17 986 | 17 998 | +12 |
+| Lancelot du Lac | 2 | 1,0000 | 16 911 | 16 913 | +2 |
+
+Et les trois héros **sans** panthéon relevés le même soir n'ont pas bougé : Roi
+Minos 19 062 pour 19 073, Hatchepsout 17 700 pour 17 708, Abraham Lincoln 10 632
+pour 10 633.
+
+**Huit héros, pire écart 0,067 %.** Le dossier retrouve sa précision d'avant la
+mise à jour, et Achille tombe au point près sur un facteur qu'aucun réglage n'a
+touché — le nombre vient du fichier, pas d'un ajustement.
+
+### Lancelot du Lac est le témoin qui vaut la démonstration
+
+Il a **deux** nœuds débloqués — `layer1_node1` et `layer1_node2`, chances de crit
+et dégâts de crit — et **ni l'un ni l'autre ne porte de poids**. Son facteur vaut
+donc exactement 1, et sa puissance ne devait pas bouger d'un point.
+
+Elle n'a pas bougé : 16 911 en jeu, 16 913 sur le site, comme avant la mise à
+jour. Un héros à panthéon dont la puissance est inchangée, c'est ce qu'aucune
+règle « par nombre de nœuds » n'aurait pu produire. La première hypothèse — un
+facteur proportionnel au nombre de nœuds débloqués, tirée de deux mesures — le
+prédisait à 16 802. Elle était fausse, et c'est lui qui l'a dit.
+
+### Ce qui est en place
+
+- `pantheon-jeu.js` porte le poids de chaque nœud, sous la clé `puissance` ;
+- `app.js` en fait la somme sur les nœuds débloqués et la passe dans le contexte ;
+- `formules.js` multiplie le noyau par `(1 + cette somme)`, à l'intérieur de la
+  racine, là où le fichier le pose ;
+- `tools/formule.js --pantheon` régénère la table à la prochaine mise à jour.
+
+### Et les petits nombres verts confirment tout seuls
+
+Les captures du panthéon portaient, sur les trois héros sans aucun nœud, l'aperçu
+du gain qu'apporterait « Précision mortelle » : **+213 · +110 · +198**. Le site
+sait désormais répondre à la même question — il suffit d'allumer le nœud dans son
+arbre :
+
+| | le jeu | le site |
+|---|---|---|
+| Roi Minos | +213 | **+213** |
+| Abraham Lincoln | +110 | **+110** |
+| Hatchepsout | +198 | +197 |
+
+Trois mesures de plus, indépendantes des huit précédentes, et sur une DIFFÉRENCE
+plutôt que sur un total — là où l'erreur du modèle ne se simplifie pas. Deux
+tombent au point près.
+
+---
+
+## 31. LA COLONNE « STATS DE BASE » N'AFFICHE PLUS ZÉRO
+
+Thomas, le 25/08/2026 : « j'ai surtout l'impression que les stats de base sont bel
+et bien dans le tableau du jeu alors qu'avant il y avait écrit 0 partout ».
+
+Il a raison, et c'est un cadeau.
+
+### Ce que disait le §19, et qui n'est plus vrai
+
+> « La colonne "stats de base" affiche 0 : le jeu ne montre pas la valeur montée
+> en niveau, il ne montre que les apports. La base implicite se retrouve par
+> soustraction. »
+
+La mise à jour a rempli cette colonne. L'écran d'Achille du 25/08 donne
+directement **1451 · 1205 · 15692 · 744**. Ce n'était accessible qu'en soustrayant
+cinq lignes les unes des autres ; c'est maintenant lu.
+
+### Et le site tombe dessus
+
+| | le site calcule | le jeu affiche | écart |
+|---|---|---|---|
+| Attaque | 1 450,15 | **1 451** | −0,85 |
+| Défense | 1 204,74 | **1 205** | −0,26 |
+| Points de vie | 15 694,00 | 15 692 | **+2,00** |
+| Dégâts de base | 743,40 | **744** | −0,60 |
+
+Trois des quatre sont la valeur exacte arrondie vers le haut, comme partout
+ailleurs. **Les points de vie, eux, sont trop hauts de 2** — et c'est le même
+biais que le §24 avait déjà isolé sur les taux de montée, mesuré ici pour la
+première fois SANS avoir à le démêler de la caserne, de l'éveil et de
+l'équipement. La colonne est un instrument neuf, et le meilleur qu'on ait eu sur
+la montée en niveau : deux ou trois écrans de plus sur des héros de niveaux
+différents et le taux des PV se règle proprement.
+
+### Les statistiques de base n'ont PAS changé — sauf deux héros
+
+`node tools/formule.js --heros` confronte le catalogue du site aux blocs
+`HeroUnitDefinitionDTO` du fichier de game design : deux sources indépendantes,
+l'une venue de Forge of Games, l'autre du jeu lui-même.
+
+```
+145 héros dans le catalogue du site
+144 retrouvés dans le fichier du jeu et IDENTIQUES
+  1 absent (TribalHealerLegendary)
+  0 écart
+```
+
+Contre le fichier du **19/08**, en revanche, deux héros ne tombent pas :
+
+| | avant | après |
+|---|---|---|
+| Ivar le Désossé | ATQ 150 · DÉF 125 · PV 1 700 | **130 · 130 · 1 900** |
+| Ada Lovelace légendaire | ATQ 143 · DÉF 110 | **168 · 90** |
+
+**Ce sont les deux seuls héros rééquilibrés par la mise à jour**, et le catalogue
+du site — tiré de Forge of Games le 20/08 — porte déjà les nouvelles valeurs.
+Thomas n'a ni l'un ni l'autre. Rien à corriger.
+
+---
+
+## 32. LE JEU COMPTE EN VIRGULE FIXE — et 0,04 n'est pas 0,04
+
+Le §31 laissait un résidu obstiné : sur la colonne « stats de base », l'attaque,
+la défense et les dégâts tombaient tous justes, et **les points de vie étaient
+trop hauts de 1, ou de 2 sur Achille**. Toujours au-dessus, jamais en dessous.
+
+Quatre écrans de plus, demandés à Thomas le 25/08 — Qin Shi Huang 110, Hua Mulan
+70, Vlad Dracula 70, Marie Curie 140 — ont donné la réponse.
+
+### Le fichier le dit à découvert
+
+À côté de chaque statistique de base, le fichier de game design répète la même
+valeur multipliée par **65 536** :
+
+```
+Achille       1 900  et  124 518 400        (1 900 x 65 536)
+Qin Shi Huang 1 800  et  117 964 800
+Hua Mulan     2 200  et  144 179 200
+```
+
+**Le jeu range ses nombres en virgule fixe 16.16** : un entier divisé par 65 536.
+Un taux de 0,04 s'y écrit donc 2 621 — et `2 621 ÷ 65 536 = 0,0399932861328125`,
+un cheveu SOUS 0,04. De même 0,06 vaut 0,05999755859375, 0,045 vaut
+0,0449981689453125, et 0,20 vaut 0,1999969482421875.
+
+Le même 2 621 se retrouve d'ailleurs, en clair, dans les nœuds de panthéon du §30.
+
+### Vingt valeurs, vingt fois juste
+
+| Héros | niveau | avec les taux ronds | en virgule fixe |
+|---|---|---|---|
+| Qin Shi Huang | 110 | 3 sur 4 | **4 sur 4** |
+| Hua Mulan | 70 | 3 sur 4 | **4 sur 4** |
+| Vlad Dracula | 70 | 3 sur 4 | **4 sur 4** |
+| Marie Curie | 140 | 3 sur 4 | **4 sur 4** |
+| Achille | 160 | 3 sur 4 | **4 sur 4** |
+
+Les taux ronds manquaient les points de vie des cinq héros. En virgule fixe, les
+vingt valeurs tombent — et toujours par le HAUT, ce qui reconfirme au passage que
+le jeu plafonne ce qu'il écrit (§22).
+
+### Ce que ça règle
+
+**Le « biais ordinaire » du §24 est nommé.** Le journal traînait depuis le début
+un excès systématique de quelques points, qu'on avait successivement attribué aux
+taux de montée, à l'arrondi, puis rangé comme irréductible (§26). Il venait de
+là : nous calculions avec des taux légèrement plus généreux que ceux du jeu.
+
+Sur les héros relevés le 25/08, l'écart de puissance baisse partout :
+
+| | avant | après |
+|---|---|---|
+| Marie Curie | +16 | **+13** |
+| Jules César | +12 | **+9** |
+| Roi Minos | +11 | **+9** |
+| Hatchepsout | +8 | **+6** |
+| Ulysse | +6 | **+4** |
+| Lancelot · Lincoln | +2 · +1 | **0 · 0** |
+| Achille | 0 | −4 |
+
+Et les statistiques elles-mêmes : **Hua Mulan tombe sur les quatre**
+(1 428 · 1 284 · 14 435 · 403), Qin Shi Huang sur trois des quatre.
+
+`fixe()`, dans `formules.js`, fait passer chaque taux par 65 536 au moment de
+s'en servir. La table `MONTEE` garde ses nombres ronds, qui restent lisibles et
+qui sont bien ceux que le catalogue déclare.
+
+### Et le §15 avait raison, encore
+
+Il disait : « Les nombres du jeu sont en virgule fixe sur 16 bits ». Le §23 l'a
+déclarée fausse en trouvant des flottants 64 bits dans l'arbre de formule. Les
+deux étaient vrais : **l'arbre de formule porte des doubles, les statistiques du
+jeu sont en 16.16.** Deux endroits, deux formats.
+
+### Un point ouvert, et il ne concerne pas le calcul
+
+Vlad Dracula est le seul héros qui décroche : le jeu lui donne 1 419 d'attaque, le
+site 1 470. La ligne RELIQUE explique tout l'écart — le jeu compte **+35**, le
+site **+86**. Or aucun niveau de l'Abaque ne vaut 35 dans notre table : ce n'est
+donc pas le même objet. **Sa relique a changé entre l'export de 19 h 39 et la
+capture de 20 h 43.** C'est le piège du §« les relevés rouillent », pas un défaut
+de la formule — ses points de vie et ses dégâts de base, eux, tombent au point
+près.
+
+---
+
+## 33. LES CASERNES SONT INNOCENTÉES — quatorze nombres, quatorze fois juste
+
+Le §32 laissait une piste : sur la caserne d'infanterie lourde, Jules César et le
+Roi Minos réclamaient tous les deux la même correction de −9 sur l'escouade. Deux
+héros indépendants, le même écart : ça ressemblait à une valeur fausse.
+
+Thomas a envoyé les deux écrans de caserne le 25/08. Ils disent le contraire.
+
+### Ce que le jeu affiche, et ce que le site calcule
+
+| Caserne d'infanterie lourde, niveau 33 | le jeu | le site |
+|---|---|---|
+| unité — attaque | 813 | **813** |
+| unité — défense | 1 401 | **1 401** |
+| unité — points de vie | 3 571 | **3 571** |
+| taille d'escouade | 2 | **2** |
+| boost aux héros | 528 · 528 · 4 755 | **528 · 528 · 4 755** |
+
+| Caserne de cavalerie, niveau 32 | le jeu | le site |
+|---|---|---|
+| unité — attaque | 1 162 | **1 162** |
+| unité — défense | 1 083 | **1 083** |
+| unité — points de vie | 2 939 | **2 939** |
+| taille d'escouade | 2 | **2** |
+| boost aux héros | 518 · 518 · 4 670 | **518 · 518 · 4 670** |
+
+**Quatorze nombres, aucun écart.** Avec la caserne de siège déjà lue au §26
+(1 459 · 699 · 6 178), cela fait **trois casernes vérifiées de bout en bout** :
+les statistiques de l'unité, sa taille d'escouade, et le forfait que la caserne
+donne au héros.
+
+### Donc le −9 ne vient pas de là
+
+Les entrées de l'escouade sont exactes. L'écart de Jules César et de Minos vient
+donc du CÔTÉ HÉROS, et les deux ne se ressemblaient que par hasard — le bruit
+propre à chaque héros vaut ±6, ce qui rend deux coïncidences à −9 parfaitement
+banales. **Compter les mesures avant de conclure, encore une fois** : deux points
+qui s'accordent ne font pas une règle, le §30 venait pourtant de le rappeler.
+
+### Où en est le dossier, et il faut le dire clairement
+
+Sur les dix héros relevés le 25/08 :
+
+- **huit tombent DANS l'intervalle** que la résolution des écrans autorise. Le jeu
+  n'affiche que des entiers plafonnés ; sur quatre statistiques, ça laisse 17 à
+  32 points de jeu. Pour ces huit-là, **aucune formule ne peut être démontrée
+  meilleure que la nôtre** ;
+- deux en sortent de peu — Achille (+4) et Hua Mulan (−6) ;
+- l'erreur moyenne vaut **5,2 points, soit 0,04 %**.
+
+Toutes les variantes essayées après la découverte de la virgule fixe — quantifier
+les statistiques, ne pas arrondir la vitesse d'attaque, changer l'arrondi final —
+**dégradent ou ne changent rien**.
+
+**Le dossier est clos sur la puissance des héros.** Ce qui reste n'est pas une
+erreur de formule : c'est l'épaisseur du trait avec lequel le jeu écrit ses
+nombres. La bonne conclusion du §26 tient, et elle tient maintenant avec des
+données bien meilleures : la formule, tous ses facteurs, les taux en virgule
+fixe, le panthéon, l'escouade et les trois casernes.
+
+---
+
+## 34. LA RÈGLE QUI ARRANGE UN GROUPE ET CASSE LES AUTRES — démontrée, pas affirmée
+
+Thomas, après le §33 : « une règle qui arrange un héros et casse les neuf autres,
+encore vrai avec les nouvelles infos qu'on a ? »
+
+La question était juste : le §33 l'affirmait sans le retester depuis la virgule
+fixe et le panthéon. Retesté.
+
+### D'abord une correction, et elle porte sur ce qui a été DIT, pas écrit
+
+En répondant à Thomas j'avais avancé que l'escouade reposait sur « trois nombres
+qu'aucun écran n'affiche ». **C'était faux, et il fallait aller voir plutôt que de
+le supposer.**
+
+Elles sont dans le fichier de game design, et le site utilise déjà exactement
+celles-là :
+
+| Unité | escouade | attendue | vitesse | portée |
+|---|---|---|---|---|
+| Guisarmiers | 2 | 8 | 1,053 | 1,25 |
+| Fantassins | 3 | 12 | 1,25 | 1,25 |
+| Catapulte | 1 | 4 | 0,333 | 6 |
+| Arbalétriers | 3 | 12 | 0,80 | 3,5 |
+| Cavalerie | 2 | 8 | 1,00 | 1,25 |
+
+Le seul paramètre réellement libre est le **crit des unités** : leur fiche n'en
+porte aucun, le site prend donc 5 % et 150 % par défaut (§23).
+
+### Le seul vrai signal, et le seul levier qui l'atteint
+
+En demandant à chaque groupe de casernes quelle escouade ses héros réclament :
+
+| Caserne | héros | désaccord entre eux | correction demandée |
+|---|---|---|---|
+| Fantassins | 3 | **5,45** | +3,41 |
+| Catapulte | 2 | **12,02** | −7,02 |
+| Arbalétriers | 2 | **4,52** | −2,03 |
+| **Guisarmiers** | 2 | **0,48** | **−9,22** |
+
+Trois groupes se contredisent EUX-MÊMES plus fort que la correction cherchée :
+là, il n'y a rien à corriger, c'est du bruit. Les Guisarmiers, eux, sont un vrai
+signal — deux héros indépendants d'accord à un demi-point près.
+
+Le seul levier qui les atteint est le crit des unités. Balayage sur les dix
+héros :
+
+| crit de l'unité | erreur moyenne | pire | ce que ça fait |
+|---|---|---|---|
+| **5 % / 150 % (actuel)** | **5,2** | 13 | — |
+| 2,5 % / 150 % | 6,4 | 14 | **César 0 · Minos 0**, mais Mulan −14, Achille −13, Lancelot −9 |
+| 5 % / 158 % | 6,8 | 16 | Achille −1, mais Marie +16 |
+| pas de crit | 14,5 | 23 | tout s'effondre |
+| 10 % / 150 % | 20,5 | 30 | tout s'effondre |
+
+**La réponse est donc oui, et elle est maintenant démontrée.** Le réglage à
+2,5 % fait tomber les DEUX héros guisarmiers exactement à zéro — c'est très
+tentant — et il dégrade les huit autres, dont Lancelot et Lincoln qui étaient
+pile. La moyenne monte de 5,2 à 6,4.
+
+Le décalage des Guisarmiers vient donc de quelque chose de propre à cette unité,
+que ses données ne portent pas — ou bien deux héros sont tombés d'accord par
+hasard, ce qui, avec un bruit de ±6, arrive une fois sur vingt-cinq.
+
+**Rien ne bouge dans le code.**
+
+---
+
+## 35. LA CALIBRATION — laisser le joueur donner le chiffre du jeu
+
+Thomas, après le §34 : « si on autorise un utilisateur à monter la puissance
+totale pour qu'elle s'accorde avec son jeu, et qu'il change d'équipement, seras-tu
+capable de tomber pile ? »
+
+Oui, à un ou deux points près. Et ce n'est pas une promesse : c'est mesuré.
+
+### Pourquoi l'écart ne bouge presque pas
+
+L'erreur d'un héros n'est pas du bruit qui se redistribue à chaque changement.
+Elle a deux moitiés, et les deux sont stables :
+
+1. **Une bonne part vient de l'escouade**, qui s'AJOUTE à la puissance et ne
+   dépend pas de l'équipement. La preuve est dans les relevés : Jules César et le
+   Roi Minos partagent une caserne, et ratent de **+9,47 et +8,99**. Presque le
+   même nombre, pour deux héros qui n'ont rien d'autre en commun. Une calibration
+   efface cette part **définitivement**.
+2. **Le reste évolue proportionnellement**, et la racine carrée l'écrase.
+
+Simulation sur les dix héros relevés, en faisant varier l'attaque et la défense
+de −10 % à +20 % — c'est-à-dire en changeant toute la panoplie :
+
+| Héros | erreur aujourd'hui | dérive après un changement de +20 % |
+|---|---|---|
+| Lancelot · Lincoln | −0,3 · −0,2 | **0,07 · 0,05** |
+| Qin Shi Huang | +1,0 | **0,20** |
+| Ulysse · Hua Mulan | +4,3 · −5,8 | **0,86 · 1,16** |
+| Minos · Jules César | +9,0 · +9,5 | **1,80 · 1,89** |
+| Marie Curie | +13,0 | **2,61** |
+
+### Et la preuve n'est pas que simulée
+
+Les aperçus de nœuds de panthéon du §30 mesuraient exactement cela — un ÉCART
+entre deux configurations du même héros, pas un total :
+
+| | le jeu | le site |
+|---|---|---|
+| Roi Minos (total faux de +9) | +213 | **+213** |
+| Abraham Lincoln | +110 | **+110** |
+| Hatchepsout (total faux de +6) | +198 | +197 |
+
+Un total qui rate de neuf points, et l'écart juste au point près. C'est
+précisément ce dont une calibration se nourrit.
+
+### Ce qui a été construit
+
+- un champ **« Puissance affichée par le jeu »** sous le chiffre, sur l'équipement
+  réel seulement — recopier une valeur du jeu n'a de sens que si le site regarde
+  la même chose que le joueur ;
+- l'écart est rangé dans le navigateur (`hoh.calibration`) avec la date **et la
+  SIGNATURE du héros** : niveau, ascensions, capacité, éveil, relique et nombre
+  de nœuds ;
+- `formules.js` retranche l'écart dans `puissance()`, donc **partout** — le
+  tableau, l'optimiseur, les aperçus de panthéon ;
+- le titre passe de « puissance estimée » à **« puissance calibrée »** ;
+- dès que la signature change, **la calibration est déclarée périmée et cesse
+  d'être appliquée** : le site revient à l'estimation et le dit. Mieux vaut un
+  chiffre estimé qu'un chiffre faussement sûr.
+
+Recalibrer relit la puissance BRUTE, celle d'avant toute calibration : deux
+calibrations de suite ne cumulent pas leurs écarts.
+
+### Vérifié dans le navigateur
+
+Achille, dont le jeu affiche 30 236 et le site 30 232 :
+
+| | |
+|---|---|
+| avant | PUISSANCE ESTIMÉE **30 232** |
+| après avoir saisi 30 236 | PUISSANCE CALIBRÉE **30 236** |
+| après que l'optimiseur ait changé tout son équipement | calibration toujours appliquée |
+| après un niveau gagné | **« Calibration périmée — refaire »**, retour à l'estimation |
+| le niveau rendu | calibration de nouveau active |
+
+### Ce que ça ne fait pas
+
+La formule ne bouge pas d'un iota, et **rien n'est déduit d'un héros pour un
+autre**. Une calibration est une mesure locale, sur un héros, à une date. C'est
+la différence entre calibrer un instrument et truquer une règle.
