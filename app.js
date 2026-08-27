@@ -240,8 +240,10 @@ window.repliIcone = (img) => {
     img.src = suite[0];
     return;
   }
-  // Une petite pastille vide n'apporte rien : on la retire simplement.
-  if (img.classList.contains('pastilleSet')) { img.remove(); return; }
+  // Une petite pastille vide n'apporte rien : on la retire simplement. Trois
+  // ensembles n'ont encore aucun blason — leur case et leur badge s'en passent
+  // plutôt que d'afficher un carré mort.
+  if (img.classList.contains('pastilleSet') || img.classList.contains('blasonTuile')) { img.remove(); return; }
   // Le portrait principal est retrouvé par son identifiant à chaque rendu : on le garde.
   if (img.id) { img.removeAttribute('src'); img.classList.add('sansIcone'); return; }
   const remplacement = document.createElement('span');
@@ -293,8 +295,8 @@ const imgObjet = (o) => {
     + ` alt="" loading="lazy" onerror="repliIcone(this)">`;
 };
 
-const imgSet = (set) =>
-  `<img class="pastilleSet" src="images/sets/${encodeURIComponent(set)}.webp"`
+const imgSet = (set, classe = 'pastilleSet') =>
+  `<img class="${classe}" src="images/sets/${encodeURIComponent(set)}.webp"`
   + ` data-repli="images/sets/${encodeURIComponent(set)}.png" alt="" loading="lazy" onerror="repliIcone(this)">`;
 
 const imgRelique = (id) =>
@@ -311,9 +313,12 @@ const imgStat = (stat) =>
 
 // Tuile d'objet reprise du jeu : l'illustration sur un fond qui dit la rareté,
 // le niveau en pastille, les étoiles au pied. Plus besoin de l'écrire en toutes lettres.
+// Le blason de l'ensemble se pose dans le coin, comme le jeu le fait sur ses
+// propres cartes : c'est lui qui dit, sans un mot, quelles pièces vont ensemble.
 const tuileObjet = (o) => `<span class="tuile r${o.rarete}">
   ${imgObjet(o)}
   <span class="niveauTuile">${o.niveau ?? 0}</span>
+  ${imgSet(o.set, 'blasonTuile')}
   <span class="etoilesTuile">${'★'.repeat(o.rarete || 0)}</span>
 </span>`;
 
@@ -1014,24 +1019,41 @@ function rendreSets() {
   $('#sets').innerHTML = setsHtml(Object.values(equipe[selection] || {}));
 }
 
+const estComplet = (set, n) => (n >= (taillesDeSet.get(set) ?? 3) ? 1 : 0);
+
 function setsHtml(identifiants) {
   const compte = {};
   for (const id of identifiants) {
     const o = objets.get(id);
     if (o) compte[o.set] = (compte[o.set] || 0) + 1;
   }
-  return Object.entries(compte).sort((a, b) => b[1] - a[1]).map(([set, n]) => {
-    const def = defSet(set);
-    const taille = taillesDeSet.get(set) ?? 3;
-    const complet = n >= taille;
-    const bonus = texteBonusSet(def);
-    const infobulle = complet
-      ? `Set complet — ${bonus || 'bonus inconnu'}`
-      : `Il manque ${taille - n} pièce(s). Complet, ce set donnerait ${bonus || 'un bonus inconnu'}.`;
-    return `<span class="badgeSet ${complet ? 'complet' : ''}" title="${esc(infobulle)}">
-      ${imgSet(set)}${esc(nomSet(set))} ${n}/${taille}${complet && bonus ? `<span class="bonusSet">${esc(bonus)}</span>` : ''}
-    </span>`;
-  }).join('');
+  // L'ensemble complet passe devant : c'est lui qui rapporte, et c'est lui qu'on
+  // vient vérifier après avoir changé une pièce.
+  return Object.entries(compte)
+    .sort((a, b) => (estComplet(b[0], b[1]) - estComplet(a[0], a[1])) || b[1] - a[1])
+    .map(([set, n]) => {
+      const def = defSet(set);
+      const taille = taillesDeSet.get(set) ?? 3;
+      const complet = n >= taille;
+      const bonus = texteBonusSet(def);
+      const manque = taille - n;
+      const infobulle = complet
+        ? `Ensemble complet — ${bonus || 'bonus inconnu'}`
+        : `Il manque ${manque} pièce${manque > 1 ? 's' : ''}. Complet, cet ensemble donnerait ${bonus || 'un bonus inconnu'}.`;
+      // Les pastilles disent l'avancement d'un coup d'œil, sans lire le rapport :
+      // autant de points que de pièces, allumés jusqu'à celles que l'on porte.
+      const jauge = Array.from({ length: taille }, (_, i) =>
+        `<span class="piecePorte ${i < n ? 'acquise' : ''}"></span>`).join('');
+      return `<span class="badgeSet ${complet ? 'complet' : ''}" title="${esc(infobulle)}">
+        ${imgSet(set)}
+        <span class="corpsSet">
+          <span class="titreSet">${esc(nomSet(set))}<span class="jaugeSet">${jauge}</span></span>
+          <span class="bonusSet">${complet
+            ? esc(bonus || 'bonus inconnu')
+            : `encore ${manque} pièce${manque > 1 ? 's' : ''} · ${esc(bonus || 'bonus inconnu')}`}</span>
+        </span>
+      </span>`;
+    }).join('');
 }
 
 const texteBonusSet = (def) => (def?.bonus || [])

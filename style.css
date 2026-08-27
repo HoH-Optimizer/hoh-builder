@@ -129,6 +129,14 @@
   --arete-panneau: inset 0 1px 0 rgba(255, 255, 255, .06);
   --filigrane: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.1 4.1 5v6.5c0 5 3.3 9.2 7.9 10.4 4.6-1.2 7.9-5.4 7.9-10.4V5L12 2.1Z' fill='none' stroke='%23000' stroke-width='.5'/%3E%3Cpath d='M12 7.2v9.3M8.1 10.9h7.8' stroke='%23000' stroke-width='.5' stroke-linecap='round'/%3E%3C/svg%3E");
   --filigrane-opacite: .16;
+
+  /* LA HAUTEUR DU TEXTE D'UNE CASE D'ÉQUIPEMENT. Un objet porte de un à cinq
+     attributs selon sa rareté ; à laisser chaque case se régler sur le sien,
+     aucune n'avait la même hauteur qu'une autre et les lignes des deux colonnes
+     du comparateur ne se faisaient plus face. On réserve donc partout la place
+     du cas le plus chargé — un nom et cinq attributs — que la case soit pleine
+     ou vide. C'est ce qui les aligne d'une colonne à l'autre. */
+  --corps-case: 113px;
 }
 
 :root[data-theme="clair"] {
@@ -552,7 +560,11 @@ main:not(.vide) > #colonneHeros {
 }
 /* La colonne SIMULÉE est celle qu'on retourne : sa parure passe côté héros. */
 #emplacements .groupeEmplacements[data-groupe="Parure"] { order: -1; }
-.listeSets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+/* UN ENSEMBLE PAR LIGNE. Côte à côte, les cartes se répartissaient sur deux
+   rangées inégales et le bonus, plus long chez l'un que chez l'autre, les
+   laissait de hauteurs différentes. Un héros n'en porte de toute façon que deux
+   ou trois : la pile tient sans peine, et chaque bonus a la place de s'écrire. */
+.listeSets { display: grid; gap: 8px; margin-top: 12px; }
 
 /* Le héros se cale au milieu de la hauteur du comparateur plutôt que de rester
    accroché en haut : les deux colonnes d'équipement l'encadrent alors vraiment. */
@@ -822,7 +834,11 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .vignette { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: var(--panneau-clair); }
 .portrait { width: 74px; height: 74px; border-radius: 18px; object-fit: cover; background: var(--panneau-clair); }
 .icone { width: 40px; height: 40px; }
-.pastilleSet { width: 34px; height: 34px; margin-right: 7px; vertical-align: -11px; }
+/* Le blason d'un ensemble se lit mal en dessous de quarante pixels : le dessin
+   qu'il porte — un chacal, un sanglier, un canoë — est ce qui le distingue de
+   ses quarante-sept voisins. La carte l'aligne toute seule, plus besoin de le
+   caler à la main. */
+.pastilleSet { width: 40px; height: 40px; }
 .iconeStat { width: 18px; height: 18px; margin-right: 7px; vertical-align: -4px; object-fit: contain; }
 /* Une icône de statistique absente disparaît : le libellé porte déjà l'information. */
 .iconeStat.sansIcone { display: none; }
@@ -1049,7 +1065,9 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 .attr { min-width: 0; }
 .attr .nomAttr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .emplacement .titre { font-size: 13px; }
-.emplacement .titre { font-weight: 600; }
+/* Un nom sur une seule ligne : c'est la dernière chose qui pouvait encore faire
+   grandir une case plus que sa voisine. */
+.emplacement .titre { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .emplacement .detail { font-size: 12px; color: var(--discret); }
 .emplacement .vide { color: var(--discret); font-style: italic; }
 /* La ligne se teinte de la rareté de l'objet qu'elle porte : on la lit d'un
@@ -1075,19 +1093,51 @@ input:focus { outline: 2px solid var(--accent-sombre); outline-offset: 1px; }
 }
 .retirer:hover { color: var(--negatif); border-color: var(--negatif); }
 
+/* LES ENSEMBLES NE SONT PLUS UNE NOTE DE BAS DE PAGE. C'est sur eux que se
+   joue une bonne part de la puissance d'un héros, et ils tenaient jusqu'ici dans
+   une pastille grise de douze pixels. Chacun devient une petite carte : le
+   blason en grand, le nom, une jauge de pièces, et le bonus écrit en toutes
+   lettres — acquis pour un ensemble complet, promis pour les autres. */
 .badgeSet {
-  padding: 5px 12px 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 9px;
   font-size: 12px;
-  border: 1px solid var(--bordure);
-  border-radius: 999px;
   color: var(--discret);
+  background: var(--panneau-clair);
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  box-shadow: var(--arete-panneau);
 }
+.badgeSet .corpsSet { display: grid; gap: 2px; min-width: 0; }
+.badgeSet .titreSet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texte);
+}
+/* Un point par pièce de l'ensemble, allumé jusqu'à celles que le héros porte. */
+.jaugeSet { display: inline-flex; gap: 3px; }
+.piecePorte {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--bordure);
+}
+.piecePorte.acquise { background: var(--discret); border-color: var(--discret); }
+/* L'ensemble complet est le seul qui rapporte quelque chose : il se détache. */
 .badgeSet.complet {
   color: var(--accent);
   border-color: var(--accent-sombre);
   background: var(--accent-voile);
-  font-weight: 600;
 }
+.badgeSet.complet .titreSet { color: var(--accent); }
+.badgeSet.complet .piecePorte.acquise { background: var(--accent); border-color: var(--accent); }
+.badgeSet.complet .bonusSet { opacity: 1; }
 
 /* ---------- Statistiques ---------- */
 
@@ -1401,7 +1451,21 @@ td.principal { font-weight: 600; }
 
 /* ---------- Tuiles d'objet, dans l'esprit du jeu ---------- */
 
-.bonusSet { display: block; margin-top: 1px; font-size: 10.5px; font-weight: 400; opacity: .85; }
+.bonusSet { display: block; font-size: 11px; font-weight: 400; opacity: .8; }
+
+/* Le blason de l'ensemble, posé sur la tuile comme le jeu le pose sur ses
+   cartes. Le coin haut gauche est le seul qui soit libre : le niveau occupe
+   celui d'en face, les étoiles le pied de la tuile. */
+.blasonTuile {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .75));
+  pointer-events: none;
+}
 
 .tuile {
   position: relative;
@@ -1475,10 +1539,18 @@ td.principal { font-weight: 600; }
 .attr .iconeStat { width: 14px; height: 14px; margin: 0; vertical-align: 0; }
 .attr.verrouille { opacity: .62; }
 
-/* L'emplacement s'articule autour de la tuile : l'objet, puis ses statistiques.
-   Le nom de l'emplacement n'y figure plus, il est passé dans l'infobulle. */
-.emplacement { grid-template-columns: 60px minmax(0, 1fr) auto; align-items: center; }
-.corpsObjet { display: grid; gap: 3px; min-width: 0; }
+/* La tuile et la croix se partagent la première rangée, le nom et les attributs
+   prennent la seconde : deux colonnes, pas trois — une troisième traînait ici,
+   qui ne servait à rien et que la grille nommée ci-dessus ignorait déjà. */
+.emplacement { grid-template-columns: 60px minmax(0, 1fr); align-items: center; }
+.corpsObjet { display: grid; gap: 3px; min-width: 0; align-content: start; }
+
+/* TOUTES LES CASES À LA MÊME HAUTEUR : voir « --corps-case ». Le texte occupe
+   la même place qu'il y ait un attribut ou cinq, et une case vide autant qu'une
+   case pleine. */
+.emplacement > .corpsObjet,
+.emplacement > .vide { min-height: var(--corps-case); }
+.attr { line-height: 1.3; }
 .tuile.vide { background: var(--panneau); border: 1px dashed var(--bordure); }
 .tuile.libre {
   position: relative;
@@ -1499,7 +1571,15 @@ td.principal { font-weight: 600; }
 
 /* Le jeu range l'armement d'un côté du héros et la parure de l'autre :
    on garde ces deux groupes, séparés par un filet. */
-.groupeEmplacements { display: grid; gap: 7px; align-content: start; }
+/* Les cases se touchaient presque. Depuis qu'elles ont toutes la même hauteur,
+   c'est l'intervalle qui dit où l'une finit et où l'autre commence : on le
+   double. */
+.groupeEmplacements { display: grid; gap: 13px; align-content: start; }
+/* L'armement ne compte que deux pièces contre trois à la parure : sa pile,
+   accrochée en haut, laissait un vide sous elle. Elle se centre désormais sur
+   la hauteur de sa voisine, et les deux colonnes du comparateur se répondent. */
+.emplacements { align-items: stretch; }
+.groupeEmplacements[data-groupe="Armement"] { align-content: center; }
 /* Le filet qui séparait les deux groupes empilés n'a plus lieu d'être : ils sont
    désormais côte à côte, et la gouttière suffit à les distinguer. */
 
@@ -1753,18 +1833,26 @@ td.principal { font-weight: 600; }
   .portrait { width: 58px; height: 58px; }
   .enteteHeros h2 { margin-bottom: 2px; }
   .cote h3 { margin-bottom: 6px; }
-  .emplacements { gap: 5px; }
   .emplacement { min-height: 66px; padding: 4px 9px; gap: 8px; }
   .emplacement .titre { font-size: 12.5px; }
   .attr { font-size: 11.5px; line-height: 1.35; }
   .tuile { width: 52px; height: 52px; }
   .tuile .icone { width: 50px; height: 50px; }
-  .emplacement { grid-template-columns: 52px minmax(0, 1fr) auto; }
-  .groupeEmplacements { gap: 5px; }
-  .emplacements { gap: 7px; }
+  .emplacement { grid-template-columns: 52px minmax(0, 1fr); }
+  /* Ici tout doit tenir sans défiler, et cinq attributs par case font vite une
+     colonne trop haute. Ce n'est pas le texte qui commande la hauteur d'une
+     ligne d'attribut mais l'icône de statistique posée devant : la réduire de
+     deux pixels rend une quinzaine de pixels par case, sans toucher aux
+     chiffres. La place réservée au texte suit. */
+  .attr .iconeStat { width: 12px; height: 12px; }
+  .emplacement { --corps-case: 105px; }
+  .tuile .blasonTuile { width: 19px; height: 19px; }
+  .groupeEmplacements { gap: 10px; }
+  .emplacements { gap: 10px; }
   .listeSets { margin-top: 8px; gap: 5px; }
-  .badgeSet { padding: 3px 10px 3px 5px; font-size: 11px; }
-  .pastilleSet { width: 28px; height: 28px; margin-right: 6px; vertical-align: -9px; }
+  .badgeSet { padding: 6px 11px 6px 7px; gap: 8px; font-size: 11px; }
+  .badgeSet .titreSet { font-size: 12px; }
+  .pastilleSet { width: 32px; height: 32px; }
   .bonusSet { font-size: 10px; }
 
   /* Le resserrement s'arrête au tableau. C'est LUI qu'on vient lire : ses lignes
@@ -1853,25 +1941,37 @@ td.principal { font-weight: 600; }
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  margin-top: 7px;
-  font-size: 11.5px;
+  gap: 8px;
+  margin-top: 9px;
+  font-size: 12.5px;
 }
 .calibrage label { color: var(--discret); }
+/* LE CHAMP DOIT POUVOIR SE LIRE PENDANT QU'ON TAPE. En sept caractères et onze
+   points et demi, il n'en montrait que trois — « 30. » — et les deux flèches du
+   champ numérique lui prenaient encore de la place. On les retire, et le champ
+   reçoit un nombre à six chiffres sans les cacher. */
 .calibrage input {
-  width: 7ch;
-  padding: 3px 6px;
+  width: 9ch;
+  min-width: 104px;
+  padding: 6px 10px;
   font: inherit;
+  font-size: 16px;
   font-variant-numeric: tabular-nums;
   text-align: right;
   color: var(--texte);
   background: var(--panneau);
   border: 1px solid var(--bordure);
-  border-radius: 7px;
+  border-radius: 8px;
+  appearance: textfield;
+  -moz-appearance: textfield;
 }
+.calibrage input::-webkit-outer-spin-button,
+.calibrage input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.calibrage input:focus { outline: none; border-color: var(--accent); }
 .calibrage button {
-  padding: 3px 9px;
+  padding: 6px 13px;
   font: inherit;
+  font-size: 13px;
   font-weight: 700;
   color: var(--texte);
   background: var(--panneau-clair);
