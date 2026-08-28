@@ -300,6 +300,29 @@ header p { margin: 0; color: var(--discret); font-size: 13px; }
 .actions { grid-column: 3; display: flex; gap: 8px; align-items: center; justify-self: end; }
 
 .marque { grid-column: 2; display: flex; align-items: center; gap: 13px; }
+
+/* LE CHOIX DE LA LANGUE. Deux drapeaux, à peine plus grands qu'un mot : c'est un
+   réglage qu'on touche une fois. Celui qui est en cours ressort par le contraste
+   — les autres sont lavés et rentrés d'un cran, comme les nœuds non pris de
+   l'arbre. La couleur seule ne suffirait pas à le dire : le drapeau actif porte
+   aussi un cerne d'accent. */
+.langues { display: flex; gap: 6px; margin-left: 6px; }
+.drapeau {
+  width: 30px;
+  height: 21px;
+  padding: 0;
+  border: 1px solid var(--bordure);
+  border-radius: 5px;
+  background: none;
+  overflow: hidden;
+  cursor: pointer;
+  filter: saturate(.35) brightness(.72);
+  transition: filter .16s ease, border-color .16s ease;
+}
+.drapeau svg { display: block; width: 100%; height: 100%; }
+.drapeau:hover { filter: none; }
+.drapeau.actif { filter: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.drapeau:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* Trop à l'étroit pour trois colonnes : tout se centre l'un sous l'autre. */
 @media (max-width: 1000px) {
   header { grid-template-columns: 1fr; justify-items: center; }
@@ -1538,6 +1561,18 @@ td.principal { font-weight: 600; }
 .attr.principalAttr b { color: var(--accent); }
 .attr .iconeStat { width: 14px; height: 14px; margin: 0; vertical-align: 0; }
 .attr.verrouille { opacity: .62; }
+/* L'unité que l'attribut verrouillé promet — « % », « pts », « s ». Elle se pose
+   à côté du mot, en plus petit et cerclée : c'est un renseignement sur la
+   nature du gain, pas le gain lui-même, et rien ne doit laisser croire qu'on
+   connaît déjà le chiffre. */
+.uniteVerrou {
+  margin-left: 5px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid var(--bordure);
+  border-radius: 5px;
+}
 
 /* La tuile et la croix se partagent la première rangée, le nom et les attributs
    prennent la seconde : deux colonnes, pas trois — une troisième traînait ici,

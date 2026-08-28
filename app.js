@@ -101,7 +101,13 @@ const FORMAT_STAT = {
   charge_initiale: 'secondes', charge_normale: 'secondes',
 };
 
-const NOM_TYPE = () => (window.NOMS_FR || {}).types || {};
+/* LE VOCABULAIRE DU JEU SUIT LA LANGUE DU SITE. Chaque langue a son fichier de
+   noms, tiré du fichier de traduction du jeu lui-même : « node tools/noms.js
+   en-US en » écrit noms-en.js. On ne traduit donc jamais un nom de héros ou
+   d'objet à la main — le joueur doit lire ici ce qu'il lit dans son jeu. */
+const nomsDuJeu = () => (window.I18N?.langue === 'en' ? window.NOMS_EN : window.NOMS_FR) || window.NOMS_FR || {};
+
+const NOM_TYPE = () => nomsDuJeu().types || {};
 
 // Les ères du jeu, telles qu'il les nomme en français.
 const NOM_ERE = {
@@ -126,7 +132,7 @@ const etoilesHtml = (n) =>
 
 const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const libelleStat = (s) => NOM_STAT[s] || s;
+const libelleStat = (s) => nomsDuJeu().stats?.[s] || NOM_STAT[s] || s;
 
 // Repli quand on n'a pas le vrai nom : on aère l'identifiant interne.
 // "AbrahamLincoln" -> "Abraham Lincoln", "DArtagnan" -> "D Artagnan"
@@ -148,9 +154,17 @@ const ficheDuHeros = (h) => (h && fiche(h.montee)) || fiche(h?.id);
 // Le fichier de traduction du jeu laisse sept identifiants sans traduction : les
 // variantes légendaires, qu'il renvoie telles quelles. Chacune double un héros
 // existant, dont le nom, lui, est traduit — on le reprend et on le qualifie.
+// UN NOM QUI N'EST QUE L'IDENTIFIANT RECOPIÉ n'est pas un nom : le fichier de
+// traduction rend « AmeliaEarhart » quand il n'a rien de mieux, et heros-jeu.js,
+// lui, en a un vrai. On les reconnaît à ceci qu'ils sont en chasse-mêlée — une
+// majuscule au milieu d'un mot. C'est ce détail qui les distingue des noms qui
+// ressemblent LÉGITIMEMENT à leur identifiant : en anglais, Achilles s'appelle
+// vraiment Achilles, et comparer le nom à l'identifiant les effaçait tous.
+const identifiantRecopie = (nom, id) => nom === id && joliNom(id) !== id;
+
 const traduit = (id) => {
-  const nom = libelles().heros?.[id] || (window.NOMS_FR || {}).heros?.[id];
-  return nom && nom !== id ? nom : null;
+  const nom = nomsDuJeu().heros?.[id] || libelles().heros?.[id];
+  return nom && !identifiantRecopie(nom, id) ? nom : null;
 };
 
 const nomHeros = (id) => {
@@ -159,11 +173,11 @@ const nomHeros = (id) => {
   const base = id.replace(/Legendary$/, '');
   if (base !== id) {
     const nomBase = traduit(base) || fiche(base)?.nom;
-    if (nomBase && nomBase !== base) return `${nomBase} (légendaire)`;
+    if (nomBase && nomBase !== base) return `${nomBase} ${T('(légendaire)')}`;
   }
   return joliNom(id);
 };
-const nomSet = (id) => libelles().sets?.[id] || (window.NOMS_FR || {}).sets?.[id] || joliNom(id);
+const nomSet = (id) => nomsDuJeu().sets?.[id] || libelles().sets?.[id] || joliNom(id);
 
 // sets-jeu.js vient du catalogue officiel : nombre de pièces et bonus d'ensemble.
 const defSet = (id) => (window.SETS_JEU || {})[id];
@@ -206,7 +220,7 @@ const secondes = (v) => Number(v).toLocaleString('fr-FR', { maximumFractionDigit
 
 function valeurAttribut(stat, valeur, type) {
   if (stat === 'InitialFocusInSecondsBonus') return `${signe(-valeur, secondes)} s`;
-  if (stat === 'AttackSpeed') return `${signe(valeur, coupsMin)} coups/min`;
+  if (stat === 'AttackSpeed') return `${signe(valeur, coupsMin)} ${T('coups/min')}`;
   if (type === 'pourcentage') return signe(valeur, pourcent);
   // UN APPORT SUR UNE STATISTIQUE ENTIÈRE S'ÉCRIT ENTIER, ET LE JEU PLAFONNE.
   // C'est la règle du §22 (voir RECHERCHE-PUISSANCE.md), déjà appliquée aux lignes
@@ -223,9 +237,9 @@ const signe = (v, f) => (v > 0 ? '+' : v < 0 ? '−' : '') + f(Math.abs(v));
 
 // Le jeu donne un vrai nom à chaque pièce d'équipement (« Chevalière de Voyageur »),
 // qui dépend de son ensemble et de son emplacement. À défaut, on décrit l'objet.
-const nomObjet = (o) => libelles().objets?.[o.id]
-  || (window.NOMS_FR || {}).objets?.[`${o.set}_${o.emplacement}`]
-  || `${NOM_SLOT[o.emplacement] || o.emplacement} · set ${nomSet(o.set)}`;
+const nomObjet = (o) => nomsDuJeu().objets?.[`${o.set}_${o.emplacement}`]
+  || libelles().objets?.[o.id]
+  || `${T(NOM_SLOT[o.emplacement] || o.emplacement)} · ${T('Ensemble')} ${nomSet(o.set)}`;
 
 /* ------------------------------------------------------------------- images */
 
@@ -323,6 +337,23 @@ const tuileObjet = (o) => `<span class="tuile r${o.rarete}">
 </span>`;
 
 // Ce qui compte vraiment sur un objet : tous ses attributs, pas seulement le principal.
+// CE QU'UN ATTRIBUT VERROUILLÉ PROMET DÉJÀ. Sa valeur est inconnue, mais pas sa
+// NATURE : le nom de l'attribut suffit à dire si le gain sera un pourcentage ou
+// un nombre de points — « DefenseBonus » est un pourcentage, « Defense » des
+// points. Sans cette marque, deux lignes « verrouillé » se ressemblaient alors
+// qu'elles ne promettent pas du tout la même chose, et l'on ne pouvait pas
+// comparer deux pièces sur ce qu'il leur reste à donner.
+// Une FONCTION et non une table figée : les libellés dépendent de la langue, qui
+// se change sans recharger la page. Une table constante garderait la langue du
+// premier affichage.
+const uniteVerrouillee = (a) => {
+  if (a.attribut === 'InitialFocusInSecondsBonus') return { court: T('s'), long: T('en secondes') };
+  if (a.attribut === 'AttackSpeed') return { court: T('coups/min'), long: T('en coups par minute') };
+  return a.type === 'pourcentage'
+    ? { court: '%', long: T('en pourcentage') }
+    : { court: T('pts'), long: T('en points') };
+};
+
 function attributsObjetHtml(o) {
   const ligne = (a, principal) => {
     if (!a || !a.attribut) return '';
@@ -330,8 +361,9 @@ function attributsObjetHtml(o) {
     // déduit de son nom, « BaseDamageBonus » désignant les dégâts de base.
     const nom = libelleStat(a.stat || a.attribut.replace(/Bonus$/, ''));
     if (a.verrouille || typeof a.valeur !== 'number') {
-      return `<span class="attr verrouille" title="Se débloque au niveau ${a.debloqueAuNiveau ?? '?'}">`
-        + `<span class="nomAttr">${esc(nom)}</span><b>verrouillé</b></span>`;
+      const unite = uniteVerrouillee(a);
+      return `<span class="attr verrouille" title="Se débloque au niveau ${a.debloqueAuNiveau ?? '?'}, et se comptera ${unite.long}.">`
+        + `<span class="nomAttr">${esc(nom)}</span><b>${T('verrouillé')}<span class="uniteVerrou">${esc(unite.court)}</span></b></span>`;
     }
     const valeur = valeurAttribut(a.stat, a.valeur, a.type);
     return `<span class="attr ${principal ? 'principalAttr' : ''}">${imgStat(a.stat)}<span class="nomAttr">${esc(nom)}</span><b>${valeur}</b></span>`;
@@ -784,7 +816,7 @@ function rendreEntete() {
   // L'avertissement se réduit à une pastille : l'explication tient dans l'infobulle.
   // Les noms français sont livrés avec le site (noms-fr.js, tiré du fichier de
   // traduction du jeu) : il ne reste à signaler que les héros trop récents pour y figurer.
-  const inconnus = c.heros.filter((h) => !nomsReels() && !(window.NOMS_FR || {}).heros?.[h.id]).length;
+  const inconnus = c.heros.filter((h) => !nomsReels() && !nomsDuJeu().heros?.[h.id]).length;
   const alerte = $('#avertissement');
   alerte.hidden = inconnus === 0;
   alerte.textContent = `${inconnus} héros sans nom traduit`;
@@ -799,10 +831,13 @@ function rendreEntete() {
 // crits, et cinq relevés d'écran ne suffisent pas à le reconstituer (voir README).
 // Plutôt qu'un classement approché présenté comme la puissance du jeu, on propose
 // les critères qu'on sait exacts — dont les statistiques que le site calcule.
+// « stat » désigne une statistique du jeu : son libellé se prend alors dans le
+// vocabulaire du jeu, pas dans les traductions du site — pour que la ligne du
+// menu de tri et celle du tableau portent exactement le même mot.
 const TRIS = [
-  { cle: 'attaque', libelle: 'Attaque', valeur: (h) => statCalculee(h.id, 'Attack') },
-  { cle: 'defense', libelle: 'Défense', valeur: (h) => statCalculee(h.id, 'Defense') },
-  { cle: 'pv', libelle: 'Points de vie', valeur: (h) => statCalculee(h.id, 'MaxHitPoints') },
+  { cle: 'attaque', libelle: 'Attaque', stat: 'Attack', valeur: (h) => statCalculee(h.id, 'Attack') },
+  { cle: 'defense', libelle: 'Défense', stat: 'Defense', valeur: (h) => statCalculee(h.id, 'Defense') },
+  { cle: 'pv', libelle: 'Points de vie', stat: 'MaxHitPoints', valeur: (h) => statCalculee(h.id, 'MaxHitPoints') },
   { cle: 'niveau', libelle: 'Niveau', valeur: (h) => (h.possede ? (h.niveau ?? 0) : -1) },
   { cle: 'rarete', libelle: 'Rareté', valeur: (h) => (ficheDuHeros(h) || fiche(h.id) || {}).etoiles || 0 },
   { cle: 'eveil', libelle: 'Éveil', valeur: (h) => h.eveil ?? 0 },
@@ -879,7 +914,9 @@ function carteHeros(h) {
   const classe = (details.classe || '').replace(/_/g, '');
   const etoiles = details.etoiles || 0;
   const ameliorable = h.possede && h.niveau != null && h.niveauMax != null && h.niveau < h.niveauMax;
-  const infobulle = `${nomHeros(h.id)}${h.possede ? ` — niveau ${h.niveau}` : ' — pas sur ton compte'}`;
+  const infobulle = h.possede
+    ? T('{0} — niveau {1}', nomHeros(h.id), h.niveau)
+    : T('{0} — pas sur ton compte', nomHeros(h.id));
 
   return `<li class="carteHeros ${h.id === selection ? 'actif' : ''} ${h.possede ? '' : 'nonPossede'}"
       data-hero="${esc(h.id)}" title="${esc(infobulle)}">
@@ -1000,7 +1037,7 @@ function emplacementsHtml(slots, modifiable) {
         // Emplacement libre : le jeu y montre la silhouette de la pièce attendue
         // et un « + ». On reprend le même repère, dessiné en SVG.
         : `<span class="tuile libre">${SILHOUETTE[slot]}${modifiable ? '<span class="plus">+</span>' : ''}</span>
-           <span class="vide">${modifiable ? 'Vide — cliquer pour choisir' : 'Vide'}</span><span></span>`;
+           <span class="vide">${modifiable ? T('Vide — cliquer pour choisir') : T('Vide')}</span><span></span>`;
       // Un <div> et non un <bouton> : il contient déjà le bouton « Retirer ».
       // Le nom de l'emplacement n'est plus écrit dans la ligne — la silhouette et
       // l'objet lui-même le disent — mais il reste dans l'infobulle.
@@ -1487,7 +1524,7 @@ function valeurStat(stat, feuilleStats) {
   switch (FORMAT_STAT[stat]) {
     case 'entier': return { texte: nombre(Math.round(v)), brut: v };
     case 'decimal': return { texte: nombre(v), brut: v };
-    case 'coups': return { texte: `${coupsMin(v)} coups/min`, brut: v };
+    case 'coups': return { texte: `${coupsMin(v)} ${T('coups/min')}`, brut: v };
     // Le jeu écrit « Mêlée » plutôt qu'une distance quand le héros frappe au contact.
     case 'portee': return { texte: v <= 1.5 ? 'Mêlée' : nombre(v), brut: v };
     case 'vitesse': return { texte: `${nombre(v)} ${v >= 2.5 ? '(rapide)' : v >= 2 ? '(moyenne)' : '(lente)'}`, brut: v };
@@ -1517,7 +1554,7 @@ function ecartHtml(stat, s, a, vide = '<span class="discret">=</span>') {
   const ecrire = (x) => {
     switch (FORMAT_STAT[stat]) {
       case 'entier': case 'decimal': case 'portee': case 'vitesse': return nombre(x);
-      case 'coups': return `${coupsMin(x)} coups/min`;
+      case 'coups': return `${coupsMin(x)} ${T('coups/min')}`;
       case 'secondes': return `${secondes(x)} s`;
       default: return pourcent(x);
     }
@@ -1575,7 +1612,7 @@ function detailHtml(stat, simule, actuel) {
   const d = simule[stat] || {};
   const estPourcentage = !FORMULES.ABSOLUES.has(stat);
   const ecrire = (v) => (estPourcentage ? pourcent(v)
-    : FORMAT_STAT[stat] === 'coups' ? `${coupsMin(v)} coups/min`
+    : FORMAT_STAT[stat] === 'coups' ? `${coupsMin(v)} ${T('coups/min')}`
     : nombre(v));
 
   // Les sources, dans l'ordre où le jeu les empile. On garde le cumul à chaque
@@ -2009,7 +2046,7 @@ function rendreSelecteur() {
 
   const lignes = candidats.map((o) => {
     const p = porteur.get(o.id);
-    const marque = p === selection ? 'équipé ici' : p ? `porté par ${nomHeros(p)}` : 'en réserve';
+    const marque = p === selection ? T('équipé ici') : p ? T('porté par {0}', nomHeros(p)) : T('en réserve');
     // Ce qui est déjà sur le banc se voit dans la liste : on ne repose pas deux
     // fois la même pièce sans s'en apercevoir.
     const surLeBanc = essai.a === o.id ? 'surBancGauche' : essai.b === o.id ? 'surBancDroit' : '';
@@ -2067,7 +2104,7 @@ function carteEssaiHtml(cote) {
         ${tuileObjet(o)}
         <div class="texteCarteEssai">
           <span class="titre">${esc(nomObjet(o))}</span>
-          <span class="discret">${p === selection ? 'équipé ici' : p ? `porté par ${esc(nomHeros(p))}` : 'en réserve'}</span>
+          <span class="discret">${p === selection ? T('équipé ici') : p ? T('porté par {0}', esc(nomHeros(p))) : T('en réserve')}</span>
         </div>
       </div>
       ${attributsObjetHtml(o)}
@@ -2224,6 +2261,16 @@ let critereOptimisation = (() => {
   catch { return CRITERE_PUISSANCE; }
 })();
 
+// CE QU'ON IMPOSE EN MATIÈRE D'ENSEMBLES. « libre » laisse la recherche décider,
+// comme elle l'a toujours fait : elle monte un ensemble quand il rapporte. Les
+// trois autres valeurs le lui imposent — elle cherche alors le meilleur
+// équipement PARMI ceux qui portent un ensemble complet sur le groupe visé.
+const GROUPES_IMPOSABLES = { parure: ['Parure'], armement: ['Armement'], tout: ['Armement', 'Parure'] };
+let ensemblesOptimisation = (() => {
+  try { return localStorage.getItem('hoh.ensembles') || 'libre'; }
+  catch { return 'libre'; }
+})();
+
 // LE SCORE D'UNE CONFIGURATION. « valeur » est ce qu'on maximise ; « puissance »
 // départage les ex æquo, et ils sont légion — des dizaines de configurations
 // donnent exactement la même attaque, autant retenir la plus puissante d'entre
@@ -2286,8 +2333,10 @@ function elaguer(contexte, depart, dispo) {
 
 // Deuxième temps : les plans. Un plan nomme l'ensemble à réunir sur un groupe
 // d'emplacements ; « null » est le plan libre, qui n'impose rien.
-function plansPossibles(pool, slots) {
-  const plans = [null];
+function plansPossibles(pool, slots, impose = false) {
+  // Le plan libre concourt toujours — sauf quand le joueur exige un ensemble
+  // complet sur ce groupe : c'est précisément lui qu'il s'agit alors d'écarter.
+  const plans = impose ? [] : [null];
   const occupation = {};
   for (const slot of slots) {
     for (const o of pool[slot]) (occupation[o.set] ||= new Set()).add(slot);
@@ -2317,7 +2366,11 @@ function remplirSelonPlan(choix, plan, slots, pool, notes) {
 // Chaque essai est une feuille de statistiques complète — donc de vrais chiffres,
 // pas une approximation — et un ensemble qui ne vaut pas son bonus se défait tout
 // seul.
-function affiner(contexte, choix, pool) {
+// « verrous » nomme, pour certains emplacements, l'ensemble auquel la pièce doit
+// appartenir : c'est ainsi que la contrainte survit à l'affinage. Sans lui,
+// l'affinage déferait l'ensemble qu'on venait d'imposer dès qu'une pièce isolée
+// faisait mieux — ce qui est son travail, et exactement ce qu'on ne veut pas ici.
+function affiner(contexte, choix, pool, verrous = {}) {
   let meilleur = evaluer(contexte, choix);
   for (let tour = 0; tour < 6; tour++) {
     let abouge = false;
@@ -2325,6 +2378,7 @@ function affiner(contexte, choix, pool) {
       let retenu = choix[slot];
       for (const o of pool[slot]) {
         if (o.id === choix[slot]) continue;
+        if (verrous[slot] && o.set !== verrous[slot]) continue;
         const score = evaluer(contexte, { ...choix, [slot]: o.id });
         if (meilleurQue(score, meilleur)) { meilleur = score; retenu = o.id; }
       }
@@ -2348,29 +2402,73 @@ function chercherMeilleurEquipement(heroId, chezLesAutres) {
 
   const { pool, notes } = elaguer(contexte, depart, dispo);
 
+  // CE QUE LE JOUEUR IMPOSE. Un groupe imposé n'a plus droit au plan libre : il
+  // ne concourt qu'avec ses ensembles complets. Encore faut-il que l'inventaire
+  // puisse en compléter un — sinon on relâche la contrainte pour ce groupe-là et
+  // on le dit, plutôt que de ne rien proposer du tout.
+  const imposes = GROUPES_IMPOSABLES[ensemblesOptimisation] || [];
+  const impossibles = [];
+  const plansDe = (slots, nom) => {
+    if (!imposes.includes(nom)) return plansPossibles(pool, slots);
+    const stricts = plansPossibles(pool, slots, true);
+    if (stricts.length) return stricts;
+    impossibles.push(nom);
+    return plansPossibles(pool, slots);
+  };
+
   // Les plans d'armement et de parure se croisent : les statistiques se
   // multiplient entre elles, on ne peut donc pas choisir les deux moitiés
   // séparément.
   const combinaisons = [];
-  for (const armement of plansPossibles(pool, SLOTS_ARMEMENT)) {
-    for (const parure of plansPossibles(pool, SLOTS_PARURE)) {
+  for (const armement of plansDe(SLOTS_ARMEMENT, 'Armement')) {
+    for (const parure of plansDe(SLOTS_PARURE, 'Parure')) {
       const choix = {};
       remplirSelonPlan(choix, armement, SLOTS_ARMEMENT, pool, notes);
       remplirSelonPlan(choix, parure, SLOTS_PARURE, pool, notes);
-      combinaisons.push({ choix, score: evaluer(contexte, choix) });
+      combinaisons.push({ choix, plans: { Armement: armement, Parure: parure }, score: evaluer(contexte, choix) });
     }
   }
+  if (!combinaisons.length) return null;
+
   // L'équipement du moment concourt aussi : si rien ne fait mieux, il gagne.
+  // Mais seulement s'il respecte ce qu'on impose — proposer de ne rien changer
+  // quand on a demandé une parure complète serait une réponse à côté.
   const avant = evaluer(contexte, depart);
-  combinaisons.push({ choix: { ...depart }, score: avant });
+  const plansDuDepart = {
+    Armement: setCompletDuGroupe(depart, SLOTS_ARMEMENT),
+    Parure: setCompletDuGroupe(depart, SLOTS_PARURE),
+  };
+  if (imposes.every((nom) => impossibles.includes(nom) || plansDuDepart[nom])) {
+    combinaisons.push({ choix: { ...depart }, plans: plansDuDepart, score: avant });
+  }
 
   combinaisons.sort((a, b) => (meilleurQue(a.score, b.score) ? -1 : 1));
   let gagnant = null;
   for (const candidat of combinaisons.slice(0, PLANS_AFFINES)) {
-    const affine = affiner(contexte, { ...candidat.choix }, pool);
+    const affine = affiner(contexte, { ...candidat.choix }, pool, verrousDesPlans(candidat.plans, imposes));
     if (!gagnant || meilleurQue(affine.score, gagnant.score)) gagnant = affine;
   }
-  return { ...gagnant, avant };
+  return { ...gagnant, avant, impossibles };
+}
+
+// L'ensemble que ce groupe porte au complet, s'il y en a un.
+function setCompletDuGroupe(choix, slots) {
+  const portes = slots.map((s) => objets.get(choix[s])).filter(Boolean);
+  if (portes.length < slots.length) return null;
+  const set = portes[0].set;
+  if (!portes.every((o) => o.set === set)) return null;
+  return portes.length >= (taillesDeSet.get(set) ?? slots.length) ? set : null;
+}
+
+// Traduit les plans retenus en verrous d'emplacement, pour les seuls groupes que
+// le joueur impose : l'affinage pourra tout retoucher ailleurs.
+function verrousDesPlans(plans, imposes) {
+  const verrous = {};
+  for (const [nom, slots] of [['Armement', SLOTS_ARMEMENT], ['Parure', SLOTS_PARURE]]) {
+    if (!imposes.includes(nom) || !plans[nom]) continue;
+    for (const slot of slots) verrous[slot] = plans[nom];
+  }
+  return verrous;
 }
 
 // Poser le résultat sur le héros. « equiper » se charge de retirer chaque pièce à
@@ -2392,13 +2490,21 @@ function appliquerEquipement(heroId, choix) {
 // CE QUE LA RECHERCHE A TROUVÉ, en une phrase. On y écrit toujours la puissance,
 // même quand ce n'est pas elle qu'on visait : c'est le prix de la ligne visée, et
 // il est parfois lourd.
-function compteRenduOptimisation(changees, score, avant) {
-  if (!changees) return 'Rien à changer : c\'est déjà la meilleure configuration trouvée.';
+// La contrainte d'ensemble n'a pas toujours pu être tenue : l'inventaire ne
+// contient pas forcément trois pièces d'une même parure. Le dire est plus utile
+// que de rendre un résultat qui n'obéit pas à ce qu'on a demandé sans prévenir.
+const NOM_GROUPE = { Armement: 'armement', Parure: 'parure' };
+function compteRenduOptimisation(changees, score, avant, impossibles = []) {
+  const reserve = impossibles.length
+    ? ` Aucun ensemble d'${impossibles.map((g) => NOM_GROUPE[g]).join(' ni de ')} complet n'est possible avec cet inventaire :`
+      + ' la recherche a cherché librement de ce côté-là.'
+    : '';
+  if (!changees) return `Rien à changer : c'est déjà la meilleure configuration trouvée.${reserve}`;
   const pieces = `${changees} pièce${changees > 1 ? 's' : ''} changée${changees > 1 ? 's' : ''}`;
   const ecartPuissance = Math.round(score.puissance) - Math.round(avant.puissance);
   const puissance = `puissance estimée ${signe(ecartPuissance, nombre)}`;
 
-  if (critereOptimisation === CRITERE_PUISSANCE) return `${pieces} · ${puissance}.`;
+  if (critereOptimisation === CRITERE_PUISSANCE) return `${pieces} · ${puissance}.${reserve}`;
 
   // La ligne visée est écrite comme le tableau l'écrit — en points, en secondes
   // ou en pourcentage selon la statistique — et de part et d'autre d'une flèche,
@@ -2410,7 +2516,7 @@ function compteRenduOptimisation(changees, score, avant) {
   // d'esquive, et c'est alors la puissance qui a départagé les ex æquo. Le dire
   // franchement vaut mieux qu'un « 5 % → 5 % » qui a l'air d'une erreur.
   const visee = de === a ? `${nom} sans changement (${a})` : `${nom} ${de} → ${a}`;
-  return `${pieces} · ${visee} · ${puissance}.`;
+  return `${pieces} · ${visee} · ${puissance}.${reserve}`;
 }
 
 function optimiser() {
@@ -2447,7 +2553,7 @@ function optimiser() {
     rendreHeros();
 
     etat.hidden = false;
-    etat.textContent = compteRenduOptimisation(changees, resultat.score, resultat.avant);
+    etat.textContent = compteRenduOptimisation(changees, resultat.score, resultat.avant, resultat.impossibles);
   }, 20);
 }
 
@@ -2462,14 +2568,17 @@ function effacerEtatOptimisation() {
 
 // Le menu des critères se remplit depuis les familles de l'écran « Stats » : une
 // statistique de plus dans le tableau apparaît ici sans qu'on y touche.
-$('#critereOptimisation').innerHTML =
-  `<option value="${CRITERE_PUISSANCE}">Puissance</option>`
-  + FAMILLES_STATS.map((f) => `<optgroup label="${esc(f.titre)}">`
-    + f.stats.map((s) => `<option value="${s}">${esc(libelleStat(s))}${s.startsWith('charge_') ? ' (la plus courte)' : ''}</option>`).join('')
-    + '</optgroup>').join('');
-$('#critereOptimisation').value =
-  [...$('#critereOptimisation').options].some((o) => o.value === critereOptimisation)
-    ? critereOptimisation : CRITERE_PUISSANCE;
+function remplirMenuCriteres() {
+  $('#critereOptimisation').innerHTML =
+    `<option value="${CRITERE_PUISSANCE}">${esc(T('Puissance'))}</option>`
+    + FAMILLES_STATS.map((f) => `<optgroup label="${esc(T(f.titre))}">`
+      + f.stats.map((s) => `<option value="${s}">${esc(libelleStat(s))}${s.startsWith('charge_') ? ` ${T('(la plus courte)')}` : ''}</option>`).join('')
+      + '</optgroup>').join('');
+  $('#critereOptimisation').value =
+    [...$('#critereOptimisation').options].some((o) => o.value === critereOptimisation)
+      ? critereOptimisation : CRITERE_PUISSANCE;
+}
+remplirMenuCriteres();
 
 $('#critereOptimisation').addEventListener('change', (e) => {
   critereOptimisation = e.target.value;
@@ -2477,7 +2586,41 @@ $('#critereOptimisation').addEventListener('change', (e) => {
   effacerEtatOptimisation();
 });
 
+$('#ensemblesOptimisation').value = GROUPES_IMPOSABLES[ensemblesOptimisation] ? ensemblesOptimisation : 'libre';
+$('#ensemblesOptimisation').addEventListener('change', (e) => {
+  ensemblesOptimisation = e.target.value;
+  try { localStorage.setItem('hoh.ensembles', ensemblesOptimisation); } catch { /* navigation privée */ }
+  effacerEtatOptimisation();
+});
+
 $('#optimiser').addEventListener('click', optimiser);
+
+/* ----------------------------------------------------------------- la langue */
+
+// Changer de langue ne recharge pas la page : on retraduit ce qui est écrit dans
+// index.html, puis on refait rendre tout ce que le script écrit lui-même — les
+// noms du jeu changent en même temps, puisqu'ils suivent la même langue.
+function marquerLangue() {
+  for (const bouton of document.querySelectorAll('.drapeau')) {
+    const sienne = bouton.dataset.langue === I18N.langue;
+    bouton.classList.toggle('actif', sienne);
+    bouton.setAttribute('aria-pressed', String(sienne));
+  }
+}
+
+for (const bouton of document.querySelectorAll('.drapeau')) {
+  bouton.addEventListener('click', () => {
+    if (!I18N.changer(bouton.dataset.langue)) return;
+    marquerLangue();
+    effacerEtatOptimisation();
+    remplirMenuTri();
+    remplirMenuCriteres();
+    if (donnees) toutRendre();
+  });
+}
+
+// Le premier passage de traduction attend la fin du fichier : les deux menus
+// déroulants sont remplis plus bas, et il n'y aurait rien à traduire ici.
 
 /* ------------------------------------------------------------- branchements */
 
@@ -2637,16 +2780,20 @@ for (const bouton of document.querySelectorAll('.filtre')) {
 
 // Le menu de tri est rempli depuis la table : une entrée de plus s'y ajoute sans
 // toucher au balisage.
-$('#tri').innerHTML = TRIS.map((t) => `<option value="${t.cle}">${esc(t.libelle)}</option>`).join('');
-$('#tri').value = TRIS.some((t) => t.cle === tri) ? tri : TRIS[0].cle;
-$('#tri').title = "Le jeu classe par « Puissance ». Ce nombre mêle les statistiques, la capacité "
-  + "et sans doute les crits, et sa formule n'a pas encore été reconstituée : le site propose "
-  + "à la place les critères qu'il sait exacts.";
+function remplirMenuTri() {
+  $('#tri').innerHTML = TRIS
+    .map((t) => `<option value="${t.cle}">${esc(t.stat ? libelleStat(t.stat) : T(t.libelle))}</option>`).join('');
+  $('#tri').value = TRIS.some((t) => t.cle === tri) ? tri : TRIS[0].cle;
+  $('#tri').title = T("Le jeu classe par « Puissance ». Ce nombre mêle les statistiques, la capacité "
+    + "et sans doute les crits, et sa formule n'a pas encore été reconstituée : le site propose "
+    + "à la place les critères qu'il sait exacts.");
+}
+remplirMenuTri();
 
 const rendreSensTri = () => {
   const bouton = $('#sensTri');
   bouton.classList.toggle('croissant', !triDecroissant);
-  bouton.title = triDecroissant ? 'Du plus grand au plus petit' : 'Du plus petit au plus grand';
+  bouton.title = triDecroissant ? T('Du plus grand au plus petit') : T('Du plus petit au plus grand');
 };
 
 $('#tri').addEventListener('change', (e) => {
@@ -2853,3 +3000,7 @@ window.addEventListener('message', (evenement) => {
   script.onerror = suite;
   document.head.append(script);
 })();
+
+/* La page est bâtie, les menus remplis : on peut la traduire d'un bloc. */
+I18N.traduireDom();
+marquerLangue();

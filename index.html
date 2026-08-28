@@ -13,7 +13,7 @@
        ce qui garantit au visiteur un jeu de fichiers cohérent. D'où la lettre qui
        suit la date : deux envois le même jour doivent porter deux jetons
        différents, sans quoi le correctif ne sert à rien. -->
-  <link rel="stylesheet" href="style.css?v=2026-08-28d">
+  <link rel="stylesheet" href="style.css?v=2026-08-28i">
   <script>
     // Le thème retenu s'applique avant le premier affichage. Sans cela, la page
     // apparaîtrait une fraction de seconde en sombre avant de passer au clair.
@@ -41,6 +41,29 @@
     <div>
       <h1>HOH <span class="leger">Builder</span></h1>
       <p id="sousTitre">Chargement…</p>
+    </div>
+
+    <!-- LE CHOIX DE LA LANGUE, à gauche avec la marque : c'est un réglage qu'on
+         cherche en arrivant, pas une action qu'on répète. Les drapeaux sont
+         dessinés en SVG plutôt que posés en émoji — Windows n'affiche pas les
+         émoji de drapeau, et l'on verrait « FR » et « GB » en petites lettres. -->
+    <div class="langues" role="group" aria-label="Langue du site">
+      <button class="drapeau" type="button" data-langue="fr" title="Français" aria-label="Français">
+        <svg viewBox="0 0 24 16" aria-hidden="true">
+          <rect width="8" height="16" fill="#0d2f8f"/>
+          <rect x="8" width="8" height="16" fill="#f4f4f4"/>
+          <rect x="16" width="8" height="16" fill="#d4243a"/>
+        </svg>
+      </button>
+      <button class="drapeau" type="button" data-langue="en" title="Anglais" aria-label="Anglais">
+        <svg viewBox="0 0 24 16" aria-hidden="true">
+          <rect width="24" height="16" fill="#0d2f8f"/>
+          <path d="M0 0 24 16M24 0 0 16" stroke="#f4f4f4" stroke-width="3.2"/>
+          <path d="M0 0 24 16M24 0 0 16" stroke="#d4243a" stroke-width="1.6"/>
+          <path d="M12 0v16M0 8h24" stroke="#f4f4f4" stroke-width="5.2"/>
+          <path d="M12 0v16M0 8h24" stroke="#d4243a" stroke-width="3"/>
+        </svg>
+      </button>
     </div>
   </div>
   <div class="actions">
@@ -158,6 +181,20 @@
                title="Ce que la recherche maximise. « Puissance » pèse le héros entier ; viser une ligne précise sert quand on sait ce qu'on veut faire du héros — et coûte souvent de la puissance, que le compte rendu affiche alors quand même.">
           pour
           <select id="critereOptimisation"></select>
+        </label>
+        <!-- IMPOSER UN ENSEMBLE. Par défaut la recherche décide seule : elle
+             monte un ensemble quand il rapporte, et le défait quand il coûte.
+             Ce menu retire ce choix — « je veux voir la meilleure parure
+             complète », même si des pièces dépareillées feraient mieux. -->
+        <label class="critereOptimisation"
+               title="Par défaut, la recherche monte un ensemble seulement quand il rapporte. Ici on peut le lui imposer : elle cherche alors le meilleur équipement PARMI ceux qui portent un ensemble complet — parure (3 pièces), armement (2 pièces), ou les deux. Si ton inventaire ne peut en compléter aucun, elle le dit et cherche librement.">
+          avec
+          <select id="ensemblesOptimisation">
+            <option value="libre">ensembles au mieux</option>
+            <option value="parure">parure complète imposée</option>
+            <option value="armement">armement complet imposé</option>
+            <option value="tout">les deux imposés</option>
+          </select>
         </label>
         <label class="caseACocher"
                title="Décoché, le calcul ne pioche que dans les objets que personne ne porte. Coché, il prend le meilleur où qu'il soit, quitte à le retirer à un autre héros — en simulation seulement : ton compte n'est jamais touché.">
@@ -311,20 +348,22 @@
 
 <!-- donnees.js est facultatif : il n'existe que sur une copie locale où l'on a lancé
      l'extraction. app.js le charge lui-même et se passe très bien de son absence. -->
-<script src="decodeur.js?v=2026-08-23a"></script>
+<script src="decodeur.js?v=2026-08-28i"></script>
 <!-- Catalogue du jeu : héros, ensembles d'équipement, paliers d'éveil et noms
      français. Ces données appartiennent au jeu et non au compte : elles sont
      livrées avec le site, et régénérées par `node tools/catalogue.js`. -->
-<script src="heros-jeu.js?v=2026-08-23a"></script>
-<script src="sets-jeu.js?v=2026-08-23a"></script>
-<script src="eveil-jeu.js?v=2026-08-23a"></script>
-<script src="casernes-jeu.js?v=2026-08-23a"></script>
-<script src="reliques-jeu.js?v=2026-08-23a"></script>
-<script src="ages-jeu.js?v=2026-08-23a"></script>
-<script src="pantheon-jeu.js?v=2026-08-23a"></script>
-<script src="capacites-jeu.js?v=2026-08-23a"></script>
-<script src="noms-fr.js?v=2026-08-23a"></script>
-<script src="formules.js?v=2026-08-23a"></script>
-<script src="app.js?v=2026-08-28d"></script>
+<script src="heros-jeu.js?v=2026-08-28i"></script>
+<script src="sets-jeu.js?v=2026-08-28i"></script>
+<script src="eveil-jeu.js?v=2026-08-28i"></script>
+<script src="casernes-jeu.js?v=2026-08-28i"></script>
+<script src="reliques-jeu.js?v=2026-08-28i"></script>
+<script src="ages-jeu.js?v=2026-08-28i"></script>
+<script src="pantheon-jeu.js?v=2026-08-28i"></script>
+<script src="capacites-jeu.js?v=2026-08-28i"></script>
+<script src="noms-fr.js?v=2026-08-28i"></script>
+<script src="noms-en.js?v=2026-08-28i"></script>
+<script src="i18n.js?v=2026-08-28i"></script>
+<script src="formules.js?v=2026-08-28i"></script>
+<script src="app.js?v=2026-08-28i"></script>
 </body>
 </html>
