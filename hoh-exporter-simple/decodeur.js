@@ -123,14 +123,37 @@
   // Un attribut d'équipement : quelle statistique il touche, et de combien.
   // Les attributs dont le nom finit par "Bonus" (et les critiques) sont des pourcentages.
   // Un attribut sans détail est verrouillé : le jeu en connaît le type, pas encore la valeur.
+  // OÙ VIT LA VALEUR D'UN ATTRIBUT. Jusqu'au 25/08/2026 elle était toujours dans le
+  // champ 4 du détail. L'export du 28/10 ne l'y met plus : sur 5 040 attributs, pas
+  // un seul n'avait de valeur, alors que la statistique (champ 3) se lisait encore.
+  // Le jeu l'a donc déplacée, sans qu'on sache où.
+  //
+  // Plutôt que de parier sur un numéro, on cherche le SEUL champ numérique du détail
+  // — la statistique étant du texte, la valeur est le seul nombre attendu. Si le
+  // détail en porte plusieurs, on ne tranche pas : on note les candidats et on laisse
+  // la valeur vide, exactement comme avant. On n'invente jamais un chiffre.
+  //
+  // « champValeur » dit d'où vient le nombre. Il sert à vérifier, puis à figer le bon
+  // numéro ici une fois qu'on l'aura vu.
+  function valeurDuDetail(detail) {
+    if (!detail || typeof detail !== 'object') return {};
+    if (typeof detail.f4 === 'number') return { valeur: detail.f4, champValeur: 'f4' };
+    const nombres = Object.entries(detail).filter(([, v]) => typeof v === 'number');
+    if (nombres.length === 1) return { valeur: nombres[0][1], champValeur: nombres[0][0] };
+    if (nombres.length > 1) return { champValeur: 'ambigu:' + nombres.map(([c]) => c).join('+') };
+    return { champValeur: 'aucun:' + Object.keys(detail).join('+') };
+  }
+
   function lireAttribut(a) {
     if (!a) return undefined;
     const attribut = sansPrefixe(a.f1, 'stat_attribute.');
     const detail = a.f2;
+    const { valeur, champValeur } = valeurDuDetail(detail);
     return {
       attribut,
       stat: sansPrefixe(detail?.f3, 'unit_stat.'),
-      valeur: detail?.f4,
+      valeur,
+      champValeur,
       // Le nom finissant par « Bonus » annonce en principe un pourcentage.
       // EXCEPTION : InitialFocusInSecondsBonus se compte en SECONDES, comme son nom
       // le dit. Vérifié sur l'infobulle du jeu, qui affiche « -0,36 s » là où la
