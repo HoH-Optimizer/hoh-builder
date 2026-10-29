@@ -112,6 +112,8 @@
 
   /* ------------------------------------------------------------------------ */
 
+  const VERSION_DECODEUR = '2026-10-29-chercheValeur';
+
   const sansPrefixe = (s, prefixe) => (typeof s === 'string' ? s.replace(prefixe, '') : undefined);
 
   // PIÈGE DU FORMAT : en Protocol Buffers, une liste d'un seul élément s'écrit
@@ -144,11 +146,23 @@
     return { champValeur: 'aucun:' + Object.keys(detail).join('+') };
   }
 
+  // QUAND ON NE TROUVE PAS, ON MONTRE. Les premiers attributs dont la valeur reste
+  // introuvable emportent une copie de leur bloc décodé, en clair. Quelques lignes
+  // dans le fichier, et de quoi voir la forme exacte plutôt que de la deviner.
+  // C'est le mode diagnostic de l'extension en miniature, sans rien avoir à cocher
+  // ni à ralentir le jeu.
+  let echantillons = [];
+  function garderEchantillon(a) {
+    if (echantillons.length >= 5) return;
+    try { echantillons.push(JSON.parse(JSON.stringify(a))); } catch { /* tant pis */ }
+  }
+
   function lireAttribut(a) {
     if (!a) return undefined;
     const attribut = sansPrefixe(a.f1, 'stat_attribute.');
     const detail = a.f2;
     const { valeur, champValeur } = valeurDuDetail(detail);
+    if (valeur === undefined && detail) garderEchantillon(a);
     return {
       attribut,
       stat: sansPrefixe(detail?.f3, 'unit_stat.'),
@@ -209,6 +223,7 @@
   const rangDAge = (nom) => global.AGES_JEU?.[nom]?.rang ?? (ORDRE_AGES.indexOf(nom) + 1);
 
   function extraire(brut) {
+    echantillons = [];   // une extraction, un jeu d'échantillons
     // v2 de l'extension : une seule capture sous la clé "startup".
     // v3 : plusieurs captures, on retrouve l'état du compte par son adresse.
     const bloc = brut.startup || (brut.captures || []).find((c) => /\/game\/startup$/.test(c.url));
@@ -281,6 +296,11 @@
     const liste = (k) => [...(familles[k] || [])].sort();
 
     return {
+      // Dit quel décodeur a produit ce fichier. Sans ce repère, impossible de
+      // distinguer un export neuf d'un export rejoué depuis une capture ancienne :
+      // l'extension décode À LA CAPTURE, pas à l'export.
+      decodeur: VERSION_DECODEUR,
+      echantillonsSansValeur: echantillons,
       genereLe: new Date().toISOString(),
       captureLe: bloc.capturedAt,
       // Absent tant que le fichier de traduction n'a pas été capturé : le site
