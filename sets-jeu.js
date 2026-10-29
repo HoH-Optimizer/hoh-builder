@@ -2,7 +2,7 @@
    -----------------------------------------------------------------------------
    FICHIER GÉNÉRÉ — ne pas modifier à la main.
    Régénéré par « node tools/catalogue.js » depuis le catalogue du jeu.
-   Version du catalogue : 2026-08-20_15-08-50
+   Version du catalogue : 2026-10-27_15-45-00
    Nombre de pièces et effet de chaque ensemble. L'effet n'existe dans le jeu
    que sous forme de phrase : « bonus » en est la relecture chiffrée, vide
    quand la phrase ne se laisse pas relire — « effet » reste alors affichable.
@@ -12,7 +12,7 @@ window.SETS_JEU = {
   "General": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Points de bouclier reçus +5%","bonus":[{"stat":"ShieldTakenAmp","valeur":0.05,"type":"pourcentage"}]},
   "RoyalEgyptian": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Soins prodigués +7,5 % et Points de vie +7,5 %","bonus":[{"stat":"HealGivenAmp","valeur":0.075,"type":"pourcentage"},{"stat":"MaxHitPoints","valeur":0.075,"type":"pourcentage"}]},
   "Lancer": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Dégâts d’attaque de base infligés +5%","bonus":[{"stat":"BasicAttackDamageAmp","valeur":0.05,"type":"pourcentage"}]},
-  "Warden": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Points de bouclier reçus +7,5 % et Esquive +5 %","bonus":[{"stat":"ShieldTakenAmp","valeur":0.075,"type":"pourcentage"},{"stat":"Evasion","valeur":0.05,"type":"pourcentage"}]},
+  "Warden": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Soins reçus +7,5 % et Esquive +5 %","bonus":[{"stat":"HealTakenAmp","valeur":0.075,"type":"pourcentage"},{"stat":"Evasion","valeur":0.05,"type":"pourcentage"}]},
   "Berserker": {"pieces":2,"emplacements":["Garment","Hand"],"effet":"Dégâts de capacité de zone infligés +8 % et Dégâts critiques infligés +10 %","bonus":[{"stat":"AoeDamageAmp","valeur":0.08,"type":"pourcentage"},{"stat":"CritDamage","valeur":0.1,"type":"pourcentage"}]},
   "Ninja": {"pieces":2,"emplacements":["Garment","Hand"],"effet":"Dégâts uniques infligés +7,5 % et soins reçus +5 %","bonus":[{"stat":"SingleTargetDamageAmp","valeur":0.075,"type":"pourcentage"},{"stat":"HealTakenAmp","valeur":0.05,"type":"pourcentage"}]},
   "Quack": {"pieces":3,"emplacements":["Hat","Neck","Ring"],"effet":"Dégâts sur la durée infligés +7,5% et Dégâts critiques infligés +10%","bonus":[{"stat":"DotDamageAmp","valeur":0.075,"type":"pourcentage"},{"stat":"CritDamage","valeur":0.1,"type":"pourcentage"}]},
